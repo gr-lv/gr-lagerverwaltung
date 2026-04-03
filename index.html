@@ -104,7 +104,7 @@
 </div>
 
 <script>
-    const CURRENT_VERSION = 49; 
+    const CURRENT_VERSION = 50; 
 
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -144,15 +144,20 @@
         if (name && name.trim() !== "") {
             state.user = name.trim();
             localStorage.setItem('lagerUser', state.user);
+            // NEU: Logge die Anmeldung
+            addLog("System", "Anmeldung erfolgreich");
             updateUserUI();
+            sync(); // Sofort synchronisieren damit die Anmeldung im Log erscheint
         }
     }
 
     function logout() {
         if(confirm("Wirklich ausloggen?")) {
+            addLog("System", "Ausgeloggt");
             state.user = null;
             localStorage.removeItem('lagerUser');
             updateUserUI();
+            sync();
         }
     }
 
@@ -209,7 +214,16 @@
         }
     }
 
-    function addLog(item, action) { state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: item, action: action }); }
+    function addLog(item, action) { 
+        // Speichert Name, Aktion (z.B. Anmeldung) und die Uhrzeit
+        state.logs.unshift({ 
+            time: new Date().toLocaleString('de-DE'), 
+            user: state.user, 
+            item: item, 
+            action: action 
+        }); 
+    }
+
     function addCategory() { const i = document.getElementById('newCatInput'); if (i.value) { state.cats.push(i.value); i.value = ""; sync(); } }
     function deleteCategory(index) { if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); } }
     function sync() { state.ver = CURRENT_VERSION; dbRef.set(state); }
@@ -223,8 +237,6 @@
             const isOut = i.status !== "im Lager";
             const btnColor = isOut ? 'var(--danger)' : 'var(--success)';
             const btnText = isOut ? 'Einlagern' : 'Auslagern';
-            
-            // NEUE ANZEIGE: "Ausgelagert von"
             const infoHtml = isOut ? `<div class="last-action">Ausgelagert von ${i.outUser || '?'} am ${i.outDate || ''}</div>` : "";
             
             list.innerHTML += `
@@ -253,9 +265,10 @@
 
         const lList = document.getElementById('logList');
         if (lList) {
-            lList.innerHTML = state.logs.slice(0, 30).map(l => `
-                <div style="font-size:0.8rem; background:rgba(255,255,255,0.5); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
-                    <strong>${l.user}</strong>: ${l.item} (${l.action}) <br> <span style="color:gray">${l.time}</span>
+            lList.innerHTML = state.logs.slice(0, 50).map(l => `
+                <div style="font-size:0.8rem; background:rgba(255,255,255,0.5); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid ${l.item === 'System' ? 'var(--accent)' : 'var(--primary)'}">
+                    <strong>${l.user}</strong>: ${l.item === 'System' ? '' : l.item} ${l.action} <br> 
+                    <span style="color:gray">${l.time}</span>
                 </div>
             `).join('');
         }
