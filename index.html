@@ -62,67 +62,9 @@
     <div id="tab-lager" class="content active">
         <div id="loginPromptLager" class="glass-panel login-overlay" style="display:none;">
             <h2>Willkommen!</h2>
-            <p>Bitte melde dich an.</p>
-            <button class="btn-main" onclick="askForName()">Anmelden</button>
+            <p>Bitte melde dich an, um das Lager zu verwalten.</p>
+            <button class="btn-main" onclick="askForName()">Jetzt Anmelden</button>
         </div>
         <div id="lagerContent" style="display:none;">
             <div class="glass-panel">
                 <input type="text" id="searchInput" placeholder="🔍 Name suchen..." onkeyup="render()">
-                <select id="filterCat" onchange="render()" style="margin-top:10px;">
-                    <option value="">📂 Alle Kategorien</option>
-                </select>
-            </div>
-            <div id="itemList"></div>
-        </div>
-    </div>
-
-    <div id="tab-neu" class="content">
-        <div id="loginPromptNeu" class="glass-panel login-overlay" style="display:none;">
-            <p>Anmeldung erforderlich.</p>
-            <button class="btn-main" onclick="askForName()">Anmelden</button>
-        </div>
-        <div id="neuContent" class="glass-panel" style="display:none;">
-            <h2 style="margin-top:0">Neu Anlegen</h2>
-            <input type="text" id="itemName" placeholder="Name des Artikels">
-            <select id="itemCatSelect"></select>
-            <input type="file" id="itemImg" accept="image/*" capture="environment">
-            <button class="btn-main" onclick="saveItem()">Speichern</button>
-            <hr style="margin:20px 0; opacity:0.2;">
-            <button onclick="document.getElementById('catMenu').style.display='block'" style="background:none; border:1px solid #999; width:100%; padding:10px; border-radius:10px;">⚙️ Kategorien</button>
-            <div id="catMenu" style="display:none; margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
-                <input type="text" id="newCatInput" placeholder="Neue Kategorie...">
-                <button onclick="addCategory()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:10px; margin-top:5px;">Hinzufügen</button>
-                <div id="catList" style="margin-top:10px"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="tab-log" class="content">
-        <div class="glass-panel"><h2 style="margin-top:0">Logbuch</h2><div id="logList"></div></div>
-    </div>
-
-    <nav>
-        <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu Anlegen</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
-    </nav>
-</div>
-
-<script>
-    const CURRENT_VERSION = 54; 
-    const firebaseConfig = {
-        apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
-        authDomain: "gr-lagerverwaltung.firebaseapp.com",
-        databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "gr-lagerverwaltung",
-        storageBucket: "gr-lagerverwaltung.firebasestorage.app",
-        messagingSenderId: "561219570576",
-        appId: "1:561219570576:web:65824b199a12933fd88115"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v32_final');
-
-    let state = { user: localStorage.getItem('lagerUser') || null, items: [], logs: [], cats: ["Werkzeug", "Garten"], ver: CURRENT_VERSION };
-
-    function init() {
