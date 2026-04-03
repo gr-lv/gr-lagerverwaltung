@@ -3,49 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lagerverwaltung Profi | V29</title>
+    <title>Lager Profi | Haus & Hof V30</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #4338ca; --dark: #0f172a; --accent: #06b6d4; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; padding-bottom: 80px; }
+        :root { --primary: #2563eb; --accent: #06b6d4; --glass: rgba(255, 255, 255, 0.7); }
         
-        /* Header & Login */
-        .header { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-        .user-info { font-size: 0.9rem; font-weight: bold; color: var(--accent); }
-        .btn-login { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+        /* FESTES HINTERGRUNDBILD */
+        html, body { 
+            height: 100%; 
+            margin: 0; 
+            font-family: 'Segoe UI', sans-serif; 
+            color: #111827; 
+            padding-bottom: 70px;
+        }
+        body {
+            background-image: url('image_5.png'); /* Nutzt dein Haus-Foto */
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
 
-        /* Navigation */
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; z-index: 1000; }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; color: #64748b; }
-        .tab-btn.active { color: var(--primary); border-top: 3px solid var(--primary); background: #f8fafc; }
+        /* MODERNES INTERFACE MIT TRANSPARENZ (GLASSMORPHISM) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 15px;
+        }
 
-        /* Content */
+        /* HEADER */
+        .header {
+            background: rgba(15, 23, 42, 0.85); /* Dunkler, aber transparent */
+            backdrop-filter: blur(5px);
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .user-info { font-weight: bold; color: var(--accent); }
+        .btn-header { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+        /* UNTERE NAVIGATION */
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(5px);
+            display: flex;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; text-transform: uppercase; }
+        .tab-btn.active { color: white; border-bottom: 4px solid var(--accent); }
+
+        /* CONTENT */
         .content { display: none; padding: 15px; max-width: 800px; margin: auto; }
         .content.active { display: block; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; }
-        .thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; background: #eee; }
         
-        /* Formulare */
-        .panel { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: left; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
-        .btn-action { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .btn-action:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .card { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 10px; background: rgba(0,0,0,0.1); }
 
-        /* Kategorien Sektion */
-        .cat-manager { display: flex; gap: 10px; margin-top: 10px; }
-        .cat-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
-        .cat-tag { background: #e2e8f0; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
-        .cat-del { color: red; cursor: pointer; font-weight: bold; }
+        /* BUCHUNGS-BUTTONS (NEU: VOLLE AKTION) */
+        .btn-book { 
+            width: 100%; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            color: white; 
+            cursor: pointer; 
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .btn-book:disabled { background: #9ca3af !important; cursor: not-allowed; opacity: 0.5; }
+
+        /* FORMS */
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border: 1px solid rgba(255,255,255,0.3); 
+            border-radius: 10px; 
+            box-sizing: border-box; 
+            background: rgba(255,255,255,0.7);
+        }
+        .btn-main { 
+            width: 100%; 
+            padding: 15px; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .btn-main:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        /* CAT MANAGER */
+        .cat-tag { background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; margin: 2px; }
+        .cat-del { color: #dc2626; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div class="user-info">👤 <span id="displayUser">Nicht angemeldet</span></div>
-    <button class="btn-login" onclick="askForName()">Benutzer wechseln</button>
+    <button class="btn-header" onclick="askForName()">Benutzer wechseln</button>
 </div>
 
 <div id="tab-lager" class="content active">
@@ -54,33 +140,35 @@
 </div>
 
 <div id="tab-log" class="content">
-    <h3>Protokoll</h3>
-    <div id="logList"></div>
+    <div class="glass-panel">
+        <h3 style="margin-top:0">Aktivitäts-Protokoll</h3>
+        <div id="logList"></div>
+    </div>
 </div>
 
 <div id="tab-neu" class="content">
-    <div class="panel">
-        <h3>Neuer Artikel</h3>
+    <div class="glass-panel">
+        <h3 style="margin-top:0">Neuer Artikel</h3>
         <input type="text" id="itemName" placeholder="Bezeichnung">
         <select id="itemCat"></select>
         <input type="file" id="itemImg" accept="image/*" capture="environment">
-        <button id="saveBtn" class="btn-action" onclick="saveItem()" disabled>Speichern (Anmeldung Erforderlich)</button>
+        <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Speichern (Anmeldung Erforderlich)</button>
     </div>
 
-    <div class="panel">
-        <h3>Kategorien verwalten</h3>
-        <div class="cat-manager">
+    <div class="glass-panel">
+        <h3 style="margin-top:0">Kategorien verwalten</h3>
+        <div style="display:flex; gap:10px">
             <input type="text" id="newCatInput" placeholder="Neue Kategorie...">
             <button onclick="addCategory()" style="padding: 10px; background: var(--accent); color:white; border:none; border-radius:8px;">+</button>
         </div>
-        <div id="catList" class="cat-list"></div>
+        <div id="catList" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;"></div>
     </div>
 </div>
 
 <nav>
     <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
     <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu anlegen</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu</button>
 </nav>
 
 <script>
@@ -96,13 +184,13 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v29_final');
+    const dbRef = firebase.database().ref('lager_v30_final');
 
     let state = {
         user: localStorage.getItem('lagerUser') || null,
         items: [],
         logs: [],
-        cats: ["Werkzeug", "Technik", "Deko"]
+        cats: ["Werkzeug", "Technik", "Deko", "Garten"]
     };
 
     // INITIALISIERUNG
@@ -118,14 +206,14 @@
             if (data) {
                 state.items = data.items || [];
                 state.logs = data.logs || [];
-                state.cats = data.cats || ["Werkzeug", "Technik", "Deko"];
+                state.cats = data.cats || ["Werkzeug", "Technik", "Deko", "Garten"];
                 render();
             }
         });
     }
 
     function askForName() {
-        let name = prompt("Bitte gib deinen Namen für das Logbuch ein:");
+        let name = prompt("Dein Name für das Logbuch:");
         if (name && name.trim() !== "") {
             state.user = name.trim();
             localStorage.setItem('lagerUser', state.user);
@@ -153,7 +241,7 @@
         const cat = document.getElementById('itemCat').value;
         const file = document.getElementById('itemImg').files[0];
         
-        if (!name) return alert("Name fehlt!");
+        if (!name) return alert("Bezeichnung fehlt!");
 
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -179,9 +267,9 @@
         const item = state.items.find(i => i.id === id);
         const action = item.status === "im Lager" ? "ausgebucht" : "eingebucht";
         
-        if (confirm(`Möchtest du "${item.name}" wirklich ${action}?`)) {
+        if (confirm(`"${item.name}" wirklich ${action}?`)) {
             item.status = (item.status === "im Lager") ? "unterwegs" : "im Lager";
-            addLog(item.name, action === "ausgebucht" ? "Weg" : "Holen");
+            addLog(item.name, action === "ausgebucht" ? "Ausbuchen (Weg)" : "Einbuchen (Holen)");
             sync();
         }
     }
@@ -205,7 +293,7 @@
     }
 
     function deleteCategory(index) {
-        if (confirm("Kategorie wirklich löschen?")) {
+        if (confirm("Kategorie löschen?")) {
             state.cats.splice(index, 1);
             sync();
         }
@@ -225,16 +313,20 @@
         state.items.filter(i => i.name.toLowerCase().includes(search)).forEach(i => {
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
-                <div class="card" style="border-left: 8px solid ${isOut ? '#ef4444' : '#22c55e'}">
+                <div class="glass-panel card">
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
                     <div style="flex:1">
                         <div style="font-weight:bold">${i.name}</div>
-                        <div style="font-size:0.8rem; color:gray">${i.cat}</div>
+                        <div style="font-size:0.8rem; color:#555">${i.cat}</div>
                     </div>
-                    <button onclick="toggleStatus(${i.id})" 
-                        style="padding:10px; border-radius:8px; border:none; background:${isOut?'#22c55e':'#f43f5e'}; color:white; font-weight:bold">
-                        ${isOut ? 'Holen' : 'Weg'}
+                    <div style="width:110px">
+                    <button class="btn-book" onclick="toggleStatus(${i.id})" 
+                        style="background:${isOut?'#16a34a':'#dc2626'};"
+                        ${!state.user ? 'disabled' : ''}>
+                        <span style="font-size:1rem">${isOut ? 'Holen' : 'Weg'}</span>
+                        <span style="font-size:0.7rem; opacity:0.7">${isOut ? 'Einbuchen' : 'Ausbuchen'}</span>
                     </button>
+                    </div>
                 </div>`;
         });
 
@@ -251,8 +343,8 @@
         // Logbuch
         const lList = document.getElementById('logList');
         lList.innerHTML = state.logs.slice(0, 30).map(l => `
-            <div style="font-size:0.8rem; background:white; padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
-                <strong>${l.user}</strong>: ${l.item} (${l.action}) <br> <span style="color:gray">${l.time}</span>
+            <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
+                <strong>${l.user}</strong>: ${l.item} <br> <span style="color:var(--primary)">(${l.action})</span> | <span style="color:gray">${l.time}</span>
             </div>
         `).join('');
     }
