@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V68 - Button Fix</title>
+    <title>GR-Lagerverwaltung V69</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -23,45 +23,37 @@
         .content-area { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; -webkit-overflow-scrolling: touch; }
 
         .glass { 
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px);
             border-radius: 20px; padding: 15px; margin-bottom: 15px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative;
         }
 
-        /* CARD STRUCTURE RE-DESIGN */
-        .card { 
-            display: grid; 
-            grid-template-columns: 70px 1fr auto; 
-            grid-template-rows: auto auto;
-            gap: 10px; 
-            align-items: center;
-            position: relative;
-        }
+        /* NEUES LAYOUT: UNTEREINANDER STATT NEBENEINANDER */
+        .card-top { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 15px; position: relative; }
+        .thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
+        .info-box { flex: 1; pointer-events: none; } /* Text schluckt keine Klicks */
+        .info-box b, .info-box small { pointer-events: auto; }
 
-        .thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 12px; grid-row: span 2; }
-
-        .item-info { grid-column: 2; }
-        .action-area { grid-column: 3; grid-row: span 2; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-
-        .btn-delete-new {
-            background: #fee2e2; color: #b91c1c; border: none; border-radius: 8px;
-            width: 35px; height: 35px; cursor: pointer; font-size: 1rem;
+        .btn-delete-fixed {
+            position: absolute; top: -5px; right: -5px; 
+            background: #fee2e2; color: #b91c1c; border: none; 
+            width: 38px; height: 38px; border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            position: absolute; top: -5px; right: -5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            z-index: 110;
+            font-size: 1.2rem; cursor: pointer; z-index: 500;
         }
 
-        .qty-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+        .qty-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; pointer-events: auto; }
         .btn-qty { 
-            background: #f1f5f9; border: 1px solid #cbd5e1; width: 34px; height: 34px; 
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1rem;
-            z-index: 105;
+            background: #f1f5f9; border: 1px solid #cbd5e1; width: 40px; height: 40px; 
+            border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 1.3rem;
         }
 
-        .btn-status { 
-            padding: 12px 15px; border: none; border-radius: 12px; 
-            color: white; font-weight: bold; font-size: 0.85rem; cursor: pointer;
-            min-width: 100px; z-index: 105; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        /* Status Button jetzt über die volle Breite unten */
+        .btn-status-big { 
+            width: 100%; padding: 15px; border: none; border-radius: 12px; 
+            color: white; font-weight: bold; font-size: 1rem; cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: block;
+            margin-top: 10px; z-index: 400; position: relative;
         }
 
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; display: flex; border-top: 2px solid var(--accent); height: 70px; z-index: 2000; }
@@ -80,22 +72,22 @@
 <div class="app-shell">
     <div class="header">
         <h1 style="margin:0; font-size:1.1rem; color:var(--accent);">GR-LAGERVERWALTUNG</h1>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
             <span id="displayUser" style="font-size:0.8rem;">👤 Gast</span>
-            <button onclick="askForName()" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:5px; font-size:0.7rem; cursor:pointer;">WECHSELN</button>
+            <button onclick="askForName()" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:5px; font-size:0.7rem;">WECHSELN</button>
         </div>
     </div>
 
     <div class="content-area">
         <div id="loginSection" class="glass" style="text-align:center; display:none;">
-            <h2>Anmelden</h2><button class="btn-main" onclick="askForName()">STARTEN</button>
+            <button class="btn-main" onclick="askForName()">ANMELDEN</button>
         </div>
 
         <div id="tab-lager" class="content active">
             <div id="reader"></div>
             <div class="glass">
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="searchInput" placeholder="Suche..." onkeyup="render()">
+                    <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()">
                     <button onclick="startScan('search')" style="background:var(--accent); border:none; border-radius:10px; width:50px; color:white;">📷</button>
                 </div>
             </div>
@@ -110,7 +102,7 @@
                     <input type="text" id="itemBarcode" placeholder="Barcode">
                     <button onclick="startScan('new')" style="background:var(--accent); border:none; border-radius:10px; width:50px; color:white;">📷</button>
                 </div>
-                <input type="number" id="itemQty" placeholder="Menge" value="1">
+                <input type="number" id="itemQty" value="1">
                 <select id="itemCatSelect"></select>
                 <input type="file" id="itemImg" accept="image/*" capture="environment">
                 <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">SPEICHERN</button>
@@ -154,7 +146,7 @@
     }
 
     function askForName() {
-        let n = prompt("Name:");
+        let n = prompt("Dein Name:");
         if (n) { state.user = n.trim(); localStorage.setItem('lagerUser', state.user); updateUserUI(); }
     }
 
@@ -172,7 +164,7 @@
     }
 
     function deleteItem(id) {
-        if(confirm("Löschen?")) {
+        if(confirm("Diesen Artikel löschen?")) {
             const idx = state.items.findIndex(x => x.id === id);
             state.items.splice(idx, 1);
             sync();
@@ -207,7 +199,7 @@
 
     function saveItem() {
         const n = document.getElementById('itemName').value;
-        if(!n) return;
+        if(!n) return alert("Name fehlt!");
         const newItem = { id: Date.now(), name: n, barcode: document.getElementById('itemBarcode').value, qty: document.getElementById('itemQty').value, cat: document.getElementById('itemCatSelect').value, img: "", status: "im Lager" };
         const f = document.getElementById('itemImg').files[0];
         const proceed = (img) => { newItem.img = img; state.items.unshift(newItem); sync(); switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager'); };
@@ -221,24 +213,25 @@
         state.items.filter(i => i.name.toLowerCase().includes(search) || (i.barcode && i.barcode.includes(search))).forEach(i => {
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
-                <div class="glass card">
-                    <button class="btn-delete-new" onclick="deleteItem(${i.id})">🗑️</button>
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
-                    <div class="item-info">
-                        <b style="font-size:1.1rem;">${i.name}</b><br>
-                        <small style="color:gray;">${i.cat}</small>
-                        <div class="qty-row">
-                            <button class="btn-qty" onclick="changeQty(${i.id}, -1)">–</button>
-                            <span style="font-weight:bold; min-width:25px; text-align:center;">${i.qty}</span>
-                            <button class="btn-qty" onclick="changeQty(${i.id}, 1)">+</button>
+                <div class="glass">
+                    <button class="btn-delete-fixed" onclick="deleteItem(${i.id})">🗑️</button>
+                    <div class="card-top">
+                        <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
+                        <div class="info-box">
+                            <b style="font-size:1.2rem; display:block; margin-bottom:4px;">${i.name}</b>
+                            <small style="background:#e2e8f0; padding:2px 8px; border-radius:5px;">${i.cat}</small>
+                            <div class="qty-row">
+                                <button class="btn-qty" onclick="changeQty(${i.id}, -1)">–</button>
+                                <span style="font-size:1.2rem; font-weight:bold; min-width:30px; text-align:center;">${i.qty}</span>
+                                <button class="btn-qty" onclick="changeQty(${i.id}, 1)">+</button>
+                            </div>
+                            ${isOut ? `<div style="color:red; font-size:0.8rem; font-weight:bold; margin-top:8px;">AUSGELAGERT BEI: ${i.outUser}</div>` : ""}
                         </div>
-                        ${isOut ? `<div style="color:red; font-size:0.7rem; font-weight:bold; margin-top:5px;">Bei: ${i.outUser}</div>` : ""}
                     </div>
-                    <div class="action-area">
-                        <button class="btn-status" onclick="toggleStatus(${i.id})" style="background:${isOut?'var(--danger)':'var(--success)'}">
-                            ${isOut ? 'Einlagern' : 'Auslagern'}
-                        </button>
-                    </div>
+                    <button class="btn-status-big" onclick="toggleStatus(${i.id})" 
+                            style="background:${isOut ? 'var(--danger)' : 'var(--success)'}">
+                        ${isOut ? 'JETZT EINLAGERN' : 'JETZT AUSLAGERN'}
+                    </button>
                 </div>`;
         });
         document.getElementById('logList').innerHTML = state.logs.slice(0,20).map(l => `<div style="font-size:0.7rem; border-bottom:1px solid #eee; padding:5px;"><b>${l.user}</b>: ${l.item} ${l.action}</div>`).join('');
