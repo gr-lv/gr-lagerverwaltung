@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V73</title>
+    <title>GR-Lagerverwaltung V74 - FORCE CLICK</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -13,231 +13,44 @@
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; }
         
         body { 
-            margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; 
-            /* Hintergrundbild wieder da */
+            margin: 0; padding: 0; font-family: sans-serif; 
             background: #1e293b url('haus_background.jpg') no-repeat center center fixed; 
-            background-size: cover; 
-            height: 100vh; overflow: hidden;
+            background-size: cover; height: 100vh; overflow: hidden;
         }
 
-        .app-shell { height: 100vh; display: flex; flex-direction: column; background: rgba(15, 23, 42, 0.5); }
-        .header { background: rgba(15, 23, 42, 0.9); color: white; padding: 15px; text-align: center; border-bottom: 2px solid var(--accent); flex-shrink: 0; }
-        .content-area { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; -webkit-overflow-scrolling: touch; }
-
-        .glass { 
-            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-            border-radius: 20px; margin-bottom: 20px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3); overflow: hidden;
+        /* Hintergrund-Overlay für Lesbarkeit ohne Filter-Bug */
+        .app-shell { 
+            height: 100vh; display: flex; flex-direction: column; 
+            background: rgba(15, 23, 42, 0.7); /* Dunkleres Overlay statt Blur */
         }
 
-        /* CARD STRUCTURE V73 */
-        .card-content { padding: 15px; position: relative; display: flex; gap: 15px; align-items: flex-start; }
-        .thumb { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; background: #eee; flex-shrink: 0; }
-        
-        .btn-del-mini { 
-            position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #b91c1c; 
-            border: none; border-radius: 8px; padding: 5px 10px; font-weight: bold; cursor: pointer;
+        .header { background: #0f172a; color: white; padding: 15px; text-align: center; border-bottom: 2px solid var(--accent); }
+        .content-area { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; }
+
+        .item-card { 
+            background: white; border-radius: 15px; margin-bottom: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4); overflow: hidden;
+            display: block; position: relative;
         }
 
-        .qty-dropdown { width: 80px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-top: 5px; }
+        .card-inner { padding: 15px; display: flex; gap: 15px; }
+        .thumb { width: 85px; height: 85px; object-fit: cover; border-radius: 10px; background: #eee; }
 
-        /* DER GROSSE BUTTON UNTEN AN DER KARTE */
-        .btn-status-full {
-            width: 100%; padding: 18px; border: none; color: white; font-weight: bold; 
-            font-size: 1.1rem; cursor: pointer; display: block; border-top: 1px solid rgba(0,0,0,0.05);
-            -webkit-tap-highlight-color: transparent;
+        /* ABSOLUT SICHERER BUTTON */
+        .btn-status-trigger {
+            display: block; width: 100%; padding: 22px; border: none;
+            color: white; font-weight: bold; font-size: 1.2rem;
+            text-align: center; cursor: pointer;
+            position: relative; z-index: 1000;
+            -webkit-appearance: none; appearance: none;
+            text-transform: uppercase;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2);
         }
 
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; display: flex; height: 70px; z-index: 2000; border-top: 2px solid var(--accent); }
-        .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; }
-        .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-top: 3px solid var(--accent); }
-
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; }
-        .content { display: none; }
-        .content.active { display: block; }
-    </style>
-</head>
-<body>
-
-<div class="app-shell">
-    <div class="header">
-        <h1 style="margin:0; font-size:1.1rem; color:var(--accent);">GR-LAGER V73</h1>
-    </div>
-
-    <div class="content-area">
-        <div id="tab-lager" class="content active">
-            <div id="reader" style="width:100%; display:none; margin-bottom:15px; border-radius:15px; overflow:hidden;"></div>
-            <div class="glass" style="padding:15px; display:flex; gap:10px;">
-                <input type="text" id="searchInput" placeholder="Artikel suchen..." onkeyup="render()">
-                <button onclick="startScan('search')" style="width:55px; background:var(--accent); border:none; border-radius:10px; color:white;">📷</button>
-            </div>
-            <div id="itemList"></div>
-        </div>
-
-        <div id="tab-neu" class="content">
-            <div class="glass" style="padding:20px;">
-                <h3 style="margin-top:0">Neuer Artikel</h3>
-                <input type="text" id="itemName" placeholder="Name">
-                <select id="itemCatSelect"></select>
-                
-                <div style="background:rgba(0,0,0,0.05); padding:15px; border-radius:12px; margin:10px 0;">
-                    <label style="font-size:0.8rem; font-weight:bold;">Kategorien verwalten:</label>
-                    <div style="display:flex; gap:8px; margin-top:5px;">
-                        <input type="text" id="newCatInput" placeholder="Neue Kat..." style="margin:0;">
-                        <button onclick="addCategory()" style="background:var(--success); color:white; border:none; border-radius:10px; padding:0 15px; font-weight:bold;">+</button>
-                    </div>
-                </div>
-
-                <input type="file" id="itemImg" accept="image/*" capture="environment">
-                <button class="btn-main" onclick="saveItem()" style="margin-top:10px;">ARTIKEL SPEICHERN</button>
-            </div>
-        </div>
-
-        <div id="tab-log" class="content">
-            <div class="glass" style="padding:20px;"><h3>Logbuch</h3><div id="logList"></div></div>
-        </div>
-    </div>
-
-    <nav>
-        <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu Einlagern</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
-    </nav>
-</div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
-        authDomain: "gr-lagerverwaltung.firebaseapp.com",
-        databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "gr-lagerverwaltung",
-        storageBucket: "gr-lagerverwaltung.firebasestorage.app",
-        messagingSenderId: "561219570576",
-        appId: "1:561219570576:web:65824b199a12933fd88115"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v32_final');
-
-    let state = { user: localStorage.getItem('lagerUser') || "Nutzer_"+Math.floor(Math.random()*99), items: [], cats: ["Werkzeug", "Elektro"] };
-
-    function init() {
-        if(!localStorage.getItem('lagerUser')) localStorage.setItem('lagerUser', state.user);
-        dbRef.on('value', snap => {
-            const data = snap.val();
-            if(data) {
-                state.items = data.items || [];
-                state.cats = data.cats || ["Werkzeug", "Elektro"];
-                state.logs = data.logs || [];
-                updateCatDropdown();
-                render();
-            }
-        });
-    }
-
-    function updateCatDropdown() {
-        document.getElementById('itemCatSelect').innerHTML = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    }
-
-    function addCategory() {
-        const val = document.getElementById('newCatInput').value.trim();
-        if(val && !state.cats.includes(val)) {
-            state.cats.push(val);
-            dbRef.child('cats').set(state.cats);
-            document.getElementById('newCatInput').value = "";
+        .delete-corner {
+            position: absolute; top: 10px; right: 10px;
+            background: #ffeded; color: #cc0000; border: 1px solid #ffcccc;
+            padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.7rem;
         }
-    }
 
-    function sync() { dbRef.set(state); }
-
-    function switchTab(e, id) {
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        e.currentTarget.classList.add('active');
-    }
-
-    function changeQty(id, val) {
-        const i = state.items.find(x => x.id === id);
-        i.qty = parseInt(val);
-        sync();
-    }
-
-    function deleteItem(id) {
-        if(confirm("Löschen?")) {
-            state.items = state.items.filter(x => x.id !== id);
-            sync();
-        }
-    }
-
-    function toggleStatus(id) {
-        const i = state.items.find(x => x.id === id);
-        const isIn = i.status === "im Lager";
-        i.status = isIn ? "unterwegs" : "im Lager";
-        i.outUser = isIn ? state.user : "";
-        state.logs = state.logs || [];
-        state.logs.unshift({ time: new Date().toLocaleString(), user: state.user, item: i.name, action: isIn ? "Ausgelagert" : "Eingelagert" });
-        sync();
-    }
-
-    function saveItem() {
-        const n = document.getElementById('itemName').value;
-        if(!n) return alert("Name fehlt!");
-        const newItem = { id: Date.now(), name: n, qty: 1, cat: document.getElementById('itemCatSelect').value, img: "", status: "im Lager" };
-        const f = document.getElementById('itemImg').files[0];
-        if(f) {
-            const r = new FileReader();
-            r.onload = (e) => { newItem.img = e.target.result; state.items.unshift(newItem); sync(); };
-            r.readAsDataURL(f);
-        } else { state.items.unshift(newItem); sync(); }
-        document.getElementById('itemName').value = "";
-        switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
-    }
-
-    function startScan(t) {
-        const r = document.getElementById('reader'); r.style.display = 'block';
-        const html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, text => {
-            if(t === 'search') { document.getElementById('searchInput').value = text; render(); }
-            html5QrCode.stop().then(() => r.style.display = 'none');
-        });
-    }
-
-    function render() {
-        const list = document.getElementById('itemList');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = "";
-        
-        state.items.filter(i => i.name.toLowerCase().includes(search)).forEach(i => {
-            const isOut = i.status !== "im Lager";
-            let qHtml = `<select class="qty-dropdown" onchange="changeQty(${i.id}, this.value)">`;
-            for(let n=1; n<=50; n++) qHtml += `<option value="${n}" ${i.qty==n?'selected':''}>${n}</option>`;
-            qHtml += `</select>`;
-
-            list.innerHTML += `
-                <div class="glass">
-                    <div class="card-content">
-                        <button class="btn-del-mini" onclick="deleteItem(${i.id})">Löschen</button>
-                        <img src="${i.img || 'https://via.placeholder.com/80'}" class="thumb">
-                        <div style="flex:1;">
-                            <b style="font-size:1.1rem; display:block; margin-right:60px;">${i.name}</b>
-                            <small style="color:gray;">${i.cat}</small><br>
-                            ${qHtml}
-                            ${isOut ? `<div style="color:red; font-size:0.8rem; font-weight:bold; margin-top:5px;">BEI: ${i.outUser}</div>` : ""}
-                        </div>
-                    </div>
-                    <button class="btn-status-full" 
-                            style="background:${isOut ? 'var(--danger)' : 'var(--success)'}"
-                            onclick="toggleStatus(${i.id})">
-                        ${isOut ? 'JETZT EINLAGERN' : 'JETZT AUSLAGERN'}
-                    </button>
-                </div>
-            `;
-        });
-        if(state.logs) document.getElementById('logList').innerHTML = state.logs.slice(0,10).map(l => `<div style="font-size:0.7rem; border-bottom:1px solid #eee; padding:5px;">${l.user}: ${l.action} (${l.item})</div>`).join('');
-    }
-    init();
-</script>
-</body>
-</html>
+        nav { position: fixed; bottom: 0; left: 0; width:
