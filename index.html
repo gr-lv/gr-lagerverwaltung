@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V40 Info</title>
+    <title>Lager Profi | V41</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -37,7 +37,7 @@
 
         .btn-book { min-width: 110px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
-        .last-action { font-size: 0.75rem; color: #555; margin-top: 4px; font-style: italic; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; display: inline-block; }
+        .last-action { font-size: 0.75rem; color: #b91c1c; margin-top: 4px; font-weight: 600; background: rgba(220, 38, 38, 0.1); padding: 4px 8px; border-radius: 6px; display: inline-block; border: 1px solid rgba(220, 38, 38, 0.2); }
 
         input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccc; border-radius: 12px; background: white; font-size: 16px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
@@ -148,78 +148,4 @@
         const n = document.getElementById('itemName').value;
         const c = document.getElementById('itemCat').value;
         const f = document.getElementById('itemImg').files[0];
-        if (!n) return alert("Name?");
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            state.items.unshift({ 
-                id: Date.now(), name: n, cat: c, img: e.target.result || "", status: "im Lager",
-                lastUser: state.user, lastDate: new Date().toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
-            });
-            addLog(n, "Neu angelegt");
-            sync();
-            document.getElementById('itemName').value = ""; document.getElementById('itemImg').value = "";
-            switchTab({currentTarget: document.querySelectorAll('nav button')[0]}, 'tab-lager');
-        };
-        if (f) reader.readAsDataURL(f); else reader.onload({target:{result:""}});
-    }
-
-    function toggleStatus(id) {
-        if (!state.user) return askForName();
-        const i = state.items.find(x => x.id === id);
-        const out = i.status === "im Lager";
-        const actionText = out ? 'Auslagern' : 'Einlagern';
-        if (confirm(`"${i.name}" wirklich ${actionText}?`)) {
-            i.status = out ? "unterwegs" : "im Lager";
-            i.lastUser = state.user;
-            i.lastDate = new Date().toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-            addLog(i.name, actionText);
-            sync();
-        }
-    }
-
-    function addLog(item, action) { state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: item, action: action }); }
-    function addCategory() { const i = document.getElementById('newCatInput'); if (i.value) { state.cats.push(i.value); i.value = ""; sync(); } }
-    function deleteCategory(index) { if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); } }
-    function sync() { dbRef.set(state); }
-
-    function render() {
-        const list = document.getElementById('itemList');
-        const s = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = "";
-        state.items.filter(x => x.name.toLowerCase().includes(s)).forEach(i => {
-            const isOut = i.status !== "im Lager";
-            const infoText = i.lastUser ? `${isOut ? 'Ausgelagert' : 'Eingelagert'} von ${i.lastUser} am ${i.lastDate}` : "Noch kein Verlauf";
-            
-            list.innerHTML += `
-                <div class="glass-panel card">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb" onclick="openZoom('${i.img}')">
-                    <div style="flex:1">
-                        <div style="font-weight:bold">${i.name}</div>
-                        <div style="font-size:0.8rem; color:#444">${i.cat}</div>
-                        <div class="last-action">${infoText}</div>
-                    </div>
-                    <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'var(--success)':'var(--danger)'};">
-                        <span>${isOut ? 'Einlagern' : 'Auslagern'}</span>
-                    </button>
-                </div>`;
-        });
-
-        const sel = document.getElementById('itemCat');
-        const cList = document.getElementById('catList');
-        sel.innerHTML = ""; cList.innerHTML = "";
-        state.cats.forEach((c, idx) => {
-            sel.innerHTML += `<option value="${c}">${c}</option>`;
-            cList.innerHTML += `<span style="background:#e2e8f0; padding:6px; border-radius:20px; font-size:0.8rem; margin:4px; display:inline-flex;">${c} <span onclick="deleteCategory(${idx})" style="color:red; cursor:pointer; margin-left:5px;">×</span></span>`;
-        });
-
-        const lList = document.getElementById('logList');
-        lList.innerHTML = state.logs.slice(0, 30).map(l => `
-            <div style="font-size:0.8rem; background:rgba(255,255,255,0.5); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
-                <strong>${l.user}</strong>: ${l.item} (${l.action}) <br> <span style="color:gray">${l.time}</span>
-            </div>
-        `).join('');
-    }
-    init();
-</script>
-</body>
-</html>
+        if (!n)
