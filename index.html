@@ -104,7 +104,7 @@
 </div>
 
 <script>
-    const CURRENT_VERSION = 48; 
+    const CURRENT_VERSION = 49; 
 
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -161,7 +161,6 @@
         document.getElementById('displayUser').innerText = state.user || "Nicht angemeldet";
         document.getElementById('logoutBtn').style.display = isLogged ? 'block' : 'none';
         
-        // Panels umschalten
         document.getElementById('loginPrompt').style.display = isLogged ? 'none' : 'block';
         document.getElementById('lagerContent').style.display = isLogged ? 'block' : 'none';
         document.getElementById('loginPromptNeu').style.display = isLogged ? 'none' : 'block';
@@ -224,7 +223,9 @@
             const isOut = i.status !== "im Lager";
             const btnColor = isOut ? 'var(--danger)' : 'var(--success)';
             const btnText = isOut ? 'Einlagern' : 'Auslagern';
-            const infoHtml = isOut ? `<div class="last-action">Draußen bei ${i.outUser || '?'} seit ${i.outDate || ''}</div>` : "";
+            
+            // NEUE ANZEIGE: "Ausgelagert von"
+            const infoHtml = isOut ? `<div class="last-action">Ausgelagert von ${i.outUser || '?'} am ${i.outDate || ''}</div>` : "";
             
             list.innerHTML += `
                 <div class="glass-panel card">
