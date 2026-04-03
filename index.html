@@ -3,43 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | Haus-Background V31</title>
+    <title>Lager Profi | V32 Custom</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #2563eb; --accent: #06b6d4; --glass: rgba(255, 255, 255, 0.7); }
+        :root { --primary: #2563eb; --accent: #06b6d4; }
         
-        /* FESTES HINTERGRUNDBILD (LOKALER LINK) */
-        html, body { 
-            height: 100%; 
-            margin: 0; 
-            font-family: 'Segoe UI', sans-serif; 
-            color: #111827; 
-            padding-bottom: 80px;
-        }
+        html, body { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; color: #111827; padding-bottom: 80px; }
         body {
-            background-image: url('haus_background.jpg'); /* Nutzt das hochgeladene Bild */
+            background-image: url('haus_background.jpg');
             background-attachment: fixed;
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
         }
 
-        /* MODERNES INTERFACE MIT TRANSPARENZ */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             padding: 20px;
             margin-bottom: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
 
-        /* HEADER & NAVIGATION */
         .header {
             background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(5px);
@@ -52,8 +43,6 @@
             top: 0;
             z-index: 1000;
         }
-        .user-info { font-weight: bold; color: var(--accent); }
-        .btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid white; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
 
         nav {
             position: fixed;
@@ -61,80 +50,65 @@
             left: 0;
             width: 100%;
             background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(5px);
             display: flex;
-            border-top: 1px solid rgba(255,255,255,0.1);
             z-index: 1000;
         }
-        .tab-btn { flex: 1; padding: 18px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; text-transform: uppercase; }
+        .tab-btn { flex: 1; padding: 18px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; }
         .tab-btn.active { color: white; border-bottom: 4px solid var(--accent); }
 
-        /* CONTENT ELEMENTS */
         .content { display: none; padding: 15px; max-width: 800px; margin: auto; }
         .content.active { display: block; }
         
-        .card { 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            margin-bottom: 10px;
-        }
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 10px; background: rgba(0,0,0,0.1); }
+        .card { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 10px; }
 
-        /* BUCHUNGS-BUTTONS */
         .btn-book { 
-            width: 110px; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            color: white; 
-            cursor: pointer; 
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            width: 110px; padding: 12px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center;
         }
-        .btn-book:disabled { background: #9ca3af !important; cursor: not-allowed; opacity: 0.5; }
 
-        /* FORMS */
-        input, select { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 8px 0; 
-            border: 1px solid rgba(255,255,255,0.3); 
-            border-radius: 10px; 
-            box-sizing: border-box; 
-            background: rgba(255,255,255,0.8);
-        }
-        .btn-main { 
-            width: 100%; 
-            padding: 15px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 12px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-        .btn-main:disabled { background: #9ca3af; cursor: not-allowed; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; background: rgba(255,255,255,0.8); }
+        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        /* CAT MANAGER */
-        .cat-tag { background: rgba(0,0,0,0.05); padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; margin: 2px; }
-        .cat-del { color: #dc2626; cursor: pointer; font-weight: bold; }
+        /* Dropdown Style für Kategorien */
+        .dropdown-content { display: none; margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px; }
+        .dropdown-content.show { display: block; }
+        .btn-toggle-cat { background: none; border: 1px solid var(--primary); color: var(--primary); width: 100%; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+
+        .cat-tag { background: rgba(0,0,0,0.08); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; margin: 4px; }
+        .cat-del { color: #ef4444; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div class="user-info">👤 <span id="displayUser">Nicht angemeldet</span></div>
-    <button class="btn-header" onclick="askForName()">Wechseln</button>
+    <div style="font-weight:bold; color:var(--accent);">👤 <span id="displayUser">Anmelden</span></div>
+    <button style="background:rgba(255,255,255,0.1); color:white; border:1px solid white; border-radius:8px; padding:5px 10px;" onclick="askForName()">Wechseln</button>
 </div>
 
 <div id="tab-lager" class="content active">
-    <input type="text" id="searchInput" placeholder="🔍 Suchen..." onkeyup="render()">
+    <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
     <div id="itemList"></div>
+</div>
+
+<div id="tab-neu" class="content">
+    <div class="glass-panel">
+        <h3 style="margin-top:0">Neuer Artikel</h3>
+        <input type="text" id="itemName" placeholder="Bezeichnung">
+        <select id="itemCat"></select>
+        <input type="file" id="itemImg" accept="image/*" capture="environment">
+        <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Speichern</button>
+
+        <button class="btn-toggle-cat" onclick="toggleCatMenu()">⚙️ Kategorien verwalten</button>
+        
+        <div id="catMenu" class="dropdown-content">
+            <div style="display:flex; gap:10px">
+                <input type="text" id="newCatInput" placeholder="Neue Kat...">
+                <button onclick="addCategory()" style="padding:10px; background:var(--accent); color:white; border:none; border-radius:10px;">+</button>
+            </div>
+            <div id="catList" style="margin-top:10px"></div>
+        </div>
+    </div>
 </div>
 
 <div id="tab-log" class="content">
@@ -144,29 +118,10 @@
     </div>
 </div>
 
-<div id="tab-neu" class="content">
-    <div class="glass-panel">
-        <h3 style="margin-top:0">Neuer Artikel</h3>
-        <input type="text" id="itemName" placeholder="Bezeichnung">
-        <select id="itemCat"></select>
-        <input type="file" id="itemImg" accept="image/*" capture="environment">
-        <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Speichern (Name Erforderlich)</button>
-    </div>
-
-    <div class="glass-panel">
-        <h3 style="margin-top:0">Kategorien verwalten</h3>
-        <div style="display:flex; gap:10px">
-            <input type="text" id="newCatInput" placeholder="Neue...">
-            <button onclick="addCategory()" style="padding: 10px; background: var(--accent); color:white; border:none; border-radius:8px;">+</button>
-        </div>
-        <div id="catList" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;"></div>
-    </div>
-</div>
-
 <nav>
     <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
     <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
 </nav>
 
 <script>
@@ -181,13 +136,13 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v31_background');
+    const dbRef = firebase.database().ref('lager_v32_final');
 
     let state = {
         user: localStorage.getItem('lagerUser') || null,
         items: [],
         logs: [],
-        cats: ["Werkzeug", "Technik", "Garten", "Küche"]
+        cats: ["Werkzeug", "Garten", "Technik"]
     };
 
     function init() {
@@ -197,14 +152,14 @@
             if (data) {
                 state.items = data.items || [];
                 state.logs = data.logs || [];
-                state.cats = data.cats || ["Werkzeug", "Technik", "Garten", "Küche"];
+                state.cats = data.cats || ["Werkzeug", "Garten", "Technik"];
                 render();
             }
         });
     }
 
     function askForName() {
-        let name = prompt("Dein Name für das Logbuch:");
+        let name = prompt("Dein Name:");
         if (name && name.trim() !== "") {
             state.user = name.trim();
             localStorage.setItem('lagerUser', state.user);
@@ -215,7 +170,6 @@
     function updateUserUI() {
         document.getElementById('displayUser').innerText = state.user || "Anmelden";
         document.getElementById('saveBtn').disabled = !state.user;
-        document.getElementById('saveBtn').innerText = state.user ? "Speichern" : "Speichern (Anmelden)";
         render();
     }
 
@@ -226,18 +180,22 @@
         e.currentTarget.classList.add('active');
     }
 
+    function toggleCatMenu() {
+        document.getElementById('catMenu').classList.toggle('show');
+    }
+
     function saveItem() {
         const name = document.getElementById('itemName').value;
         const cat = document.getElementById('itemCat').value;
         const file = document.getElementById('itemImg').files[0];
-        if (!name) return alert("Bezeichnung fehlt!");
+        if (!name) return alert("Name fehlt!");
         const reader = new FileReader();
         reader.onload = function(e) {
             state.items.unshift({ id: Date.now(), name: name, cat: cat, img: e.target.result || "", status: "im Lager" });
             addLog(name, "Neu angelegt");
             sync();
             document.getElementById('itemName').value = "";
-            switchTab({currentTarget: document.querySelector('nav button')}, 'tab-lager');
+            switchTab({currentTarget: document.querySelectorAll('nav button')[0]}, 'tab-lager');
         };
         if (file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
     }
@@ -272,7 +230,6 @@
         const list = document.getElementById('itemList');
         const search = document.getElementById('searchInput').value.toLowerCase();
         list.innerHTML = "";
-        
         state.items.filter(i => i.name.toLowerCase().includes(search)).forEach(i => {
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
@@ -282,11 +239,9 @@
                         <div style="font-weight:bold">${i.name}</div>
                         <div style="font-size:0.8rem; color:#444">${i.cat}</div>
                     </div>
-                    <button class="btn-book" onclick="toggleStatus(${i.id})" 
-                        style="background:${isOut?'#16a34a':'#dc2626'};"
-                        ${!state.user ? 'disabled' : ''}>
-                        <span>${isOut ? 'Einbuchen' : 'Ausbuchen'}</span>
-                        <span style="font-size:0.7rem; opacity:0.7">${isOut ? '(Holen)' : '(Weg)'}</span>
+                    <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'#16a34a':'#dc2626'};">
+                        <span>${isOut ? 'Holen' : 'Weg'}</span>
+                        <span style="font-size:0.65rem; opacity:0.8">${isOut ? 'Einbuchen' : 'Ausbuchen'}</span>
                     </button>
                 </div>`;
         });
@@ -301,12 +256,11 @@
 
         const lList = document.getElementById('logList');
         lList.innerHTML = state.logs.slice(0, 30).map(l => `
-            <div style="font-size:0.8rem; background:rgba(255,255,255,0.1); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
-                <strong>${l.user}</strong>: ${l.item} <br> <span style="color:var(--primary)">(${l.action})</span> | <span style="color:gray">${l.time}</span>
+            <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
+                <strong>${l.user}</strong>: ${l.item} (${l.action}) <br> <span style="color:gray">${l.time}</span>
             </div>
         `).join('');
     }
-
     init();
 </script>
 </body>
