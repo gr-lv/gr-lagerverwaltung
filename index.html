@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lagerverwaltung | Secure V26</title>
+    <title>Lagerverwaltung | Final Fix V27</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,8 +11,8 @@
 
     <style>
         :root { --primary: #4338ca; --dark: #1e1b4b; --surface: rgba(255,255,255,0.96); }
-        body { font-family: 'Inter', sans-serif; margin: 0; background: #0f172a; color: #1e293b; padding-bottom: 100px; overflow-x: hidden; }
-        #login-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #1e1b4b; z-index: 20000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background: #0f172a; color: #1e293b; padding-bottom: 100px; }
+        #login-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #1e1b4b; z-index: 20000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; }
         .user-bar { background: var(--dark); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; background: rgba(30, 27, 75, 0.95); display: flex; padding: 8px; border-radius: 20px; z-index: 9999; backdrop-filter: blur(10px); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; font-weight: bold; padding: 12px; cursor: pointer; border-radius: 15px; }
@@ -21,7 +21,7 @@
         .content.active { display: block; }
         .panel { background: var(--surface); padding: 15px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-size: 16px; }
-        .card { background: white; padding: 12px; border-radius: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; border-left: 6px solid #ccc; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card { background: white; padding: 12px; border-radius: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; border-left: 6px solid #ccc; }
         .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; background: #eee; }
         .btn-google { background: white; color: #444; border-radius: 8px; border: none; padding: 12px 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
     </style>
@@ -66,7 +66,6 @@
 </nav>
 
 <script>
-    // DEINE CONFIG (unverändert lassen)
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -78,115 +77,20 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v26');
+    const dbRef = firebase.database().ref('lager_cloud_final');
     let db = { items: [], logs: [], categories: ["Werkzeug", "Technik", "Deko", "Küche", "Sonstiges"] };
     let currentUser = null;
 
-    // --- DIESER TEIL FIXT DEN LOGIN-LOOP ---
+    // LOGIN LOGIK MIT FIX FÜR COOKIE-BLOCKIERUNG
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
         return firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                // ERFOLG: Wir sind eingeloggt
                 currentUser = user.displayName;
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('curUser').innerText = currentUser;
                 loadData();
             } else {
-                // PRÜFEN, OB WIR GERADE VON GOOGLE ZURÜCKKOMMEN
-                firebase.auth().getRedirectResult().then((result) => {
-                    if (result && result.user) {
-                        // Wir sind gerade gelandet, Seite aktualisieren
-                        location.reload();
-                    } else {
-                        // WIRKLICH NICHT EINGELOGGT -> LOGIN ZEIGEN
-                        document.getElementById('login-overlay').style.display = 'flex';
-                    }
-                }).catch((error) => {
-                    console.error("Auth Fehler:", error);
-                    document.getElementById('login-overlay').style.display = 'flex';
-                });
-            }
-        });
-    });
-
-    function loginWithGoogle() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        // Das hier erzwingt, dass Google die Session sauber übergibt
-        provider.setCustomParameters({ prompt: 'select_account' });
-        firebase.auth().signInWithRedirect(provider);
-    }
-    // --- ENDE DES FIXES ---
-
-    function logout() { firebase.auth().signOut().then(() => location.reload()); }
-
-    function loadData() {
-        dbRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data) { db = data; render(); }
-            else { render(); }
-        });
-    }
-    // ... Rest deiner Funktionen (sync, doSave, render) ...
-</script>
-
-    function sync() { dbRef.set(db); }
-
-    function doSave() {
-        let name = document.getElementById('nName').value;
-        if(!name) return;
-        let file = document.getElementById('nImg').files[0];
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            if(!db.items) db.items = [];
-            db.items.unshift({ id: Date.now(), name: name, cat: document.getElementById('nCatSelect').value, img: e.target.result || "", isOut: false });
-            if(!db.logs) db.logs = [];
-            db.logs.unshift({ t: new Date().toLocaleString(), u: currentUser, i: name, a: "Neu angelegt" });
-            sync();
-            document.getElementById('nName').value = "";
-            switchTab(null, 'tab-lager');
-        };
-        if(file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
-    }
-
-    function toggleItem(id) {
-        let i = db.items.find(x => x.id === id);
-        if(i) {
-            i.isOut = !i.isOut;
-            db.logs.unshift({ t: new Date().toLocaleString(), u: currentUser, i: i.name, a: i.isOut ? "Ausgebucht" : "Eingebucht" });
-            sync();
-        }
-    }
-
-    function render() {
-        const nCat = document.getElementById('nCatSelect');
-        if(nCat.innerHTML === "") {
-            (db.categories || []).forEach(c => nCat.innerHTML += `<option value="${c}">${c}</option>`);
-        }
-        const list = document.getElementById('list');
-        list.innerHTML = "";
-        const s = document.getElementById('srch').value.toLowerCase();
-        (db.items || []).filter(i => i.name.toLowerCase().includes(s)).forEach(i => {
-            list.innerHTML += `<div class="card" style="border-left-color: ${i.isOut ? '#e11d48' : '#059669'}">
-                ${i.img ? `<img src="${i.img}" class="thumb">` : '<div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>'}
-                <div style="flex:1"><b>${i.name}</b><br><small>${i.cat}</small></div>
-                <button onclick="toggleItem(${i.id})" style="padding:8px 15px; border-radius:10px; border:none; background:${i.isOut?'#4ade80':'#fb7185'}; color:white; font-weight:bold;">${i.isOut ? 'Holen' : 'Weg'}</button>
-            </div>`;
-        });
-        document.getElementById('logBody').innerHTML = (db.logs || []).slice(0,25).map(l => 
-            `<div style="font-size:11px; background:white; padding:10px; border-radius:12px; margin-bottom:8px; border-left:4px solid var(--primary); box-shadow:0 2px 4px rgba(0,0,0,0.05)">
-                <b>${l.u}</b>: ${l.i} <span style="color:var(--primary)">(${l.a})</span><br><small style="color:gray">${l.t}</small></div>`).join('');
-    }
-
-    function switchTab(e, id) {
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(e) e.currentTarget.classList.add('active');
-        else {
-            document.querySelector(`button[onclick*="${id}"]`).classList.add('active');
-        }
-    }
-</script>
-</body>
-</html>
+                // Check if returning from Google Redirect
+                firebase.auth().getRedirectResult().then(result => {
+                    if (result && result.
