@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V65</title>
+    <title>GR-Lagerverwaltung V66</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -25,15 +25,23 @@
         .glass { 
             background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px);
             border-radius: 20px; padding: 20px; margin-bottom: 15px; 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3); position: relative;
         }
 
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
         
-        .card { display: flex; align-items: center; gap: 15px; padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 10px; background: #eee; }
+        .card { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); position: relative; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; background: #eee; }
         
+        /* Mengen-Buttons */
+        .qty-controls { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+        .btn-qty { background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        /* Lösch-Button */
+        .btn-delete { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.1rem; }
+        .btn-delete:hover { color: var(--danger); }
+
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; display: flex; border-top: 2px solid var(--accent); height: 70px; z-index: 2000; }
         .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.65rem; }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-top: 3px solid var(--accent); }
@@ -172,6 +180,22 @@
         e.currentTarget.classList.add('active');
     }
 
+    function changeQty(id, delta) {
+        const idx = state.items.findIndex(x => x.id === id);
+        let current = parseInt(state.items[idx].qty || 0);
+        state.items[idx].qty = Math.max(0, current + delta);
+        sync();
+    }
+
+    function deleteItem(id) {
+        if(confirm("Diesen Artikel wirklich löschen?")) {
+            const idx = state.items.findIndex(x => x.id === id);
+            state.logs.unshift({ time: new Date().toLocaleString(), user: state.user, item: state.items[idx].name, action: "Gelöscht" });
+            state.items.splice(idx, 1);
+            sync();
+        }
+    }
+
     function saveItem() {
         if(!state.user) return alert("Anmeldung erforderlich!");
         const n = document.getElementById('itemName').value;
@@ -192,10 +216,9 @@
             newItem.img = imgData;
             state.items.unshift(newItem);
             state.logs.unshift({ time: new Date().toLocaleString(), user: state.user, item: n, action: "Neu angelegt" });
-            dbRef.set({ items: state.items, logs: state.logs, cats: state.cats });
+            sync();
             document.getElementById('itemName').value = "";
             document.getElementById('itemBarcode').value = "";
-            alert("Erfolgreich gespeichert!");
             switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
         };
 
@@ -210,12 +233,14 @@
         const idx = state.items.findIndex(x => x.id === id);
         const i = state.items[idx];
         const isIn = i.status === "im Lager";
-        
         i.status = isIn ? "unterwegs" : "im Lager";
         i.outUser = isIn ? state.user : "";
         i.outDate = isIn ? new Date().toLocaleDateString() : "";
-        
         state.logs.unshift({ time: new Date().toLocaleString(), user: state.user, item: i.name, action: isIn ? "Auslagerung" : "Einlagerung" });
+        sync();
+    }
+
+    function sync() {
         dbRef.set({ items: state.items, logs: state.logs, cats: state.cats });
     }
 
@@ -228,13 +253,19 @@
             const isOut = i.status !== "im Lager";
             html += `
                 <div class="glass card">
+                    <button class="btn-delete" onclick="deleteItem(${i.id})">🗑️</button>
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
                     <div style="flex:1">
-                        <b>${i.name}</b> (x${i.qty})<br>
-                        <small>${i.cat}</small>
-                        ${isOut ? `<br><span style="color:red; font-size:0.75rem; font-weight:bold;">Ausgelagert: ${i.outUser}</span>` : ""}
+                        <b style="font-size:1rem;">${i.name}</b><br>
+                        <div class="qty-controls">
+                            <button class="btn-qty" onclick="changeQty(${i.id}, -1)">–</button>
+                            <span style="font-weight:bold; min-width:20px; text-align:center;">${i.qty}</span>
+                            <button class="btn-qty" onclick="changeQty(${i.id}, 1)">+</button>
+                            <small style="color:#666; margin-left:5px;">${i.cat}</small>
+                        </div>
+                        ${isOut ? `<span style="color:red; font-size:0.7rem; font-weight:bold;">Ausgelagert: ${i.outUser}</span>` : ""}
                     </div>
-                    <button onclick="toggleStatus(${i.id})" style="background:${isOut?'#dc2626':'#16a34a'}; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:bold; min-width:100px;">
+                    <button onclick="toggleStatus(${i.id})" style="background:${isOut?'#dc2626':'#16a34a'}; color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold; min-width:85px; font-size:0.8rem;">
                         ${isOut ? 'Einlagern' : 'Auslagern'}
                     </button>
                 </div>`;
