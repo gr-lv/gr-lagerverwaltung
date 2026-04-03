@@ -87,24 +87,42 @@
         firebase.auth().signInWithRedirect(provider);
     }
 
+  // INITIALISIERUNG & LOGIN-CHECK
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
+            console.log("Eingeloggt als:", user.displayName);
             currentUser = user.displayName;
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('curUser').innerText = currentUser;
+            
+            // Erst wenn der User da ist, holen wir die Daten
             dbRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) { db = data; render(); }
             });
         } else {
-            document.getElementById('login-overlay').style.display = 'flex';
+            // Wenn kein User da ist, prüfen wir, ob wir gerade von Google zurückkommen
+            firebase.auth().getRedirectResult().then((result) => {
+                if (result.user) {
+                    // Nutzer ist gerade erfolgreich zurückgekehrt
+                    location.reload(); // Seite einmal frisch laden, damit der Listener oben anspringt
+                } else {
+                    // Wirklich nicht eingeloggt -> Zeige Login
+                    document.getElementById('login-overlay').style.display = 'flex';
+                }
+            }).catch((error) => {
+                console.error("Redirect Fehler:", error);
+                document.getElementById('login-overlay').style.display = 'flex';
+            });
         }
     });
 
-    function logout() { firebase.auth().signOut().then(() => location.reload()); }
-
-    // DATEN FUNKTIONEN
-    function sync() { dbRef.set(db); }
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        // Erzwinge die Konto-Auswahl, damit Google nicht einfach im Kreis springt
+        provider.setCustomParameters({ prompt: 'select_account' });
+        firebase.auth().signInWithRedirect(provider);
+    }
 
     function doSave() {
         let name = document.getElementById('nName').value;
