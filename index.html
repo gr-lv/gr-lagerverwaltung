@@ -3,127 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR Lagerverwaltung | Cloud V22</title>
+    <title>Lagerverwaltung Profi | V29</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { 
-            --primary: #4338ca; --primary-light: #818cf8;
-            --surface: rgba(255, 255, 255, 0.96);
-            --text: #1e293b; --text-light: #64748b;
-            --danger: #e11d48; --success: #059669; --dark: #1e1b4b;
-        }
+        :root { --primary: #4338ca; --dark: #0f172a; --accent: #06b6d4; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f1f5f9; color: #1e293b; padding-bottom: 80px; }
+        
+        /* Header & Login */
+        .header { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
+        .user-info { font-size: 0.9rem; font-weight: bold; color: var(--accent); }
+        .btn-login { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
 
-        body { 
-            font-family: 'Inter', sans-serif; margin: 0; 
-            background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
-                        url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed;
-            background-size: cover; color: var(--text); padding-bottom: 100px;
-        }
-        
-        .user-bar { background: var(--dark); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        
-        nav { 
-            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
-            width: 92%; max-width: 500px; background: #1e1b4b; 
-            display: flex; padding: 8px; border-radius: 20px; z-index: 9999;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        
-        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; font-weight: bold; padding: 12px; cursor: pointer; border-radius: 15px; font-size: 13px; }
-        .tab-btn.active { color: white; background: var(--primary); }
+        /* Navigation */
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; z-index: 1000; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; color: #64748b; }
+        .tab-btn.active { color: var(--primary); border-top: 3px solid var(--primary); background: #f8fafc; }
 
-        .content { padding: 20px; display: none; max-width: 600px; margin: auto; }
+        /* Content */
+        .content { display: none; padding: 15px; max-width: 800px; margin: auto; }
         .content.active { display: block; }
-
-        .panel { background: var(--surface); padding: 15px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-
-        input, select, textarea { padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-size: 15px; }
-
-        .card { 
-            background: white; padding: 12px; border-radius: 18px; margin-bottom: 12px; 
-            display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 6px solid #ccc;
-        }
-
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #eee; }
-        .tag { font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: bold; display: inline-block; margin-right: 4px; }
-        .tag-loc { background: #e0e7ff; color: var(--primary); }
-        .tag-cat { background: #fef3c7; color: #92400e; }
-
-        .btn-qty { width: 35px; height: 35px; border-radius: 10px; border: 1px solid #ddd; background: white; cursor: pointer; font-weight: bold; font-size: 18px; }
-        .btn-action { padding: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; min-width: 100px; transition: 0.2s; }
-        .in { background: var(--primary); color: white; }
-        .out { background: #e2e8f0; color: var(--text); }
+        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px; }
+        .thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; background: #eee; }
         
-        #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--dark); color:white; display:flex; justify-content:center; align-items:center; z-index:10000; transition: 0.5s; }
+        /* Formulare */
+        .panel { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: left; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-action:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        /* Kategorien Sektion */
+        .cat-manager { display: flex; gap: 10px; margin-top: 10px; }
+        .cat-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+        .cat-tag { background: #e2e8f0; padding: 5px 10px; border-radius: 15px; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+        .cat-del { color: red; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="loading-overlay">☁️ Verbinde mit Cloud...</div>
-
-<div class="user-bar">
-    <div>👤 <span id="curUser">Gast</span></div>
-    <button onclick="setUser()" style="background:rgba(255,255,255,0.1); border:1px solid white; color:white; border-radius:8px; padding:5px 12px; cursor:pointer;">Login</button>
+<div class="header">
+    <div class="user-info">👤 <span id="displayUser">Nicht angemeldet</span></div>
+    <button class="btn-login" onclick="askForName()">Benutzer wechseln</button>
 </div>
 
 <div id="tab-lager" class="content active">
-    <div class="panel">
-        <input type="text" id="srch" placeholder="🔍 Artikel suchen..." onkeyup="render()">
-        <div style="display:flex; gap:8px;">
-            <select id="fltrLoc" onchange="render()" style="margin-bottom:0">
-                <option value="">Alle Orte</option>
-                <option value="Nutzungsgebäude">Nutzungsgebäude</option>
-                <option value="Bethaus unter Bühne">Bethaus unter Bühne</option>
-            </select>
-            <select id="fltrCat" onchange="render()" style="margin-bottom:0">
-                <option value="">Alle Kategorien</option>
-            </select>
-        </div>
-    </div>
-    <div id="list"></div>
-</div>
-
-<div id="tab-stamm" class="content">
-    <div class="panel" style="background: rgba(255,255,255,0.85);">
-        <h4 style="margin:0 0 10px 0;">Kategorien verwalten</h4>
-        <div style="display:flex; gap:8px;">
-            <input type="text" id="newCatInput" placeholder="Neue Kat..." style="margin-bottom:0">
-            <button onclick="addCategory()" style="background:var(--success); color:white; border:none; padding:0 15px; border-radius:10px; cursor:pointer; font-weight:bold;">+</button>
-        </div>
-        <div id="catChips" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
-    </div>
-
-    <div class="panel">
-        <h3 style="margin-top:0">Neuer Artikel</h3>
-        <input type="text" id="nName" placeholder="Bezeichnung">
-        <div style="display:flex; gap:10px;">
-            <input type="number" id="nQty" value="1" placeholder="Menge">
-            <select id="nCatSelect"></select>
-        </div>
-        <select id="nLoc">
-            <option value="Nutzungsgebäude">Nutzungsgebäude</option>
-            <option value="Bethaus unter Bühne">Bethaus unter Bühne</option>
-        </select>
-        <input type="file" id="nImg" accept="image/*" capture="environment">
-        <button onclick="doSave()" style="width:100%; padding:16px; background:var(--dark); color:white; border:none; border-radius:14px; font-weight:bold; cursor:pointer;">In Cloud speichern</button>
-    </div>
+    <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
+    <div id="itemList"></div>
 </div>
 
 <div id="tab-log" class="content">
-    <div id="logBody"></div>
+    <h3>Protokoll</h3>
+    <div id="logList"></div>
+</div>
+
+<div id="tab-neu" class="content">
+    <div class="panel">
+        <h3>Neuer Artikel</h3>
+        <input type="text" id="itemName" placeholder="Bezeichnung">
+        <select id="itemCat"></select>
+        <input type="file" id="itemImg" accept="image/*" capture="environment">
+        <button id="saveBtn" class="btn-action" onclick="saveItem()" disabled>Speichern (Anmeldung Erforderlich)</button>
+    </div>
+
+    <div class="panel">
+        <h3>Kategorien verwalten</h3>
+        <div class="cat-manager">
+            <input type="text" id="newCatInput" placeholder="Neue Kategorie...">
+            <button onclick="addCategory()" style="padding: 10px; background: var(--accent); color:white; border:none; border-radius:8px;">+</button>
+        </div>
+        <div id="catList" class="cat-list"></div>
+    </div>
 </div>
 
 <nav>
     <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-stamm')">Neu/Kat</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Log</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu anlegen</button>
 </nav>
 
 <script>
-    // --- FIREBASE KONFIGURATION ---
+    // Konfiguration (Deine Daten)
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -134,170 +95,169 @@
         appId: "1:561219570576:web:65824b199a12933fd88115"
     };
 
-    // Firebase Initialisierung
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('cloud_lager_v1');
+    const dbRef = firebase.database().ref('lager_v29_final');
 
-    let db = { items: [], logs: [], categories: ["Werkzeug", "Technik", "Deko"] };
-    let user = localStorage.getItem('l_user') || "Gast";
+    let state = {
+        user: localStorage.getItem('lagerUser') || null,
+        items: [],
+        logs: [],
+        cats: ["Werkzeug", "Technik", "Deko"]
+    };
 
-    // LIVE-DATA LISTENER
-    dbRef.on('value', (snapshot) => {
-        const cloudData = snapshot.val();
-        if (cloudData) {
-            db = cloudData;
-            if (!db.items) db.items = [];
-            if (!db.logs) db.logs = [];
-            if (!db.categories) db.categories = ["Allgemein"];
+    // INITIALISIERUNG
+    function init() {
+        if (!state.user) {
+            setTimeout(askForName, 500);
+        } else {
+            updateUserUI();
         }
-        document.getElementById('loading-overlay').style.opacity = '0';
-        setTimeout(() => document.getElementById('loading-overlay').style.display = 'none', 500);
-        render();
-    });
+        
+        dbRef.on('value', (snap) => {
+            const data = snap.val();
+            if (data) {
+                state.items = data.items || [];
+                state.logs = data.logs || [];
+                state.cats = data.cats || ["Werkzeug", "Technik", "Deko"];
+                render();
+            }
+        });
+    }
 
-    function sync() {
-        dbRef.set(db);
+    function askForName() {
+        let name = prompt("Bitte gib deinen Namen für das Logbuch ein:");
+        if (name && name.trim() !== "") {
+            state.user = name.trim();
+            localStorage.setItem('lagerUser', state.user);
+            updateUserUI();
+        }
+    }
+
+    function updateUserUI() {
+        document.getElementById('displayUser').innerText = state.user || "Nicht angemeldet";
+        document.getElementById('saveBtn').disabled = !state.user;
+        document.getElementById('saveBtn').innerText = state.user ? "Speichern" : "Speichern (Anmeldung Erforderlich)";
+        render();
     }
 
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(e) e.currentTarget.classList.add('active');
-        render();
+        e.currentTarget.classList.add('active');
     }
 
-    function setUser() {
-        let n = prompt("Dein Name für die Buchungen:");
-        if(n) { user = n; localStorage.setItem('l_user', n); render(); }
+    // FUNKTIONEN
+    function saveItem() {
+        const name = document.getElementById('itemName').value;
+        const cat = document.getElementById('itemCat').value;
+        const file = document.getElementById('itemImg').files[0];
+        
+        if (!name) return alert("Name fehlt!");
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const newItem = {
+                id: Date.now(),
+                name: name,
+                cat: cat,
+                img: e.target.result || "",
+                status: "im Lager"
+            };
+            state.items.unshift(newItem);
+            addLog(name, "Neu angelegt");
+            sync();
+            document.getElementById('itemName').value = "";
+            switchTab({currentTarget: document.querySelector('nav button')}, 'tab-lager');
+        };
+        if (file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
+    }
+
+    function toggleStatus(id) {
+        if (!state.user) return askForName();
+        
+        const item = state.items.find(i => i.id === id);
+        const action = item.status === "im Lager" ? "ausgebucht" : "eingebucht";
+        
+        if (confirm(`Möchtest du "${item.name}" wirklich ${action}?`)) {
+            item.status = (item.status === "im Lager") ? "unterwegs" : "im Lager";
+            addLog(item.name, action === "ausgebucht" ? "Weg" : "Holen");
+            sync();
+        }
+    }
+
+    function addLog(itemName, action) {
+        state.logs.unshift({
+            time: new Date().toLocaleString('de-DE'),
+            user: state.user,
+            item: itemName,
+            action: action
+        });
     }
 
     function addCategory() {
-        let val = document.getElementById('newCatInput').value.trim();
-        if(val && !db.categories.includes(val)) {
-            db.categories.push(val);
-            document.getElementById('newCatInput').value = "";
+        const input = document.getElementById('newCatInput');
+        if (input.value) {
+            state.cats.push(input.value);
+            input.value = "";
             sync();
         }
     }
 
-    function removeCategory(cat) {
-        if(confirm(cat + " löschen?")) {
-            db.categories = db.categories.filter(c => c !== cat);
+    function deleteCategory(index) {
+        if (confirm("Kategorie wirklich löschen?")) {
+            state.cats.splice(index, 1);
             sync();
         }
     }
 
-    function doSave() {
-        let name = document.getElementById('nName').value;
-        if(!name) return alert("Bitte Name eingeben!");
-        
-        let file = document.getElementById('nImg').files[0];
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            db.items.unshift({
-                id: Date.now(),
-                name: name,
-                qty: parseInt(document.getElementById('nQty').value) || 0,
-                cat: document.getElementById('nCatSelect').value,
-                loc: document.getElementById('nLoc').value,
-                img: e.target.result || "",
-                isOut: false
-            });
-            db.logs.unshift({ t: new Date().toLocaleString(), u: user, i: name, a: "Neu angelegt" });
-            sync();
-            document.getElementById('nName').value = "";
-            switchTab(null, 'tab-lager');
-            document.querySelectorAll('.tab-btn')[0].classList.add('active');
-        };
-        if(file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
+    function sync() {
+        dbRef.set(state);
     }
 
-    function updateQty(id, change) {
-        let i = db.items.find(x => x.id === id);
-        if(i) {
-            i.qty = Math.max(0, (i.qty || 0) + change);
-            sync();
-        }
-    }
-
-    function toggleItem(id) {
-        let i = db.items.find(x => x.id === id);
-        if(i) {
-            i.isOut = !i.isOut;
-            db.logs.unshift({ t: new Date().toLocaleString(), u: user, i: i.name, a: i.isOut ? "Ausgebucht" : "Eingebucht" });
-            sync();
-        }
-    }
-
-    function deleteItem(id) {
-        if(confirm("Artikel wirklich löschen?")) {
-            db.items = db.items.filter(x => x.id !== id);
-            sync();
-        }
-    }
-
+    // RENDER LOGIK
     function render() {
-        document.getElementById('curUser').innerText = user;
-        
-        const fCat = document.getElementById('fltrCat');
-        const nCat = document.getElementById('nCatSelect');
-        const chips = document.getElementById('catChips');
-        const curF = fCat.value;
-
-        fCat.innerHTML = '<option value="">Alle Kategorien</option>';
-        nCat.innerHTML = '<option value="">Keine Kategorie</option>';
-        chips.innerHTML = "";
-
-        db.categories.sort().forEach(c => {
-            fCat.innerHTML += `<option value="${c}">${c}</option>`;
-            nCat.innerHTML += `<option value="${c}">${c}</option>`;
-            chips.innerHTML += `<span class="tag tag-cat" onclick="removeCategory('${c}')" style="cursor:pointer">${c} ✕</span>`;
-        });
-        fCat.value = curF;
-
-        const list = document.getElementById('list');
-        const s = document.getElementById('srch').value.toLowerCase();
-        const locF = document.getElementById('fltrLoc').value;
-        const catF = fCat.value;
-        
+        // Items
+        const list = document.getElementById('itemList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
         list.innerHTML = "";
-        const filtered = db.items.filter(i => 
-            i.name.toLowerCase().includes(s) && 
-            (locF === "" || i.loc === locF) &&
-            (catF === "" || i.cat === catF)
-        );
-
-        if(filtered.length === 0) list.innerHTML = "<p style='text-align:center; color:white;'>Keine Artikel gefunden.</p>";
-
-        filtered.forEach(i => {
+        
+        state.items.filter(i => i.name.toLowerCase().includes(search)).forEach(i => {
+            const isOut = i.status !== "im Lager";
             list.innerHTML += `
-            <div class="card" style="border-left-color: ${i.isOut ? 'var(--danger)' : 'var(--success)'}">
-                ${i.img ? `<img src="${i.img}" class="thumb">` : ''}
-                <div style="flex:1">
-                    <h4 style="margin:0">${i.name}</h4>
-                    <span class="tag tag-loc">${i.loc}</span>
-                    ${i.cat ? `<span class="tag tag-cat">${i.cat}</span>` : ''}
-                    <div style="margin-top:8px; display:flex; align-items:center; gap:12px;">
-                        <button class="btn-qty" onclick="updateQty(${i.id}, -1)">-</button>
-                        <span style="font-weight:bold; font-size:16px;">${i.qty || 0}</span>
-                        <button class="btn-qty" onclick="updateQty(${i.id}, 1)">+</button>
+                <div class="card" style="border-left: 8px solid ${isOut ? '#ef4444' : '#22c55e'}">
+                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
+                    <div style="flex:1">
+                        <div style="font-weight:bold">${i.name}</div>
+                        <div style="font-size:0.8rem; color:gray">${i.cat}</div>
                     </div>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:12px; align-items:flex-end;">
-                    <button onclick="deleteItem(${i.id})" style="background:none; border:none; cursor:pointer; font-size:18px;">🗑️</button>
-                    <button class="btn-action ${i.isOut?'out':'in'}" onclick="toggleItem(${i.id})">
-                        ${i.isOut ? 'Einbuchen' : 'Ausbuchen'}
+                    <button onclick="toggleStatus(${i.id})" 
+                        style="padding:10px; border-radius:8px; border:none; background:${isOut?'#22c55e':'#f43f5e'}; color:white; font-weight:bold">
+                        ${isOut ? 'Holen' : 'Weg'}
                     </button>
-                </div>
-            </div>`;
+                </div>`;
         });
 
-        document.getElementById('logBody').innerHTML = db.logs.slice(0,20).map(l => 
-            `<div class="panel" style="font-size:12px; margin-bottom:8px;">
-                <small style="color:gray">${l.t}</small><br><b>${l.u}</b>: ${l.i} (${l.a})
-            </div>`).join('');
+        // Kategorien Select & List
+        const sel = document.getElementById('itemCat');
+        const cList = document.getElementById('catList');
+        sel.innerHTML = "";
+        cList.innerHTML = "";
+        state.cats.forEach((c, index) => {
+            sel.innerHTML += `<option value="${c}">${c}</option>`;
+            cList.innerHTML += `<span class="cat-tag">${c} <span class="cat-del" onclick="deleteCategory(${index})">×</span></span>`;
+        });
+
+        // Logbuch
+        const lList = document.getElementById('logList');
+        lList.innerHTML = state.logs.slice(0, 30).map(l => `
+            <div style="font-size:0.8rem; background:white; padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
+                <strong>${l.user}</strong>: ${l.item} (${l.action}) <br> <span style="color:gray">${l.time}</span>
+            </div>
+        `).join('');
     }
+
+    init();
 </script>
 </body>
 </html>
