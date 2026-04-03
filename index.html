@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V90</title>
+    <title>GR-Lagerverwaltung V90 - Tausch</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -14,8 +14,9 @@
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
 
         /* LOGIN SCREEN */
-        #login-screen { position: fixed; top:0; left:0; width:100vw; height:100vh; background: var(--dark); z-index: 30000; display: flex; align-items: center; justify-content: center; }
+        #login-screen { position: fixed; top:0; left:0; width:100vw; height:100vh; background: var(--dark); z-index: 100000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; border: 2px solid var(--accent); }
+        .login-card input { background: white; color: black; }
 
         /* APP STRUKTUR */
         #mainApp { display: none; height: 100vh; flex-direction: column; position: relative; z-index: 10; }
@@ -24,7 +25,7 @@
 
         /* HEADER */
         .header { background: var(--dark); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
-        .header h1 { margin: 0; font-size: 1.2rem; flex: 1; text-align: center; font-weight: 900; }
+        .header h1 { margin: 0; font-size: 1.1rem; flex: 1; text-align: center; font-weight: 900; }
         .header-info { font-size: 0.7rem; width: 70px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; }
 
         .content-area { flex: 1; overflow-y: auto; padding: 15px 15px 120px 15px; -webkit-overflow-scrolling: touch; }
@@ -32,7 +33,6 @@
         .item-card { background: white; border-radius: 15px; margin-bottom: 15px; overflow: hidden; color: #333; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
         .delete-btn { position: absolute; top: 8px; right: 8px; background: var(--danger); color: white; border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; z-index: 5; }
 
-        /* DROPDOWN VERWALTUNG */
         details { background: #f1f5f9; border-radius: 10px; margin-bottom: 10px; padding: 5px; color: #333; }
         summary { font-weight: bold; padding: 10px; cursor: pointer; outline: none; }
         .manage-box { padding: 10px; border-top: 1px solid #ddd; max-height: 200px; overflow-y: auto; }
@@ -56,7 +56,7 @@
         <input type="text" id="loginUser" placeholder="Dein Name">
         <input type="password" id="loginPass" placeholder="Passwort">
         <button onclick="handleLogin()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">ANMELDEN</button>
-        <p id="loginErr" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">Falsches Passwort!</p>
+        <p id="loginErr" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">Login fehlgeschlagen!</p>
     </div>
 </div>
 
@@ -73,10 +73,18 @@
     <div class="content-area">
         <div id="tab-lager" class="content active">
             <div style="background:rgba(255,255,255,0.95); padding:12px; border-radius:15px; margin-bottom:15px; color:#333;">
-                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="margin-top:8px;">
-                <label style="font-weight:bold; font-size:0.8rem;">Lager auswählen:</label>
-                <select id="filterLagerSelect" onchange="render()"></select>
-                <select id="filterCatSelect" onchange="render()"></select>
+                <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
+                
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">LAGER:</label>
+                        <select id="filterLagerSelect" onchange="render()"></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">KATEGORIE:</label>
+                        <select id="filterCatSelect" onchange="render()"></select>
+                    </div>
+                </div>
             </div>
             <div id="itemList"></div>
         </div>
@@ -136,7 +144,8 @@
 
     function handleLogin() {
         const u = document.getElementById('loginUser').value.trim();
-        if(u !== "" && document.getElementById('loginPass').value === "1234") { 
+        const p = document.getElementById('loginPass').value;
+        if(u !== "" && p === "1234") { 
             state.user = u;
             localStorage.setItem('lagerAuthorizedUser', u);
             startApp();
@@ -163,24 +172,17 @@
         });
     }
 
-    window.onload = () => {
-        const saved = localStorage.getItem('lagerAuthorizedUser');
-        if(saved) { state.user = saved; startApp(); }
-    };
-
     function updateDropdowns() {
         const catHtml = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
         const lagerHtml = state.locations.map(l => `<option value="${l}">${l}</option>`).join('');
         
-        document.getElementById('itemCatSelect').innerHTML = lagerHtml ? catHtml : `<option>Zuerst Lager anlegen</option>`;
+        document.getElementById('itemCatSelect').innerHTML = catHtml;
         document.getElementById('filterCatSelect').innerHTML = `<option value="all">Alle Kategorien</option>` + catHtml;
-        
-        // Lager-Filter inkl. "Alle Lager"
-        document.getElementById('filterLagerSelect').innerHTML = `<option value="all">-- Alle Lager --</option>` + lagerHtml;
+        document.getElementById('filterLagerSelect').innerHTML = `<option value="all">Alle Lager</option>` + lagerHtml;
         document.getElementById('itemLagerSelect').innerHTML = lagerHtml;
 
-        document.getElementById('catManageList').innerHTML = state.cats.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:4px;"><span>${c}</span><span style="color:red; font-weight:bold;" onclick="deleteType('cats', '${c}')">X</span></div>`).join('');
-        document.getElementById('lagerManageList').innerHTML = state.locations.map(l => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:4px;"><span>${l}</span><span style="color:red; font-weight:bold;" onclick="deleteType('locations', '${l}')">X</span></div>`).join('');
+        document.getElementById('catManageList').innerHTML = state.cats.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${c}</span><span style="color:red;font-weight:bold;" onclick="deleteType('cats', '${c}')">X</span></div>`).join('');
+        document.getElementById('lagerManageList').innerHTML = state.locations.map(l => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${l}</span><span style="color:red;font-weight:bold;" onclick="deleteType('locations', '${l}')">X</span></div>`).join('');
     }
 
     function addType(key, inputId) {
@@ -192,14 +194,14 @@
     }
 
     function deleteType(key, val) {
-        if(confirm(`${val} wirklich löschen?`)) {
+        if(confirm(`${val} löschen?`)) {
             state[key] = state[key].filter(x => x !== val);
             dbRef.child(key).set(state[key]);
         }
     }
 
     function deleteItem(id) {
-        if(confirm("Artikel löschen?")) {
+        if(confirm("Löschen?")) {
             state.items = state.items.filter(i => i.id !== id);
             dbRef.child('items').set(state.items);
         }
@@ -234,7 +236,7 @@
                         <img src="${i.img || 'https://via.placeholder.com/80'}" style="width:75px; height:75px; object-fit:cover; border-radius:10px;">
                         <div style="flex:1;">
                             <b style="font-size:1.1rem;">${i.name}</b><br>
-                            <small style="color:#777; font-weight:bold;">${i.cat} | ${i.lager || 'Kein Lager'}</small>
+                            <small style="color:#666; font-weight:bold;">${i.cat} | ${i.lager || '?'}</small>
                             ${isOut ? `<div style="color:var(--danger); font-weight:bold; font-size:0.8rem; margin-top:5px;">Bei: ${i.outUser}</div>` : ""}
                         </div>
                     </div>
@@ -247,25 +249,14 @@
 
     function saveItem() {
         const n = document.getElementById('itemName').value;
-        const l = document.getElementById('itemLagerSelect').value;
-        if(!n || !l) { alert("Name und Lager benötigt!"); return; }
-        
-        const newItem = { 
-            id: Date.now(), 
-            name: n, 
-            cat: document.getElementById('itemCatSelect').value, 
-            lager: l,
-            img: "", 
-            status: "im Lager" 
-        };
-        
+        if(!n) return;
+        const newItem = { id: Date.now(), name: n, cat: document.getElementById('itemCatSelect').value, lager: document.getElementById('itemLagerSelect').value, img: "", status: "im Lager" };
         const f = document.getElementById('itemImg').files[0];
         if(f) {
             const r = new FileReader();
             r.onload = (e) => { newItem.img = e.target.result; state.items.push(newItem); dbRef.child('items').set(state.items); };
             r.readAsDataURL(f);
         } else { state.items.push(newItem); dbRef.child('items').set(state.items); }
-        
         document.getElementById('itemName').value = "";
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
     }
@@ -276,6 +267,11 @@
         document.getElementById(id).classList.add('active');
         e.currentTarget.classList.add('active');
     }
+
+    window.onload = () => {
+        const saved = localStorage.getItem('lagerAuthorizedUser');
+        if(saved) { state.user = saved; startApp(); }
+    };
 </script>
 </body>
 </html>
