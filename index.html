@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V33</title>
+    <title>Lager Profi | V34 Fix</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,24 +11,13 @@
     <style>
         :root { --primary: #2563eb; --accent: #06b6d4; }
         
-        html, body { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; color: #111827; padding-bottom: 80px; }
+        html, body { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; color: #111827; padding-bottom: 90px; overflow-x: hidden; }
         body {
             background-image: url('haus_background.jpg');
             background-attachment: fixed;
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.55);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
 
         .header {
@@ -41,173 +30,56 @@
             align-items: center;
             position: sticky;
             top: 0;
-            z-index: 1000;
+            z-index: 10000;
         }
 
+        /* NAVIGATION FIX: Feste Aufteilung damit nichts überlappt */
         nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(15, 23, 42, 0.98);
             display: flex;
-            z-index: 1000;
+            justify-content: space-around;
+            z-index: 10000;
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         .tab-btn { 
-            flex: 1; 
-            padding: 18px 5px; /* Etwas schmaler gepolstert für den längeren Text */
+            flex: 1;
+            padding: 20px 2px;
             border: none; 
             background: none; 
             font-weight: bold; 
             color: #9ca3af; 
             cursor: pointer; 
-            font-size: 0.85rem; /* Schriftgröße leicht angepasst */
+            font-size: 0.75rem;
             text-transform: uppercase;
+            text-align: center;
+            white-space: nowrap;
         }
-        .tab-btn.active { color: white; border-bottom: 4px solid var(--accent); }
+        .tab-btn.active { color: white; border-bottom: 4px solid var(--accent); background: rgba(255,255,255,0.05); }
 
-        .content { display: none; padding: 15px; max-width: 800px; margin: auto; }
+        .content { display: none; padding: 15px; max-width: 800px; margin: auto; position: relative; z-index: 10; }
         .content.active { display: block; }
         
-        .card { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 10px; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+
+        .card { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; background: #eee; }
 
         .btn-book { 
-            width: 110px; padding: 12px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center;
+            min-width: 100px; padding: 10px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; background: rgba(255,255,255,0.8); }
-        .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-
-        .dropdown-content { display: none; margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px; }
-        .dropdown-content.show { display: block; }
-        .btn-toggle-cat { background: none; border: 1px solid var(--primary); color: var(--primary); width: 100%; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-
-        .cat-tag { background: rgba(0,0,0,0.08); padding: 5px 12px; border-radius: 20px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 8px; margin: 4px; }
-        .cat-del { color: #ef4444; cursor: pointer; font-weight: bold; }
-    </style>
-</head>
-<body>
-
-<div class="header">
-    <div style="font-weight:bold; color:var(--accent);">👤 <span id="displayUser">Anmelden</span></div>
-    <button style="background:rgba(255,255,255,0.1); color:white; border:1px solid white; border-radius:8px; padding:5px 10px;" onclick="askForName()">Wechseln</button>
-</div>
-
-<div id="tab-lager" class="content active">
-    <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
-    <div id="itemList"></div>
-</div>
-
-<div id="tab-neu" class="content">
-    <div class="glass-panel">
-        <h3 style="margin-top:0">Neuer Artikel</h3>
-        <input type="text" id="itemName" placeholder="Bezeichnung">
-        <select id="itemCat"></select>
-        <input type="file" id="itemImg" accept="image/*" capture="environment">
-        <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Speichern</button>
-
-        <button class="btn-toggle-cat" onclick="toggleCatMenu()">⚙️ Kategorien verwalten</button>
-        
-        <div id="catMenu" class="dropdown-content">
-            <div style="display:flex; gap:10px">
-                <input type="text" id="newCatInput" placeholder="Neue Kat...">
-                <button onclick="addCategory()" style="padding:10px; background:var(--accent); color:white; border:none; border-radius:10px;">+</button>
-            </div>
-            <div id="catList" style="margin-top:10px"></div>
-        </div>
-    </div>
-</div>
-
-<div id="tab-log" class="content">
-    <div class="glass-panel">
-        <h3 style="margin-top:0">Logbuch</h3>
-        <div id="logList"></div>
-    </div>
-</div>
-
-<nav>
-    <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu Anlegen</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
-</nav>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
-        authDomain: "gr-lagerverwaltung.firebaseapp.com",
-        databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "gr-lagerverwaltung",
-        storageBucket: "gr-lagerverwaltung.firebasestorage.app",
-        messagingSenderId: "561219570576",
-        appId: "1:561219570576:web:65824b199a12933fd88115"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v32_final');
-
-    let state = {
-        user: localStorage.getItem('lagerUser') || null,
-        items: [],
-        logs: [],
-        cats: ["Werkzeug", "Garten", "Technik"]
-    };
-
-    function init() {
-        if (!state.user) { setTimeout(askForName, 500); } else { updateUserUI(); }
-        dbRef.on('value', (snap) => {
-            const data = snap.val();
-            if (data) {
-                state.items = data.items || [];
-                state.logs = data.logs || [];
-                state.cats = data.cats || ["Werkzeug", "Garten", "Technik"];
-                render();
-            }
-        });
-    }
-
-    function askForName() {
-        let name = prompt("Dein Name:");
-        if (name && name.trim() !== "") {
-            state.user = name.trim();
-            localStorage.setItem('lagerUser', state.user);
-            updateUserUI();
-        }
-    }
-
-    function updateUserUI() {
-        document.getElementById('displayUser').innerText = state.user || "Anmelden";
-        document.getElementById('saveBtn').disabled = !state.user;
-        render();
-    }
-
-    function switchTab(e, id) {
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        e.currentTarget.classList.add('active');
-    }
-
-    function toggleCatMenu() {
-        document.getElementById('catMenu').classList.toggle('show');
-    }
-
-    function saveItem() {
-        const name = document.getElementById('itemName').value;
-        const cat = document.getElementById('itemCat').value;
-        const file = document.getElementById('itemImg').files[0];
-        if (!name) return alert("Name fehlt!");
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            state.items.unshift({ id: Date.now(), name: name, cat: cat, img: e.target.result || "", status: "im Lager" });
-            addLog(name, "Neu angelegt");
-            sync();
-            document.getElementById('itemName').value = "";
-            switchTab({currentTarget: document.querySelectorAll('nav button')[0]}, 'tab-lager');
-        };
-        if (file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
-    }
-
-    function toggleStatus(id) {
-        if (!state.user) return askForName();
+        input, select { width: 100%; padding: 12
