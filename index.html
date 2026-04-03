@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V35 Stabil</title>
+    <title>Lager Profi | V36</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #2563eb; --accent: #06b6d4; }
+        :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; }
         
-        /* HINTERGRUND FIX */
         html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; background: #000; }
         
         .bg-layer {
@@ -21,13 +20,12 @@
             background-position: center;
             background-size: cover;
             background-repeat: no-repeat;
-            z-index: 1; /* Ganz unten */
+            z-index: 1;
         }
 
-        /* INHALT FIX */
         .app-container {
             position: relative;
-            z-index: 10; /* Über dem Bild */
+            z-index: 10;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -71,209 +69,4 @@
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.4);
-        }
-
-        .card { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #fff; border: 1px solid #ddd; }
-
-        .btn-book { 
-            min-width: 100px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center;
-        }
-
-        input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccc; border-radius: 12px; background: white; font-size: 16px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        
-        .btn-toggle-cat { background: #f8fafc; border: 1px solid #ddd; padding: 10px; width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; }
-        .cat-tag { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-flex; margin: 4px; }
-    </style>
-</head>
-<body>
-
-<div class="bg-layer"></div>
-
-<div class="app-container">
-    <div class="header">
-        <div style="font-weight:bold; color:var(--accent);">👤 <span id="displayUser">Anmelden</span></div>
-        <button style="background:var(--primary); color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;" onclick="askForName()">Wechseln</button>
-    </div>
-
-    <div id="tab-lager" class="content active">
-        <div class="glass-panel">
-            <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
-        </div>
-        <div id="itemList"></div>
-    </div>
-
-    <div id="tab-neu" class="content">
-        <div class="glass-panel">
-            <h2 style="margin-top:0">Neu Anlegen</h2>
-            <input type="text" id="itemName" placeholder="Was ist es?">
-            <select id="itemCat"></select>
-            <input type="file" id="itemImg" accept="image/*" capture="environment">
-            <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Artikel Speichern</button>
-            
-            <button class="btn-toggle-cat" onclick="document.getElementById('catMenu').style.display='block'">⚙️ Kategorien verwalten</button>
-            <div id="catMenu" style="display:none; margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
-                <input type="text" id="newCatInput" placeholder="Neue Kat...">
-                <button onclick="addCategory()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:10px; margin-top:5px;">Hinzufügen</button>
-                <div id="catList" style="margin-top:10px"></div>
-                <button onclick="this.parentElement.style.display='none'" style="width:100%; background:none; border:none; color:gray; margin-top:10px;">Schließen</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="tab-log" class="content">
-        <div class="glass-panel">
-            <h2 style="margin-top:0">Logbuch</h2>
-            <div id="logList"></div>
-        </div>
-    </div>
-
-    <nav>
-        <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu Anlegen</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
-    </nav>
-</div>
-
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
-        authDomain: "gr-lagerverwaltung.firebaseapp.com",
-        databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "gr-lagerverwaltung",
-        storageBucket: "gr-lagerverwaltung.firebasestorage.app",
-        messagingSenderId: "561219570576",
-        appId: "1:561219570576:web:65824b199a12933fd88115"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v32_final');
-
-    let state = {
-        user: localStorage.getItem('lagerUser') || null,
-        items: [],
-        logs: [],
-        cats: ["Werkzeug", "Garten", "Technik"]
-    };
-
-    function init() {
-        if (!state.user) { setTimeout(askForName, 500); } else { updateUserUI(); }
-        dbRef.on('value', (snap) => {
-            const data = snap.val();
-            if (data) {
-                state.items = data.items || [];
-                state.logs = data.logs || [];
-                state.cats = data.cats || ["Werkzeug", "Garten", "Technik"];
-                render();
-            }
-        });
-    }
-
-    function askForName() {
-        let name = prompt("Name für Protokoll:");
-        if (name && name.trim() !== "") {
-            state.user = name.trim();
-            localStorage.setItem('lagerUser', state.user);
-            updateUserUI();
-        }
-    }
-
-    function updateUserUI() {
-        document.getElementById('displayUser').innerText = state.user || "Anmelden";
-        document.getElementById('saveBtn').disabled = !state.user;
-        render();
-    }
-
-    function switchTab(e, id) {
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        e.currentTarget.classList.add('active');
-        window.scrollTo(0,0);
-    }
-
-    function saveItem() {
-        const nameVal = document.getElementById('itemName').value;
-        const catVal = document.getElementById('itemCat').value;
-        const file = document.getElementById('itemImg').files[0];
-        if (!nameVal) return alert("Name fehlt!");
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            state.items.unshift({ id: Date.now(), name: nameVal, cat: catVal, img: e.target.result || "", status: "im Lager" });
-            addLog(nameVal, "Neu angelegt");
-            sync();
-            document.getElementById('itemName').value = "";
-            switchTab({currentTarget: document.querySelectorAll('nav button')[0]}, 'tab-lager');
-        };
-        if (file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
-    }
-
-    function toggleStatus(id) {
-        if (!state.user) return askForName();
-        const item = state.items.find(i => i.id === id);
-        const act = item.status === "im Lager" ? "ausgebucht" : "eingebucht";
-        if (confirm(`"${item.name}" wirklich ${act}?`)) {
-            item.status = (item.status === "im Lager") ? "unterwegs" : "im Lager";
-            addLog(item.name, item.status === "im Lager" ? "Holen" : "Weg");
-            sync();
-        }
-    }
-
-    function addLog(item, action) {
-        state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: item, action: action });
-    }
-
-    function addCategory() {
-        const input = document.getElementById('newCatInput');
-        if (input.value) { state.cats.push(input.value); input.value = ""; sync(); }
-    }
-
-    function deleteCategory(index) {
-        if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); }
-    }
-
-    function sync() { dbRef.set(state); }
-
-    function render() {
-        const list = document.getElementById('itemList');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = "";
-        state.items.filter(i => i.name.toLowerCase().includes(search)).forEach(i => {
-            const isOut = i.status !== "im Lager";
-            list.innerHTML += `
-                <div class="glass-panel card">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
-                    <div style="flex:1">
-                        <div style="font-weight:bold">${i.name}</div>
-                        <div style="font-size:0.8rem; color:#444">${i.cat}</div>
-                    </div>
-                    <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'#16a34a':'#dc2626'};">
-                        <span>${isOut ? 'Holen' : 'Weg'}</span>
-                        <span style="font-size:0.6rem; opacity:0.8">${isOut ? 'Einbuchen' : 'Ausbuchen'}</span>
-                    </button>
-                </div>`;
-        });
-
-        const sel = document.getElementById('itemCat');
-        const cList = document.getElementById('catList');
-        sel.innerHTML = ""; cList.innerHTML = "";
-        state.cats.forEach((c, index) => {
-            sel.innerHTML += `<option value="${c}">${c}</option>`;
-            cList.innerHTML += `<span class="cat-tag">${c} <span onclick="deleteCategory(${index})" style="color:red; cursor:pointer; margin-left:5px;">×</span></span>`;
-        });
-
-        const lList = document.getElementById('logList');
-        lList.innerHTML = state.logs.slice(0, 30).map(l => `
-            <div style="font-size:0.8rem; background:rgba(255,255,255,0.5); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
-                <strong>${l.user}</strong>: ${l.item} (${l.action}) <br> <span style="color:gray">${l.time}</span>
-            </div>
-        `).join('');
-    }
-    init();
-</script>
-</body>
-</html>
+            box
