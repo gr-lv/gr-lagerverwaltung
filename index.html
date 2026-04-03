@@ -101,15 +101,19 @@
     let db = { items: [], logs: [], categories: ["Werkzeug", "Technik", "Deko", "Küche"] };
     let currentUser = null;
 
-    // LOGIN LOGIK
+    // NEUE LOGIN LOGIK (Redirect statt Popup)
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        firebase.auth().signInWithPopup(provider).then((result) => {
-            // Erfolg! Seite wird durch Auth-Listener aktualisiert
-        }).catch((error) => {
-            alert("Fehler: " + error.message);
-        });
+        // Wir nutzen signInWithRedirect statt Popup
+        firebase.auth().signInWithRedirect(provider);
     }
+
+    // Dieser Teil fängt den Nutzer nach der Google-Umleitung wieder ab
+    firebase.auth().getRedirectResult().catch((error) => {
+        if(error.code !== 'auth/none') {
+            console.error("Redirect Fehler:", error.message);
+        }
+    });
 
     // AUTH LISTENER (Prüft ob Nutzer eingeloggt ist)
     firebase.auth().onAuthStateChanged((user) => {
