@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V42 Fix</title>
+    <title>Lager Profi | V43 Update-Safe</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -37,7 +37,7 @@
 
 <div class="app-container">
     <div class="header">
-        <div style="font-weight:bold; color:var(--accent);">👤 <span id="displayUser">Anmelden</span></div>
+        <div style="font-weight:bold; color:var(--accent);">👤 <span id="displayUser">Anmelden</span> <small style="font-size: 0.6rem; color:gray;">(V43)</small></div>
         <button style="background:var(--primary); color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;" onclick="askForName()">Wechseln</button>
     </div>
 
@@ -75,6 +75,8 @@
 </div>
 
 <script>
+    const CURRENT_VERSION = 43; // Diese Nummer bei jedem GitHub-Update erhöhen!
+
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -88,17 +90,27 @@
     firebase.initializeApp(firebaseConfig);
     const dbRef = firebase.database().ref('lager_v32_final');
 
-    let state = { user: localStorage.getItem('lagerUser') || null, items: [], logs: [], cats: ["Werkzeug", "Garten"] };
+    let state = { user: localStorage.getItem('lagerUser') || null, items: [], logs: [], cats: ["Werkzeug", "Garten"], ver: CURRENT_VERSION };
 
     function init() {
         if (!state.user) { setTimeout(askForName, 500); } else { updateUserUI(); }
         dbRef.on('value', (snap) => {
             const data = snap.val();
             if (data) {
+                // Prüfen ob eine neuere Version in der Datenbank registriert ist
+                if (data.ver && data.ver > CURRENT_VERSION) {
+                    alert("Eine neue App-Version ist verfügbar. Die Seite wird aktualisiert.");
+                    location.reload(true);
+                    return;
+                }
                 state.items = data.items || [];
                 state.logs = data.logs || [];
                 state.cats = data.cats || ["Werkzeug", "Garten"];
+                state.ver = data.ver || CURRENT_VERSION;
                 render();
+            } else {
+                // Initialer Sync der Version falls DB leer
+                sync();
             }
         });
     }
@@ -162,7 +174,11 @@
     function addLog(item, action) { state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: item, action: action }); }
     function addCategory() { const i = document.getElementById('newCatInput'); if (i.value) { state.cats.push(i.value); i.value = ""; sync(); } }
     function deleteCategory(index) { if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); } }
-    function sync() { dbRef.set(state); }
+    
+    function sync() { 
+        state.ver = CURRENT_VERSION; // Immer die aktuelle Nummer mitschicken
+        dbRef.set(state); 
+    }
 
     function render() {
         const list = document.getElementById('itemList');
@@ -171,7 +187,6 @@
         list.innerHTML = "";
         state.items.filter(x => x.name.toLowerCase().includes(s)).forEach(i => {
             const isOut = i.status !== "im Lager";
-            // REPARATUR-LOGIK: Akzeptiert alten (lastUser) und neuen (outUser) Namen
             const displayUser = i.outUser || i.lastUser || "Unbekannt";
             const displayDate = i.outDate || i.lastDate || "";
             const infoHtml = isOut ? `<div class="last-action">Mitgenommen von ${displayUser} am ${displayDate}</div>` : "";
