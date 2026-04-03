@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V32 Custom</title>
+    <title>Lager Profi | V33</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -53,7 +53,17 @@
             display: flex;
             z-index: 1000;
         }
-        .tab-btn { flex: 1; padding: 18px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; }
+        .tab-btn { 
+            flex: 1; 
+            padding: 18px 5px; /* Etwas schmaler gepolstert für den längeren Text */
+            border: none; 
+            background: none; 
+            font-weight: bold; 
+            color: #9ca3af; 
+            cursor: pointer; 
+            font-size: 0.85rem; /* Schriftgröße leicht angepasst */
+            text-transform: uppercase;
+        }
         .tab-btn.active { color: white; border-bottom: 4px solid var(--accent); }
 
         .content { display: none; padding: 15px; max-width: 800px; margin: auto; }
@@ -70,7 +80,6 @@
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; background: rgba(255,255,255,0.8); }
         .btn-main { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
 
-        /* Dropdown Style für Kategorien */
         .dropdown-content { display: none; margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px; }
         .dropdown-content.show { display: block; }
         .btn-toggle-cat { background: none; border: 1px solid var(--primary); color: var(--primary); width: 100%; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 10px; }
@@ -120,7 +129,7 @@
 
 <nav>
     <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu Anlegen</button>
     <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
 </nav>
 
@@ -202,66 +211,3 @@
 
     function toggleStatus(id) {
         if (!state.user) return askForName();
-        const item = state.items.find(i => i.id === id);
-        const action = item.status === "im Lager" ? "ausgebucht" : "eingebucht";
-        if (confirm(`"${item.name}" wirklich ${action}?`)) {
-            item.status = (item.status === "im Lager") ? "unterwegs" : "im Lager";
-            addLog(item.name, action === "ausgebucht" ? "Weg" : "Holen");
-            sync();
-        }
-    }
-
-    function addLog(itemName, action) {
-        state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: itemName, action: action });
-    }
-
-    function addCategory() {
-        const input = document.getElementById('newCatInput');
-        if (input.value) { state.cats.push(input.value); input.value = ""; sync(); }
-    }
-
-    function deleteCategory(index) {
-        if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); }
-    }
-
-    function sync() { dbRef.set(state); }
-
-    function render() {
-        const list = document.getElementById('itemList');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = "";
-        state.items.filter(i => i.name.toLowerCase().includes(search)).forEach(i => {
-            const isOut = i.status !== "im Lager";
-            list.innerHTML += `
-                <div class="glass-panel card">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
-                    <div style="flex:1">
-                        <div style="font-weight:bold">${i.name}</div>
-                        <div style="font-size:0.8rem; color:#444">${i.cat}</div>
-                    </div>
-                    <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'#16a34a':'#dc2626'};">
-                        <span>${isOut ? 'Holen' : 'Weg'}</span>
-                        <span style="font-size:0.65rem; opacity:0.8">${isOut ? 'Einbuchen' : 'Ausbuchen'}</span>
-                    </button>
-                </div>`;
-        });
-
-        const sel = document.getElementById('itemCat');
-        const cList = document.getElementById('catList');
-        sel.innerHTML = ""; cList.innerHTML = "";
-        state.cats.forEach((c, index) => {
-            sel.innerHTML += `<option value="${c}">${c}</option>`;
-            cList.innerHTML += `<span class="cat-tag">${c} <span class="cat-del" onclick="deleteCategory(${index})">×</span></span>`;
-        });
-
-        const lList = document.getElementById('logList');
-        lList.innerHTML = state.logs.slice(0, 30).map(l => `
-            <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
-                <strong>${l.user}</strong>: ${l.item} (${l.action}) <br> <span style="color:gray">${l.time}</span>
-            </div>
-        `).join('');
-    }
-    init();
-</script>
-</body>
-</html>
