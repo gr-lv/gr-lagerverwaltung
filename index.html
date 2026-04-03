@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V39 Zoom</title>
+    <title>Lager Profi | V40 Info</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -21,9 +21,7 @@
         }
 
         .app-container { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; }
-
         .header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(15, 23, 42, 1); display: flex; z-index: 2000; border-top: 2px solid var(--accent); }
 
         .tab-btn { flex: 1; padding: 20px 5px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; text-align: center; }
@@ -39,26 +37,19 @@
 
         .btn-book { min-width: 110px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
+        .last-action { font-size: 0.75rem; color: #555; margin-top: 4px; font-style: italic; background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 4px; display: inline-block; }
+
         input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccc; border-radius: 12px; background: white; font-size: 16px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
         
-        /* ZOOM OVERLAY STYLES */
-        #zoomOverlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 5000; justify-content: center; align-items: center; cursor: zoom-out;
-        }
-        #zoomOverlay img { max-width: 95%; max-height: 90%; border-radius: 10px; border: 2px solid white; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-
-        .cat-tag { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-flex; margin: 4px; }
+        #zoomOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; justify-content: center; align-items: center; cursor: zoom-out; }
+        #zoomOverlay img { max-width: 95%; max-height: 90%; border-radius: 10px; border: 2px solid white; }
     </style>
 </head>
 <body>
 
 <div class="bg-layer"></div>
-
-<div id="zoomOverlay" onclick="closeZoom()">
-    <img id="zoomImg" src="">
-</div>
+<div id="zoomOverlay" onclick="closeZoom()"><img id="zoomImg" src=""></div>
 
 <div class="app-container">
     <div class="header">
@@ -67,9 +58,7 @@
     </div>
 
     <div id="tab-lager" class="content active">
-        <div class="glass-panel">
-            <input type="text" id="searchInput" placeholder="🔍 Suchen..." onkeyup="render()">
-        </div>
+        <div class="glass-panel"><input type="text" id="searchInput" placeholder="🔍 Suchen..." onkeyup="render()"></div>
         <div id="itemList"></div>
     </div>
 
@@ -91,10 +80,7 @@
     </div>
 
     <div id="tab-log" class="content">
-        <div class="glass-panel">
-            <h2 style="margin-top:0">Logbuch</h2>
-            <div id="logList"></div>
-        </div>
+        <div class="glass-panel"><h2 style="margin-top:0">Logbuch</h2><div id="logList"></div></div>
     </div>
 
     <nav>
@@ -148,16 +134,8 @@
         render();
     }
 
-    // ZOOM FUNKTIONEN
-    function openZoom(src) {
-        if (!src || src.includes('via.placeholder.com')) return;
-        document.getElementById('zoomImg').src = src;
-        document.getElementById('zoomOverlay').style.display = 'flex';
-    }
-
-    function closeZoom() {
-        document.getElementById('zoomOverlay').style.display = 'none';
-    }
+    function openZoom(src) { if (!src || src.includes('via.placeholder.com')) return; document.getElementById('zoomImg').src = src; document.getElementById('zoomOverlay').style.display = 'flex'; }
+    function closeZoom() { document.getElementById('zoomOverlay').style.display = 'none'; }
 
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
@@ -173,11 +151,13 @@
         if (!n) return alert("Name?");
         const reader = new FileReader();
         reader.onload = function(e) {
-            state.items.unshift({ id: Date.now(), name: n, cat: c, img: e.target.result || "", status: "im Lager" });
+            state.items.unshift({ 
+                id: Date.now(), name: n, cat: c, img: e.target.result || "", status: "im Lager",
+                lastUser: state.user, lastDate: new Date().toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
+            });
             addLog(n, "Neu angelegt");
             sync();
-            document.getElementById('itemName').value = "";
-            document.getElementById('itemImg').value = "";
+            document.getElementById('itemName').value = ""; document.getElementById('itemImg').value = "";
             switchTab({currentTarget: document.querySelectorAll('nav button')[0]}, 'tab-lager');
         };
         if (f) reader.readAsDataURL(f); else reader.onload({target:{result:""}});
@@ -187,26 +167,19 @@
         if (!state.user) return askForName();
         const i = state.items.find(x => x.id === id);
         const out = i.status === "im Lager";
-        if (confirm(`"${i.name}" wirklich ${out ? 'Auslagern' : 'Einlagern'}?`)) {
+        const actionText = out ? 'Auslagern' : 'Einlagern';
+        if (confirm(`"${i.name}" wirklich ${actionText}?`)) {
             i.status = out ? "unterwegs" : "im Lager";
-            addLog(i.name, out ? "Auslagern" : "Einlagern");
+            i.lastUser = state.user;
+            i.lastDate = new Date().toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+            addLog(i.name, actionText);
             sync();
         }
     }
 
-    function addLog(item, action) {
-        state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: item, action: action });
-    }
-
-    function addCategory() {
-        const i = document.getElementById('newCatInput');
-        if (i.value) { state.cats.push(i.value); i.value = ""; sync(); }
-    }
-
-    function deleteCategory(index) {
-        if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); }
-    }
-
+    function addLog(item, action) { state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: item, action: action }); }
+    function addCategory() { const i = document.getElementById('newCatInput'); if (i.value) { state.cats.push(i.value); i.value = ""; sync(); } }
+    function deleteCategory(index) { if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); } }
     function sync() { dbRef.set(state); }
 
     function render() {
@@ -215,15 +188,15 @@
         list.innerHTML = "";
         state.items.filter(x => x.name.toLowerCase().includes(s)).forEach(i => {
             const isOut = i.status !== "im Lager";
+            const infoText = i.lastUser ? `${isOut ? 'Ausgelagert' : 'Eingelagert'} von ${i.lastUser} am ${i.lastDate}` : "Noch kein Verlauf";
+            
             list.innerHTML += `
                 <div class="glass-panel card">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" 
-                         class="thumb" 
-                         onclick="openZoom('${i.img}')" 
-                         title="Klicken zum Vergrößern">
+                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb" onclick="openZoom('${i.img}')">
                     <div style="flex:1">
                         <div style="font-weight:bold">${i.name}</div>
                         <div style="font-size:0.8rem; color:#444">${i.cat}</div>
+                        <div class="last-action">${infoText}</div>
                     </div>
                     <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'var(--success)':'var(--danger)'};">
                         <span>${isOut ? 'Einlagern' : 'Auslagern'}</span>
@@ -236,7 +209,7 @@
         sel.innerHTML = ""; cList.innerHTML = "";
         state.cats.forEach((c, idx) => {
             sel.innerHTML += `<option value="${c}">${c}</option>`;
-            cList.innerHTML += `<span class="cat-tag">${c} <span onclick="deleteCategory(${idx})" style="color:red; cursor:pointer; margin-left:5px;">×</span></span>`;
+            cList.innerHTML += `<span style="background:#e2e8f0; padding:6px; border-radius:20px; font-size:0.8rem; margin:4px; display:inline-flex;">${c} <span onclick="deleteCategory(${idx})" style="color:red; cursor:pointer; margin-left:5px;">×</span></span>`;
         });
 
         const lList = document.getElementById('logList');
