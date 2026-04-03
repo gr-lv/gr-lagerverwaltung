@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | Haus & Hof V30</title>
+    <title>Lager Profi | Haus-Background V31</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,40 +11,40 @@
     <style>
         :root { --primary: #2563eb; --accent: #06b6d4; --glass: rgba(255, 255, 255, 0.7); }
         
-        /* FESTES HINTERGRUNDBILD */
+        /* FESTES HINTERGRUNDBILD (LOKALER LINK) */
         html, body { 
             height: 100%; 
             margin: 0; 
             font-family: 'Segoe UI', sans-serif; 
             color: #111827; 
-            padding-bottom: 70px;
+            padding-bottom: 80px;
         }
         body {
-            background-image: url('image_5.png'); /* Nutzt dein Haus-Foto */
+            background-image: url('haus_background.jpg'); /* Nutzt das hochgeladene Bild */
             background-attachment: fixed;
             background-position: center;
             background-repeat: no-repeat;
             background-size: cover;
         }
 
-        /* MODERNES INTERFACE MIT TRANSPARENZ (GLASSMORPHISM) */
+        /* MODERNES INTERFACE MIT TRANSPARENZ */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             padding: 20px;
             margin-bottom: 15px;
         }
 
-        /* HEADER */
+        /* HEADER & NAVIGATION */
         .header {
-            background: rgba(15, 23, 42, 0.85); /* Dunkler, aber transparent */
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(5px);
             color: white;
-            padding: 12px 15px;
+            padding: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -53,24 +53,23 @@
             z-index: 1000;
         }
         .user-info { font-weight: bold; color: var(--accent); }
-        .btn-header { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+        .btn-header { background: rgba(255,255,255,0.1); color: white; border: 1px solid white; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
 
-        /* UNTERE NAVIGATION */
         nav {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(5px);
             display: flex;
             border-top: 1px solid rgba(255,255,255,0.1);
             z-index: 1000;
         }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; text-transform: uppercase; }
+        .tab-btn { flex: 1; padding: 18px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; text-transform: uppercase; }
         .tab-btn.active { color: white; border-bottom: 4px solid var(--accent); }
 
-        /* CONTENT */
+        /* CONTENT ELEMENTS */
         .content { display: none; padding: 15px; max-width: 800px; margin: auto; }
         .content.active { display: block; }
         
@@ -79,13 +78,12 @@
             align-items: center; 
             gap: 15px; 
             margin-bottom: 10px;
-            position: relative;
         }
         .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 10px; background: rgba(0,0,0,0.1); }
 
-        /* BUCHUNGS-BUTTONS (NEU: VOLLE AKTION) */
+        /* BUCHUNGS-BUTTONS */
         .btn-book { 
-            width: 100%; 
+            width: 110px; 
             padding: 12px; 
             border: none; 
             border-radius: 10px; 
@@ -107,7 +105,7 @@
             border: 1px solid rgba(255,255,255,0.3); 
             border-radius: 10px; 
             box-sizing: border-box; 
-            background: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.8);
         }
         .btn-main { 
             width: 100%; 
@@ -131,17 +129,17 @@
 
 <div class="header">
     <div class="user-info">👤 <span id="displayUser">Nicht angemeldet</span></div>
-    <button class="btn-header" onclick="askForName()">Benutzer wechseln</button>
+    <button class="btn-header" onclick="askForName()">Wechseln</button>
 </div>
 
 <div id="tab-lager" class="content active">
-    <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
+    <input type="text" id="searchInput" placeholder="🔍 Suchen..." onkeyup="render()">
     <div id="itemList"></div>
 </div>
 
 <div id="tab-log" class="content">
     <div class="glass-panel">
-        <h3 style="margin-top:0">Aktivitäts-Protokoll</h3>
+        <h3 style="margin-top:0">Logbuch</h3>
         <div id="logList"></div>
     </div>
 </div>
@@ -152,13 +150,13 @@
         <input type="text" id="itemName" placeholder="Bezeichnung">
         <select id="itemCat"></select>
         <input type="file" id="itemImg" accept="image/*" capture="environment">
-        <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Speichern (Anmeldung Erforderlich)</button>
+        <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Speichern (Name Erforderlich)</button>
     </div>
 
     <div class="glass-panel">
         <h3 style="margin-top:0">Kategorien verwalten</h3>
         <div style="display:flex; gap:10px">
-            <input type="text" id="newCatInput" placeholder="Neue Kategorie...">
+            <input type="text" id="newCatInput" placeholder="Neue...">
             <button onclick="addCategory()" style="padding: 10px; background: var(--accent); color:white; border:none; border-radius:8px;">+</button>
         </div>
         <div id="catList" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;"></div>
@@ -172,7 +170,6 @@
 </nav>
 
 <script>
-    // Konfiguration (Deine Daten)
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -184,29 +181,23 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v30_final');
+    const dbRef = firebase.database().ref('lager_v31_background');
 
     let state = {
         user: localStorage.getItem('lagerUser') || null,
         items: [],
         logs: [],
-        cats: ["Werkzeug", "Technik", "Deko", "Garten"]
+        cats: ["Werkzeug", "Technik", "Garten", "Küche"]
     };
 
-    // INITIALISIERUNG
     function init() {
-        if (!state.user) {
-            setTimeout(askForName, 500);
-        } else {
-            updateUserUI();
-        }
-        
+        if (!state.user) { setTimeout(askForName, 500); } else { updateUserUI(); }
         dbRef.on('value', (snap) => {
             const data = snap.val();
             if (data) {
                 state.items = data.items || [];
                 state.logs = data.logs || [];
-                state.cats = data.cats || ["Werkzeug", "Technik", "Deko", "Garten"];
+                state.cats = data.cats || ["Werkzeug", "Technik", "Garten", "Küche"];
                 render();
             }
         });
@@ -222,9 +213,9 @@
     }
 
     function updateUserUI() {
-        document.getElementById('displayUser').innerText = state.user || "Nicht angemeldet";
+        document.getElementById('displayUser').innerText = state.user || "Anmelden";
         document.getElementById('saveBtn').disabled = !state.user;
-        document.getElementById('saveBtn').innerText = state.user ? "Speichern" : "Speichern (Anmeldung Erforderlich)";
+        document.getElementById('saveBtn').innerText = state.user ? "Speichern" : "Speichern (Anmelden)";
         render();
     }
 
@@ -235,24 +226,14 @@
         e.currentTarget.classList.add('active');
     }
 
-    // FUNKTIONEN
     function saveItem() {
         const name = document.getElementById('itemName').value;
         const cat = document.getElementById('itemCat').value;
         const file = document.getElementById('itemImg').files[0];
-        
         if (!name) return alert("Bezeichnung fehlt!");
-
         const reader = new FileReader();
         reader.onload = function(e) {
-            const newItem = {
-                id: Date.now(),
-                name: name,
-                cat: cat,
-                img: e.target.result || "",
-                status: "im Lager"
-            };
-            state.items.unshift(newItem);
+            state.items.unshift({ id: Date.now(), name: name, cat: cat, img: e.target.result || "", status: "im Lager" });
             addLog(name, "Neu angelegt");
             sync();
             document.getElementById('itemName').value = "";
@@ -263,49 +244,31 @@
 
     function toggleStatus(id) {
         if (!state.user) return askForName();
-        
         const item = state.items.find(i => i.id === id);
         const action = item.status === "im Lager" ? "ausgebucht" : "eingebucht";
-        
         if (confirm(`"${item.name}" wirklich ${action}?`)) {
             item.status = (item.status === "im Lager") ? "unterwegs" : "im Lager";
-            addLog(item.name, action === "ausgebucht" ? "Ausbuchen (Weg)" : "Einbuchen (Holen)");
+            addLog(item.name, action === "ausgebucht" ? "Weg" : "Holen");
             sync();
         }
     }
 
     function addLog(itemName, action) {
-        state.logs.unshift({
-            time: new Date().toLocaleString('de-DE'),
-            user: state.user,
-            item: itemName,
-            action: action
-        });
+        state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: itemName, action: action });
     }
 
     function addCategory() {
         const input = document.getElementById('newCatInput');
-        if (input.value) {
-            state.cats.push(input.value);
-            input.value = "";
-            sync();
-        }
+        if (input.value) { state.cats.push(input.value); input.value = ""; sync(); }
     }
 
     function deleteCategory(index) {
-        if (confirm("Kategorie löschen?")) {
-            state.cats.splice(index, 1);
-            sync();
-        }
+        if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); }
     }
 
-    function sync() {
-        dbRef.set(state);
-    }
+    function sync() { dbRef.set(state); }
 
-    // RENDER LOGIK
     function render() {
-        // Items
         const list = document.getElementById('itemList');
         const search = document.getElementById('searchInput').value.toLowerCase();
         list.innerHTML = "";
@@ -317,33 +280,28 @@
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
                     <div style="flex:1">
                         <div style="font-weight:bold">${i.name}</div>
-                        <div style="font-size:0.8rem; color:#555">${i.cat}</div>
+                        <div style="font-size:0.8rem; color:#444">${i.cat}</div>
                     </div>
-                    <div style="width:110px">
                     <button class="btn-book" onclick="toggleStatus(${i.id})" 
                         style="background:${isOut?'#16a34a':'#dc2626'};"
                         ${!state.user ? 'disabled' : ''}>
-                        <span style="font-size:1rem">${isOut ? 'Holen' : 'Weg'}</span>
-                        <span style="font-size:0.7rem; opacity:0.7">${isOut ? 'Einbuchen' : 'Ausbuchen'}</span>
+                        <span>${isOut ? 'Einbuchen' : 'Ausbuchen'}</span>
+                        <span style="font-size:0.7rem; opacity:0.7">${isOut ? '(Holen)' : '(Weg)'}</span>
                     </button>
-                    </div>
                 </div>`;
         });
 
-        // Kategorien Select & List
         const sel = document.getElementById('itemCat');
         const cList = document.getElementById('catList');
-        sel.innerHTML = "";
-        cList.innerHTML = "";
+        sel.innerHTML = ""; cList.innerHTML = "";
         state.cats.forEach((c, index) => {
             sel.innerHTML += `<option value="${c}">${c}</option>`;
             cList.innerHTML += `<span class="cat-tag">${c} <span class="cat-del" onclick="deleteCategory(${index})">×</span></span>`;
         });
 
-        // Logbuch
         const lList = document.getElementById('logList');
         lList.innerHTML = state.logs.slice(0, 30).map(l => `
-            <div style="font-size:0.8rem; background:rgba(255,255,255,0.2); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
+            <div style="font-size:0.8rem; background:rgba(255,255,255,0.1); padding:8px; margin-bottom:5px; border-radius:8px; border-left:3px solid var(--primary)">
                 <strong>${l.user}</strong>: ${l.item} <br> <span style="color:var(--primary)">(${l.action})</span> | <span style="color:gray">${l.time}</span>
             </div>
         `).join('');
