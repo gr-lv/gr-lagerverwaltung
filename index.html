@@ -114,4 +114,157 @@
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
-        databaseURL: "
+        databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "gr-lagerverwaltung",
+        storageBucket: "gr-lagerverwaltung.firebasestorage.app",
+        messagingSenderId: "561219570576",
+        appId: "1:561219570576:web:65824b199a12933fd88115"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref('lager_v32_final');
+
+    let state = { user: null, items: [], cats: [] };
+
+   function handleLogin() {
+    console.log("Button wurde gedrückt!"); // Das zeigt uns, ob die Technik reagiert
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    
+    if(u !== "" && p === "1234") { 
+        console.log("Login korrekt für:", u);
+        state.user = u;
+        localStorage.setItem('lagerAuthorizedUser', u);
+        startApp();
+    } else {
+        console.log("Login falsch oder Feld leer");
+        document.getElementById('loginErr').style.display = 'block';
+    }
+}
+
+    function startApp() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'flex';
+        document.getElementById('userDisplay').innerText = "Hallo, " + state.user;
+        initApp();
+    }
+
+    function logout() {
+        localStorage.removeItem('lagerAuthorizedUser');
+        location.reload();
+    }
+
+    function initApp() {
+        dbRef.on('value', snap => {
+            const data = snap.val();
+            if(data) {
+                state.items = data.items || [];
+                state.cats = data.cats || ["Werkzeug", "Garten"];
+                updateDropdowns();
+                render();
+            }
+        });
+    }
+
+    window.onload = () => {
+        const savedUser = localStorage.getItem('lagerAuthorizedUser');
+        if(savedUser) {
+            state.user = savedUser;
+            startApp();
+        }
+    };
+
+    function updateDropdowns() {
+        const html = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.getElementById('itemCatSelect').innerHTML = html;
+        document.getElementById('filterCatSelect').innerHTML = `<option value="all">Alle Kategorien</option>` + html;
+        
+        // Management Liste
+        document.getElementById('categoryListManage').innerHTML = state.cats.map(c => `
+            <div class="cat-item">
+                <span>${c}</span>
+                <span class="cat-del" onclick="deleteCategory('${c}')">Löschen</span>
+            </div>
+        `).join('');
+    }
+
+    function addCategory() {
+        const val = document.getElementById('newCatInput').value.trim();
+        if(!val || state.cats.includes(val)) return;
+        state.cats.push(val);
+        dbRef.child('cats').set(state.cats);
+        document.getElementById('newCatInput').value = "";
+    }
+
+    function deleteCategory(name) {
+        if(confirm(`Kategorie "${name}" wirklich löschen?`)) {
+            state.cats = state.cats.filter(c => c !== name);
+            dbRef.child('cats').set(state.cats);
+        }
+    }
+
+    function deleteItem(id) {
+        if(confirm("Diesen Artikel wirklich löschen?")) {
+            state.items = state.items.filter(i => i.id !== id);
+            dbRef.child('items').set(state.items);
+        }
+    }
+
+    function toggleStatus(id) {
+        const i = state.items.find(x => x.id === id);
+        const isIn = i.status === "im Lager";
+        i.status = isIn ? "unterwegs" : "im Lager";
+        i.outUser = isIn ? state.user : "";
+        dbRef.child('items').set(state.items);
+    }
+
+    function render() {
+        const list = document.getElementById('itemList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const catFilter = document.getElementById('filterCatSelect').value;
+        list.innerHTML = "";
+        
+        state.items.filter(i => {
+            return i.name.toLowerCase().includes(search) && (catFilter === "all" || i.cat === catFilter);
+        }).forEach(i => {
+            const isOut = i.status !== "im Lager";
+            list.innerHTML += `
+                <div class="item-card">
+                    <button class="delete-mini" onclick="deleteItem(${i.id})">🗑</button>
+                    <div style="padding:15px; display:flex; gap:15px; align-items:center;">
+                        <img src="${i.img || 'https://via.placeholder.com/100'}" style="width:70px; height:70px; object-fit:cover; border-radius:8px;">
+                        <div style="flex:1; padding-right:20px;">
+                            <b style="font-size:1.1rem;">${i.name}</b><br><small style="color:#666">${i.cat}</small>
+                            ${isOut ? `<div style="color:red; font-weight:bold; font-size:0.8rem; margin-top:5px;">BEI: ${i.outUser}</div>` : ""}
+                        </div>
+                    </div>
+                    <button class="btn-status" style="background:${isOut ? 'var(--danger)' : 'var(--success)'}" onclick="toggleStatus(${i.id})">
+                        ${isOut ? 'EINLAGERN' : 'AUSLAGERN'}
+                    </button>
+                </div>`;
+        });
+    }
+
+    function saveItem() {
+        const n = document.getElementById('itemName').value;
+        if(!n) return;
+        const newItem = { id: Date.now(), name: n, cat: document.getElementById('itemCatSelect').value, img: "", status: "im Lager" };
+        const f = document.getElementById('itemImg').files[0];
+        if(f) {
+            const r = new FileReader();
+            r.onload = (e) => { newItem.img = e.target.result; state.items.unshift(newItem); dbRef.child('items').set(state.items); };
+            r.readAsDataURL(f);
+        } else { state.items.unshift(newItem); dbRef.child('items').set(state.items); }
+        document.getElementById('itemName').value = "";
+        switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
+    }
+
+    function switchTab(e, id) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        e.currentTarget.classList.add('active');
+    }
+</script>
+</body>
+</html>
