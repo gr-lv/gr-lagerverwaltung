@@ -10,52 +10,99 @@
 
     <style>
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --logout: #64748b; }
-        html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #4b5563; }
-        .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('haus_background.jpg'); background-position: center; background-size: cover; z-index: 1; }
-        .app-container { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; }
-        .header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px; text-align: center; z-index: 100; border-bottom: 2px solid var(--accent); }
-        .header h1 { margin: 0; font-size: 1.2rem; color: var(--accent); text-transform: uppercase; }
-        .user-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.8rem; }
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(15, 23, 42, 1); display: flex; z-index: 1000; border-top: 2px solid var(--accent); }
-        .tab-btn { flex: 1; padding: 15px 5px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; }
+        
+        body { 
+            margin: 0; padding: 0; 
+            font-family: 'Segoe UI', sans-serif; 
+            background: url('haus_background.jpg') no-repeat center center fixed; 
+            background-size: cover;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-shell {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: rgba(30, 41, 59, 0.6); /* Dunkler Schleier für bessere Lesbarkeit */
+        }
+
+        .header { 
+            background: rgba(15, 23, 42, 0.95); 
+            color: white; padding: 15px; 
+            text-align: center; border-bottom: 2px solid var(--accent);
+            z-index: 2000;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 15px 100px 15px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .glass { 
+            background: rgba(255, 255, 255, 0.95); 
+            border-radius: 20px; padding: 20px; 
+            margin-bottom: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative; z-index: 100;
+        }
+
+        nav { 
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: #0f172a; display: flex; 
+            border-top: 2px solid var(--accent); z-index: 3000;
+        }
+
+        .tab-btn { 
+            flex: 1; padding: 18px 5px; border: none; background: none; 
+            color: #9ca3af; font-weight: bold; font-size: 0.75rem; text-transform: uppercase;
+        }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); }
-        .content-scroll { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; position: relative; z-index: 50; }
-        .content { display: none; max-width: 600px; margin: 0 auto; width: 100%; }
+
+        .btn-main { 
+            width: 100%; padding: 16px; background: var(--primary); 
+            color: white; border: none; border-radius: 12px; 
+            font-weight: bold; cursor: pointer; position: relative; z-index: 500;
+        }
+
+        .btn-book { 
+            padding: 12px; border: none; border-radius: 10px; 
+            color: white; font-weight: bold; min-width: 90px;
+            cursor: pointer; position: relative; z-index: 500;
+        }
+
+        .card { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
+        
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; }
+        
+        .content { display: none; }
         .content.active { display: block; }
-        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid white; }
-        .card { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #fff; }
-        .btn-book { min-width: 100px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; }
-        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
-<div class="bg-layer"></div>
-
-<div class="app-container">
+<div class="app-shell">
     <div class="header">
-        <h1>GR-Lagerverwaltung</h1>
-        <div class="user-bar">
-            <div>👤 <span id="displayUser">Lade...</span></div>
-            <div style="display:flex; gap:5px;">
-                <button onclick="askForName()" style="background:var(--primary); color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">Wechseln</button>
-                <button id="logoutBtn" onclick="logout()" style="background:var(--logout); color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer; display:none;">Logout</button>
-            </div>
+        <h1 style="margin:0; font-size:1.1rem; color:var(--accent);">GR-LAGERVERWALTUNG</h1>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <span id="displayUser" style="font-size:0.8rem;">Lade...</span>
+            <button onclick="askForName()" style="background:var(--primary); color:white; border:none; padding:5px 10px; border-radius:5px; font-size:0.7rem; z-index:4000;">WECHSELN</button>
         </div>
     </div>
 
-    <div class="content-scroll">
+    <div class="content-area">
         <div id="tab-lager" class="content active">
-            <div id="loginPrompt" class="glass-panel" style="text-align:center;">
-                <h2>Willkommen!</h2>
-                <p>Bitte melde dich an.</p>
-                <button class="btn-main" onclick="askForName()">ANMELDEN</button>
+            <div id="loginPrompt" class="glass" style="text-align:center; padding:40px 20px;">
+                <h2 style="margin-top:0">Willkommen</h2>
+                <p>Bitte anmelden um fortzufahren.</p>
+                <button class="btn-main" onclick="askForName()">JETZT ANMELDEN</button>
             </div>
+            
             <div id="lagerContent" style="display:none;">
-                <div class="glass-panel">
-                    <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
+                <div class="glass">
+                    <input type="text" id="searchInput" placeholder="🔍 Suchen..." onkeyup="render()">
                     <select id="filterCat" onchange="render()"><option value="">📂 Alle Kategorien</option></select>
                 </div>
                 <div id="itemList"></div>
@@ -63,17 +110,20 @@
         </div>
 
         <div id="tab-neu" class="content">
-            <div id="neuContent" class="glass-panel">
-                <h2>Neu Anlegen</h2>
-                <input type="text" id="itemName" placeholder="Name">
+            <div id="neuContent" class="glass">
+                <h2 style="margin-top:0">Neu Anlegen</h2>
+                <input type="text" id="itemName" placeholder="Name des Artikels">
                 <select id="itemCatSelect"></select>
-                <input type="file" id="itemImg" accept="image/*" capture="environment">
-                <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">Speichern</button>
+                <input type="file" id="itemImg" accept="image/*" capture="environment" style="margin-top:10px;">
+                <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">ARTIKEL SPEICHERN</button>
             </div>
         </div>
 
         <div id="tab-log" class="content">
-            <div class="glass-panel"><h2>Logbuch</h2><div id="logList"></div></div>
+            <div class="glass">
+                <h2 style="margin-top:0">Logbuch</h2>
+                <div id="logList"></div>
+            </div>
         </div>
     </div>
 
@@ -85,7 +135,7 @@
 </div>
 
 <script>
-    const CURRENT_VERSION = 58;
+    const CURRENT_VERSION = 59;
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -119,22 +169,9 @@
         if (n && n.trim() !== "") {
             state.user = n.trim();
             localStorage.setItem('lagerUser', state.user);
-            // Spezial-Log für David Janzen (Groß/Kleinschreibung egal)
             if (state.user.toLowerCase() === "david janzen") {
                 addLog("System", "Anmeldung David Janzen");
             }
-            updateUserUI();
-            sync();
-        }
-    }
-
-    function logout() {
-        if(confirm("Abmelden?")) {
-            if (state.user && state.user.toLowerCase() === "david janzen") {
-                addLog("System", "Logout David Janzen");
-            }
-            state.user = null;
-            localStorage.removeItem('lagerUser');
             updateUserUI();
             sync();
         }
@@ -151,28 +188,33 @@
 
     function updateUserUI() {
         const isLogged = !!state.user;
-        document.getElementById('displayUser').innerText = state.user || "Nicht angemeldet";
-        document.getElementById('logoutBtn').style.display = isLogged ? 'block' : 'none';
+        document.getElementById('displayUser').innerText = isLogged ? "👤 " + state.user : "Nicht angemeldet";
         document.getElementById('loginPrompt').style.display = isLogged ? 'none' : 'block';
         document.getElementById('lagerContent').style.display = isLogged ? 'block' : 'none';
         render();
     }
-
-    function sync() { state.ver = CURRENT_VERSION; dbRef.set(state); }
 
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         e.currentTarget.classList.add('active');
-        render();
+    }
+
+    function toggleStatus(id) {
+        const i = state.items.find(x => x.id === id);
+        const isIn = i.status === "im Lager";
+        i.status = isIn ? "unterwegs" : "im Lager";
+        if (isIn) { i.outUser = state.user; i.outDate = new Date().toLocaleDateString('de-DE'); }
+        addLog(i.name, isIn ? "Auslagerung" : "Einlagerung");
+        sync();
     }
 
     function saveItem() {
         const n = document.getElementById('itemName').value;
         const c = document.getElementById('itemCatSelect').value;
         const f = document.getElementById('itemImg').files[0];
-        if (!n) return alert("Name?");
+        if (!n) return alert("Name fehlt!");
         const reader = new FileReader();
         reader.onload = (e) => {
             state.items.unshift({ id: Date.now(), name: n, cat: c, img: e.target.result || "", status: "im Lager", outUser: "", outDate: "" });
@@ -184,14 +226,7 @@
         if (f) reader.readAsDataURL(f); else reader.onload({target:{result:""}});
     }
 
-    function toggleStatus(id) {
-        const i = state.items.find(x => x.id === id);
-        const isIn = i.status === "im Lager";
-        i.status = isIn ? "unterwegs" : "im Lager";
-        if (isIn) { i.outUser = state.user; i.outDate = new Date().toLocaleDateString('de-DE'); }
-        addLog(i.name, isIn ? "Auslagerung" : "Einlagerung");
-        sync();
-    }
+    function sync() { state.ver = CURRENT_VERSION; dbRef.set(state); }
 
     function render() {
         const fDrop = document.getElementById('filterCat');
@@ -208,4 +243,23 @@
         const list = document.getElementById('itemList');
         const search = document.getElementById('searchInput').value.toLowerCase();
         list.innerHTML = "";
-        state.
+        state.items.filter(i => i.name.toLowerCase().includes(search) && (sel==="" || i.cat===sel)).forEach(i => {
+            const isOut = i.status !== "im Lager";
+            list.innerHTML += `
+                <div class="card">
+                    <img src="${i.img || 'https://via.placeholder.com/60'}" class="thumb">
+                    <div style="flex:1; font-size:0.9rem;">
+                        <b>${i.name}</b><br><small>${i.cat}</small>
+                        ${isOut ? `<div style="font-size:0.7rem; color:red; font-weight:bold;">Ausgelagert: ${i.outUser}</div>` : ""}
+                    </div>
+                    <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'var(--danger)':'var(--success)'}">${isOut?'Ein':'Aus'}</button>
+                </div>`;
+        });
+
+        const lBox = document.getElementById('logList');
+        if(lBox) lBox.innerHTML = state.logs.slice(0,40).map(l => `<div style="font-size:0.75rem; margin-bottom:5px; border-bottom:1px solid #eee; padding-bottom:3px;"><b>${l.user}</b>: ${l.item==="System"?"":l.item} ${l.action} <br><small style="color:gray">${l.time}</small></div>`).join('');
+    }
+    init();
+</script>
+</body>
+</html>
