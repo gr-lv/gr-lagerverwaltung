@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V43 Update-Safe</title>
+    <title>Lager Profi | V44 Datum-Fix</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -37,7 +37,7 @@
 
 <div class="app-container">
     <div class="header">
-        <div style="font-weight:bold; color:var(--accent);">👤 <span id="displayUser">Anmelden</span> <small style="font-size: 0.6rem; color:gray;">(V43)</small></div>
+        <div style="font-weight:bold; color:var(--accent);">👤 <span id="displayUser">Anmelden</span> <small style="font-size: 0.6rem; color:gray;">(V44)</small></div>
         <button style="background:var(--primary); color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;" onclick="askForName()">Wechseln</button>
     </div>
 
@@ -75,7 +75,7 @@
 </div>
 
 <script>
-    const CURRENT_VERSION = 43; // Diese Nummer bei jedem GitHub-Update erhöhen!
+    const CURRENT_VERSION = 44; 
 
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -97,9 +97,8 @@
         dbRef.on('value', (snap) => {
             const data = snap.val();
             if (data) {
-                // Prüfen ob eine neuere Version in der Datenbank registriert ist
                 if (data.ver && data.ver > CURRENT_VERSION) {
-                    alert("Eine neue App-Version ist verfügbar. Die Seite wird aktualisiert.");
+                    alert("Update verfügbar. Seite wird neu geladen...");
                     location.reload(true);
                     return;
                 }
@@ -108,10 +107,7 @@
                 state.cats = data.cats || ["Werkzeug", "Garten"];
                 state.ver = data.ver || CURRENT_VERSION;
                 render();
-            } else {
-                // Initialer Sync der Version falls DB leer
-                sync();
-            }
+            } else { sync(); }
         });
     }
 
@@ -164,7 +160,8 @@
             i.status = out ? "unterwegs" : "im Lager";
             if (out) {
                 i.outUser = state.user;
-                i.outDate = new Date().toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                // ÄNDERUNG: Nur Datum, keine Uhrzeit
+                i.outDate = new Date().toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric'});
             }
             addLog(i.name, out ? "Auslagern" : "Einlagern");
             sync();
@@ -174,11 +171,7 @@
     function addLog(item, action) { state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user, item: item, action: action }); }
     function addCategory() { const i = document.getElementById('newCatInput'); if (i.value) { state.cats.push(i.value); i.value = ""; sync(); } }
     function deleteCategory(index) { if (confirm("Löschen?")) { state.cats.splice(index, 1); sync(); } }
-    
-    function sync() { 
-        state.ver = CURRENT_VERSION; // Immer die aktuelle Nummer mitschicken
-        dbRef.set(state); 
-    }
+    function sync() { state.ver = CURRENT_VERSION; dbRef.set(state); }
 
     function render() {
         const list = document.getElementById('itemList');
