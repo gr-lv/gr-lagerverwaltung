@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lagerverwaltung | Final Fix V27</title>
+    <title>Lagerverwaltung | V27 Fix</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -81,7 +81,13 @@
     let db = { items: [], logs: [], categories: ["Werkzeug", "Technik", "Deko", "Küche", "Sonstiges"] };
     let currentUser = null;
 
-    // LOGIN LOGIK MIT FIX FÜR COOKIE-BLOCKIERUNG
+    // --- LOGIN LOGIK ---
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        firebase.auth().signInWithRedirect(provider);
+    }
+
     firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     .then(() => {
         return firebase.auth().onAuthStateChanged((user) => {
@@ -91,6 +97,88 @@
                 document.getElementById('curUser').innerText = currentUser;
                 loadData();
             } else {
-                // Check if returning from Google Redirect
                 firebase.auth().getRedirectResult().then(result => {
-                    if (result && result.
+                    if (result && result.user) {
+                        location.reload();
+                    } else {
+                        document.getElementById('login-overlay').style.display = 'flex';
+                    }
+                }).catch(e => {
+                    console.error("Auth Error:", e);
+                    document.getElementById('login-overlay').style.display = 'flex';
+                });
+            }
+        });
+    });
+
+    function logout() { firebase.auth().signOut().then(() => location.reload()); }
+
+    function loadData() {
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) { db = data; render(); }
+            else { render(); }
+        });
+    }
+
+    function sync() { dbRef.set(db); }
+
+    function doSave() {
+        let name = document.getElementById('nName').value;
+        if(!name) return;
+        let file = document.getElementById('nImg').files[0];
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            if(!db.items) db.items = [];
+            db.items.unshift({ id: Date.now(), name: name, cat: document.getElementById('nCatSelect').value, img: e.target.result || "", isOut: false });
+            if(!db.logs) db.logs = [];
+            db.logs.unshift({ t: new Date().toLocaleString(), u: currentUser, i: name, a: "Neu angelegt" });
+            sync();
+            document.getElementById('nName').value = "";
+            switchTab(null, 'tab-lager');
+        };
+        if(file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
+    }
+
+    function toggleItem(id) {
+        let i = db.items.find(x => x.id === id);
+        if(i) {
+            i.isOut = !i.isOut;
+            db.logs.unshift({ t: new Date().toLocaleString(), u: currentUser, i: i.name, a: i.isOut ? "Ausgebucht" : "Eingebucht" });
+            sync();
+        }
+    }
+
+    function render() {
+        const nCat = document.getElementById('nCatSelect');
+        if(nCat && nCat.innerHTML === "") {
+            (db.categories || []).forEach(c => nCat.innerHTML += `<option value="${c}">${c}</option>`);
+        }
+        const list = document.getElementById('list');
+        list.innerHTML = "";
+        const s = document.getElementById('srch').value.toLowerCase();
+        (db.items || []).filter(i => i.name.toLowerCase().includes(s)).forEach(i => {
+            list.innerHTML += `<div class="card" style="border-left-color: ${i.isOut ? '#e11d48' : '#059669'}">
+                ${i.img ? `<img src="${i.img}" class="thumb">` : '<div class="thumb" style="display:flex;align-items:center;justify-content:center;font-size:20px;">📦</div>'}
+                <div style="flex:1"><b>${i.name}</b><br><small>${i.cat}</small></div>
+                <button onclick="toggleItem(${i.id})" style="padding:8px 15px; border-radius:10px; border:none; background:${i.isOut?'#4ade80':'#fb7185'}; color:white; font-weight:bold;">${i.isOut ? 'Holen' : 'Weg'}</button>
+            </div>`;
+        });
+        document.getElementById('logBody').innerHTML = (db.logs || []).slice(0,25).map(l => 
+            `<div style="font-size:11px; background:white; padding:10px; border-radius:12px; margin-bottom:8px; border-left:4px solid var(--primary); box-shadow:0 2px 4px rgba(0,0,0,0.05)">
+                <b>${l.u}</b>: ${l.i} <span style="color:var(--primary)">(${l.a})</span><br><small style="color:gray">${l.t}</small></div>`).join('');
+    }
+
+    function switchTab(e, id) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(e) e.currentTarget.classList.add('active');
+        else {
+            const btn = document.querySelector(`button[onclick*="${id}"]`);
+            if(btn) btn.classList.add('active');
+        }
+    }
+</script>
+</body>
+</html>
