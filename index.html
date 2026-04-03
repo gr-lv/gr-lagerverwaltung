@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lager Profi | V37 Safe-Mode</title>
+    <title>Lager Profi | V39 Zoom</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,87 +11,54 @@
     <style>
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; }
         
-        /* HINTERGRUND-RESERVE: Grau statt Schwarz, falls Bild fehlt */
         html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; background: #4b5563; }
         
         .bg-layer {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('haus_background.jpg'); /* Prüfe diesen Namen auf GitHub! */
-            background-position: center;
-            background-size: cover;
-            background-repeat: no-repeat;
-            z-index: 1;
+            background-image: url('haus_background.jpg');
+            background-position: center; background-size: cover; background-repeat: no-repeat; z-index: 1;
         }
 
-        .app-container {
-            position: relative;
-            z-index: 10;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+        .app-container { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; }
 
-        .header {
-            background: rgba(15, 23, 42, 0.95);
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+        .header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
 
-        nav {
-            position: fixed;
-            bottom: 0; left: 0; width: 100%;
-            background: rgba(15, 23, 42, 1);
-            display: flex;
-            z-index: 2000;
-            border-top: 2px solid var(--accent);
-        }
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(15, 23, 42, 1); display: flex; z-index: 2000; border-top: 2px solid var(--accent); }
 
-        .tab-btn { 
-            flex: 1; padding: 20px 5px; border: none; background: none; 
-            font-weight: bold; color: #9ca3af; cursor: pointer; 
-            font-size: 0.75rem; text-transform: uppercase; text-align: center;
-        }
+        .tab-btn { flex: 1; padding: 20px 5px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; text-align: center; }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); }
 
         .content { display: none; padding: 15px; max-width: 600px; margin: 0 auto 100px auto; width: 90%; }
         .content.active { display: block; }
         
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.4);
-        }
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4); }
 
         .card { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #fff; border: 1px solid #ddd; }
+        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #fff; border: 1px solid #ddd; cursor: zoom-in; }
 
-        .btn-book { 
-            min-width: 110px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
+        .btn-book { min-width: 110px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
         input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccc; border-radius: 12px; background: white; font-size: 16px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
         
-        .btn-toggle-cat { background: #f8fafc; border: 1px solid #ddd; padding: 10px; width: 100%; border-radius: 10px; margin-top: 10px; cursor: pointer; }
+        /* ZOOM OVERLAY STYLES */
+        #zoomOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 5000; justify-content: center; align-items: center; cursor: zoom-out;
+        }
+        #zoomOverlay img { max-width: 95%; max-height: 90%; border-radius: 10px; border: 2px solid white; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+
         .cat-tag { background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; display: inline-flex; margin: 4px; }
     </style>
 </head>
 <body>
 
 <div class="bg-layer"></div>
+
+<div id="zoomOverlay" onclick="closeZoom()">
+    <img id="zoomImg" src="">
+</div>
 
 <div class="app-container">
     <div class="header">
@@ -113,12 +80,12 @@
             <select id="itemCat"></select>
             <input type="file" id="itemImg" accept="image/*" capture="environment">
             <button id="saveBtn" class="btn-main" onclick="saveItem()" disabled>Speichern</button>
-            <button class="btn-toggle-cat" onclick="document.getElementById('catMenu').style.display='block'">⚙️ Kategorien</button>
+            <button onclick="document.getElementById('catMenu').style.display='block'" style="background:none; border:1px solid #999; width:100%; padding:10px; border-radius:10px; margin-top:10px;">⚙️ Kategorien</button>
             <div id="catMenu" style="display:none; margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
                 <input type="text" id="newCatInput" placeholder="Neue Kat...">
                 <button onclick="addCategory()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:10px; margin-top:5px;">+</button>
                 <div id="catList" style="margin-top:10px"></div>
-                <button onclick="this.parentElement.style.display='none'" style="width:100%; background:none; border:none; color:gray; margin-top:10px;">X</button>
+                <button onclick="this.parentElement.style.display='none'" style="width:100%; background:none; border:none; color:gray; margin-top:10px;">Schließen</button>
             </div>
         </div>
     </div>
@@ -181,6 +148,17 @@
         render();
     }
 
+    // ZOOM FUNKTIONEN
+    function openZoom(src) {
+        if (!src || src.includes('via.placeholder.com')) return;
+        document.getElementById('zoomImg').src = src;
+        document.getElementById('zoomOverlay').style.display = 'flex';
+    }
+
+    function closeZoom() {
+        document.getElementById('zoomOverlay').style.display = 'none';
+    }
+
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -199,6 +177,7 @@
             addLog(n, "Neu angelegt");
             sync();
             document.getElementById('itemName').value = "";
+            document.getElementById('itemImg').value = "";
             switchTab({currentTarget: document.querySelectorAll('nav button')[0]}, 'tab-lager');
         };
         if (f) reader.readAsDataURL(f); else reader.onload({target:{result:""}});
@@ -238,7 +217,10 @@
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
                 <div class="glass-panel card">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
+                    <img src="${i.img || 'https://via.placeholder.com/70'}" 
+                         class="thumb" 
+                         onclick="openZoom('${i.img}')" 
+                         title="Klicken zum Vergrößern">
                     <div style="flex:1">
                         <div style="font-weight:bold">${i.name}</div>
                         <div style="font-size:0.8rem; color:#444">${i.cat}</div>
@@ -254,7 +236,7 @@
         sel.innerHTML = ""; cList.innerHTML = "";
         state.cats.forEach((c, idx) => {
             sel.innerHTML += `<option value="${c}">${c}</option>`;
-            cList.innerHTML += `<span class="cat-tag">${c} <span onclick="deleteCategory(${idx})" style="color:red; cursor:pointer;">×</span></span>`;
+            cList.innerHTML += `<span class="cat-tag">${c} <span onclick="deleteCategory(${idx})" style="color:red; cursor:pointer; margin-left:5px;">×</span></span>`;
         });
 
         const lList = document.getElementById('logList');
