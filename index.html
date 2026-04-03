@@ -10,86 +10,85 @@
 
     <style>
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --logout: #64748b; }
-        html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; background: #4b5563; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #4b5563; }
         
+        /* Hintergrund fixiert */
         .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: url('haus_background.jpg'); background-position: center; background-size: cover; z-index: 1; }
-        .app-container { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; }
-
-        .header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--accent); }
-        .header h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; color: var(--accent); text-transform: uppercase; }
-        .user-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.85rem; }
         
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(15, 23, 42, 1); display: flex; z-index: 2000; border-top: 2px solid var(--accent); }
-        .tab-btn { flex: 1; padding: 20px 5px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; font-size: 0.75rem; text-transform: uppercase; }
+        /* App-Container über dem Hintergrund */
+        .app-container { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        .header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px; text-align: center; z-index: 100; border-bottom: 2px solid var(--accent); }
+        .header h1 { margin: 0; font-size: 1.2rem; color: var(--accent); text-transform: uppercase; }
+        .user-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.8rem; }
+        
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(15, 23, 42, 1); display: flex; z-index: 1000; border-top: 2px solid var(--accent); }
+        .tab-btn { flex: 1; padding: 15px 5px; border: none; background: none; font-weight: bold; color: #9ca3af; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); }
 
-        .content { display: none; padding: 15px; max-width: 600px; margin: 0 auto 100px auto; width: 90%; position: relative; z-index: 20; }
+        .content-scroll { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; position: relative; z-index: 50; }
+        .content { display: none; max-width: 600px; margin: 0 auto; width: 100%; }
         .content.active { display: block; }
         
-        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4); }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid white; position: relative; z-index: 60; }
+        
         .card { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #fff; cursor: zoom-in; }
-        .btn-book { min-width: 110px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; }
+        .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #fff; cursor: pointer; }
+        .btn-book { min-width: 100px; padding: 12px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; z-index: 70; }
         
-        .last-action { font-size: 0.75rem; color: #b91c1c; margin-top: 4px; font-weight: 600; background: rgba(220, 38, 38, 0.1); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(220, 38, 38, 0.2); }
-        input, select { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ccc; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; position: relative; z-index: 80; }
         
-        #zoomOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; justify-content: center; align-items: center; }
+        .last-action { font-size: 0.7rem; color: #b91c1c; margin-top: 4px; font-weight: bold; background: rgba(220, 38, 38, 0.1); padding: 4px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <div class="bg-layer"></div>
-<div id="zoomOverlay" onclick="this.style.display='none'"><img id="zoomImg" style="max-width:90%; max-height:90%; border-radius:10px;"></div>
 
 <div class="app-container">
     <div class="header">
         <h1>GR-Lagerverwaltung</h1>
         <div class="user-bar">
-            <div>👤 <span id="displayUser">Anmelden...</span></div>
+            <div>👤 <span id="displayUser">Lade...</span></div>
             <div style="display:flex; gap:5px;">
-                <button onclick="askForName()" style="background:var(--primary); color:white; border:none; border-radius:6px; padding:6px 12px; cursor:pointer;">Wechseln</button>
-                <button id="logoutBtn" onclick="logout()" style="background:var(--logout); color:white; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; display:none;">Logout</button>
+                <button onclick="askForName()" style="background:var(--primary); color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer; z-index:110;">Wechseln</button>
+                <button id="logoutBtn" onclick="logout()" style="background:var(--logout); color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer; display:none; z-index:110;">Logout</button>
             </div>
         </div>
     </div>
 
-    <div id="tab-lager" class="content active">
-        <div id="loginPrompt" class="glass-panel" style="text-align:center; padding:40px 20px;">
-            <h2>Willkommen!</h2>
-            <p>Bitte erst anmelden.</p>
-            <button class="btn-main" onclick="askForName()">Jetzt Anmelden</button>
-        </div>
-        
-        <div id="lagerContent" style="display:none;">
-            <div class="glass-panel">
-                <input type="text" id="searchInput" placeholder="🔍 Name suchen..." onkeyup="render()">
-                <select id="filterCat" onchange="render()"><option value="">📂 Alle Kategorien</option></select>
+    <div class="content-scroll">
+        <div id="tab-lager" class="content active">
+            <div id="loginPrompt" class="glass-panel" style="text-align:center;">
+                <h2>Willkommen!</h2>
+                <p>Bitte melde dich an, um das Lager zu sehen.</p>
+                <button class="btn-main" onclick="askForName()">JETZT ANMELDEN</button>
             </div>
-            <div id="itemList"></div>
-        </div>
-    </div>
-
-    <div id="tab-neu" class="content">
-        <div id="neuContent" class="glass-panel">
-            <h2 style="margin-top:0">Neu Anlegen</h2>
-            <input type="text" id="itemName" placeholder="Artikelname">
-            <select id="itemCatSelect"></select>
-            <input type="file" id="itemImg" accept="image/*" capture="environment">
-            <button class="btn-main" onclick="saveItem()">Speichern</button>
-            <hr style="margin:20px 0; opacity:0.2;">
-            <button onclick="document.getElementById('catMenu').style.display='block'" style="background:none; border:1px solid #999; width:100%; padding:10px; border-radius:10px;">⚙️ Kategorien verwalten</button>
-            <div id="catMenu" style="display:none; margin-top:15px; border-top:1px solid #ccc; padding-top:10px;">
-                <input type="text" id="newCatInput" placeholder="Neue Kategorie...">
-                <button onclick="addCategory()" style="width:100%; padding:10px; background:var(--accent); color:white; border:none; border-radius:10px; margin-top:5px;">Hinzufügen</button>
-                <div id="catList" style="margin-top:10px"></div>
+            
+            <div id="lagerContent" style="display:none;">
+                <div class="glass-panel">
+                    <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
+                    <select id="filterCat" onchange="render()"><option value="">📂 Alle Kategorien</option></select>
+                </div>
+                <div id="itemList"></div>
             </div>
         </div>
-    </div>
 
-    <div id="tab-log" class="content">
-        <div class="glass-panel"><h2>Logbuch</h2><div id="logList"></div></div>
+        <div id="tab-neu" class="content">
+            <div id="neuContent" class="glass-panel">
+                <h2>Neuen Artikel anlegen</h2>
+                <input type="text" id="itemName" placeholder="Wie heißt der Artikel?">
+                <select id="itemCatSelect"></select>
+                <p style="font-size:0.8rem; margin:10px 0 5px 0;">Foto auswählen:</p>
+                <input type="file" id="itemImg" accept="image/*" capture="environment">
+                <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">Speichern</button>
+            </div>
+        </div>
+
+        <div id="tab-log" class="content">
+            <div class="glass-panel"><h2>Logbuch</h2><div id="logList"></div></div>
+        </div>
     </div>
 
     <nav>
@@ -100,7 +99,7 @@
 </div>
 
 <script>
-    const CURRENT_VERSION = 56;
+    const CURRENT_VERSION = 57;
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -121,21 +120,22 @@
         dbRef.on('value', (snap) => {
             const data = snap.val();
             if (data) {
-                if (data.ver && data.ver > CURRENT_VERSION) { location.reload(true); return; }
                 state.items = data.items || [];
                 state.logs = data.logs || [];
                 state.cats = data.cats || ["Werkzeug", "Garten"];
                 render();
             }
         });
+        // Auto-Prompt wenn nicht eingeloggt
+        if(!state.user) { setTimeout(askForName, 1000); }
     }
 
     function askForName() {
-        let n = prompt("Dein Name:");
+        let n = prompt("Bitte gib deinen Namen ein:");
         if (n && n.trim() !== "") {
             state.user = n.trim();
             localStorage.setItem('lagerUser', state.user);
-            if (state.user === "David Janzen") addLog("System", "Anmeldung");
+            if (state.user === "David Janzen") addLog("System", "Anmeldung David Janzen");
             updateUserUI();
             sync();
         }
@@ -143,7 +143,7 @@
 
     function logout() {
         if(confirm("Abmelden?")) {
-            if (state.user === "David Janzen") addLog("System", "Logout");
+            if (state.user === "David Janzen") addLog("System", "Logout David Janzen");
             state.user = null;
             localStorage.removeItem('lagerUser');
             updateUserUI();
@@ -157,9 +157,83 @@
         document.getElementById('logoutBtn').style.display = isLogged ? 'block' : 'none';
         document.getElementById('loginPrompt').style.display = isLogged ? 'none' : 'block';
         document.getElementById('lagerContent').style.display = isLogged ? 'block' : 'none';
-        
-        // Tab-Sperre für "Neu Anlegen"
-        if (!isLogged) {
-            document.getElementById('neuContent').innerHTML = "<p style='text-align:center; padding:20px;'>Bitte erst im Tab 'Lager' anmelden.</p>";
-        } else {
-            // Hier müsste
+        render();
+    }
+
+    function addLog(item, action) {
+        state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user || "Unbekannt", item: item, action: action });
+    }
+
+    function sync() { state.ver = CURRENT_VERSION; dbRef.set(state); }
+
+    function switchTab(e, id) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        e.currentTarget.classList.add('active');
+    }
+
+    function saveItem() {
+        const n = document.getElementById('itemName').value;
+        const c = document.getElementById('itemCatSelect').value;
+        const f = document.getElementById('itemImg').files[0];
+        if (!n) return alert("Bitte Namen eingeben!");
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            state.items.unshift({ id: Date.now(), name: n, cat: c, img: e.target.result || "", status: "im Lager", outUser: "", outDate: "" });
+            addLog(n, "Neu angelegt");
+            sync();
+            alert("Erfolgreich gespeichert!");
+            document.getElementById('itemName').value = "";
+            switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
+        };
+        if (f) reader.readAsDataURL(f); else reader.onload({target:{result:""}});
+    }
+
+    function toggleStatus(id) {
+        const i = state.items.find(x => x.id === id);
+        const isIn = i.status === "im Lager";
+        if (confirm(isIn ? "Artikel ausleihen?" : "Artikel zurückgebracht?")) {
+            i.status = isIn ? "unterwegs" : "im Lager";
+            if (isIn) { i.outUser = state.user; i.outDate = new Date().toLocaleDateString('de-DE'); }
+            addLog(i.name, isIn ? "Auslagerung" : "Einlagerung");
+            sync();
+        }
+    }
+
+    function render() {
+        const fDrop = document.getElementById('filterCat');
+        const sDrop = document.getElementById('itemCatSelect');
+        if(!fDrop || !sDrop) return;
+
+        const sel = fDrop.value;
+        fDrop.innerHTML = '<option value="">📂 Alle Kategorien</option>';
+        sDrop.innerHTML = "";
+        state.cats.forEach(c => {
+            fDrop.innerHTML += `<option value="${c}" ${sel===c?'selected':''}>${c}</option>`;
+            sDrop.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+
+        const list = document.getElementById('itemList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        list.innerHTML = "";
+        state.items.filter(i => i.name.toLowerCase().includes(search) && (sel==="" || i.cat===sel)).forEach(i => {
+            const isOut = i.status !== "im Lager";
+            list.innerHTML += `
+                <div class="glass-panel card">
+                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb" onclick="window.open(this.src)">
+                    <div style="flex:1">
+                        <b>${i.name}</b><br><small>${i.cat}</small>
+                        ${isOut ? `<div class="last-action">Ausgelagert von ${i.outUser} am ${i.outDate}</div>` : ""}
+                    </div>
+                    <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'var(--danger)':'var(--success)'}">${isOut?'Einlagern':'Auslagern'}</button>
+                </div>`;
+        });
+
+        const lBox = document.getElementById('logList');
+        if(lBox) lBox.innerHTML = state.logs.slice(0,30).map(l => `<div style="font-size:0.8rem; margin-bottom:8px; border-bottom:1px solid #ddd; padding-bottom:4px;"><b>${l.user}</b>: ${l.item === "System" ? "" : l.item} ${l.action} <br><small style="color:gray">${l.time}</small></div>`).join('');
+    }
+    init();
+</script>
+</body>
+</html>
