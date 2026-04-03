@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lagerverwaltung | Google Secure V24</title>
+    <title>Lagerverwaltung | Google Secure V25</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -12,39 +12,25 @@
     <style>
         :root { --primary: #4338ca; --dark: #1e1b4b; --surface: rgba(255,255,255,0.96); }
         body { font-family: 'Inter', sans-serif; margin: 0; background: #0f172a; color: #1e293b; padding-bottom: 100px; }
-        
-        /* Login Bildschirm */
-        #login-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%; 
-            background: #1e1b4b; z-index: 20000; display: flex; 
-            flex-direction: column; justify-content: center; align-items: center; color: white;
-            padding: 20px; text-align: center;
-        }
-
-        .user-bar { background: var(--dark); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        
+        #login-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #1e1b4b; z-index: 20000; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 20px; text-align: center; }
+        .user-bar { background: var(--dark); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         nav { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; background: rgba(30, 27, 75, 0.95); display: flex; padding: 8px; border-radius: 20px; z-index: 9999; backdrop-filter: blur(10px); }
-        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; font-weight: bold; padding: 12px; cursor: pointer; border-radius: 15px; transition: 0.3s; }
+        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; font-weight: bold; padding: 12px; cursor: pointer; border-radius: 15px; }
         .tab-btn.active { color: white; background: var(--primary); }
-
         .content { padding: 20px; display: none; max-width: 600px; margin: auto; }
         .content.active { display: block; }
-
         .panel { background: var(--surface); padding: 15px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
-
-        .card { background: white; padding: 12px; border-radius: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; border-left: 6px solid #ccc; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .card { background: white; padding: 12px; border-radius: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; border-left: 6px solid #ccc; }
         .thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 12px; background: #eee; }
-        
-        .btn-google { background: white; color: #444; border-radius: 8px; border: none; padding: 12px 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .log-entry { font-size: 12px; background: white; padding: 10px; border-radius: 12px; margin-bottom: 8px; border-left: 4px solid var(--primary); }
+        .btn-google { background: white; color: #444; border-radius: 8px; border: none; padding: 12px 24px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
 
 <div id="login-overlay">
-    <h1 style="margin-bottom: 10px;">Lagerverwaltung</h1>
-    <p style="margin-bottom: 30px; opacity: 0.8;">Bitte melde dich an, um fortzufahren.</p>
+    <h1>Lagerverwaltung</h1>
+    <p>Bitte anmelden, um fortzufahren.</p>
     <button class="btn-google" onclick="loginWithGoogle()">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
         Mit Google anmelden
@@ -53,13 +39,11 @@
 
 <div class="user-bar">
     <div>👤 <span id="curUser">Lädt...</span></div>
-    <button onclick="logout()" style="background:none; border:1px solid rgba(255,255,255,0.3); color:white; border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer;">Abmelden</button>
+    <button onclick="logout()" style="background:none; border:1px solid white; color:white; border-radius:6px; padding:4px 10px; font-size:11px;">Abmelden</button>
 </div>
 
 <div id="tab-lager" class="content active">
-    <div class="panel">
-        <input type="text" id="srch" placeholder="🔍 Artikel suchen..." onkeyup="render()">
-    </div>
+    <div class="panel"><input type="text" id="srch" placeholder="🔍 Suchen..." onkeyup="render()"></div>
     <div id="list">Warte auf Daten...</div>
 </div>
 
@@ -69,23 +53,19 @@
         <input type="text" id="nName" placeholder="Bezeichnung">
         <select id="nCatSelect"></select>
         <input type="file" id="nImg" accept="image/*" capture="environment">
-        <button onclick="doSave()" style="width:100%; padding:16px; background:var(--primary); color:white; border:none; border-radius:14px; font-weight:bold; cursor:pointer;">Artikel speichern</button>
+        <button onclick="doSave()" style="width:100%; padding:16px; background:var(--primary); color:white; border:none; border-radius:14px; font-weight:bold;">Speichern</button>
     </div>
 </div>
 
-<div id="tab-log" class="content">
-    <h3>Aktivitäten</h3>
-    <div id="logBody"></div>
-</div>
+<div id="tab-log" class="content"><div id="logBody"></div></div>
 
 <nav>
     <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-stamm')">Hinzufügen</button>
-    <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Logbuch</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-stamm')">Neu</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-log')">Log</button>
 </nav>
 
 <script>
-    // --- DEINE FIREBASE KONFIGURATION ---
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -97,32 +77,21 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_cloud_v24');
+    const dbRef = firebase.database().ref('lager_cloud_v25');
     let db = { items: [], logs: [], categories: ["Werkzeug", "Technik", "Deko", "Küche"] };
     let currentUser = null;
 
-    // NEUE LOGIN LOGIK (Redirect statt Popup)
+    // LOGIN FUNKTIONEN (Wichtig für den Button)
     function loginWithGoogle() {
         const provider = new firebase.auth.GoogleAuthProvider();
-        // Wir nutzen signInWithRedirect statt Popup
         firebase.auth().signInWithRedirect(provider);
     }
 
-    // Dieser Teil fängt den Nutzer nach der Google-Umleitung wieder ab
-    firebase.auth().getRedirectResult().catch((error) => {
-        if(error.code !== 'auth/none') {
-            console.error("Redirect Fehler:", error.message);
-        }
-    });
-
-    // AUTH LISTENER (Prüft ob Nutzer eingeloggt ist)
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
             currentUser = user.displayName;
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('curUser').innerText = currentUser;
-            
-            // Daten-Stream starten
             dbRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) { db = data; render(); }
@@ -132,12 +101,61 @@
         }
     });
 
-    function logout() {
-        firebase.auth().signOut().then(() => location.reload());
-    }
+    function logout() { firebase.auth().signOut().then(() => location.reload()); }
 
-    // LAGER FUNKTIONEN
+    // DATEN FUNKTIONEN
     function sync() { dbRef.set(db); }
 
     function doSave() {
-        let name
+        let name = document.getElementById('nName').value;
+        if(!name) return;
+        let file = document.getElementById('nImg').files[0];
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            if(!db.items) db.items = [];
+            db.items.unshift({ id: Date.now(), name: name, cat: document.getElementById('nCatSelect').value, img: e.target.result || "", isOut: false });
+            if(!db.logs) db.logs = [];
+            db.logs.unshift({ t: new Date().toLocaleString(), u: currentUser, i: name, a: "Neu angelegt" });
+            sync();
+            switchTab(null, 'tab-lager');
+        };
+        if(file) reader.readAsDataURL(file); else reader.onload({target:{result:""}});
+    }
+
+    function toggleItem(id) {
+        let i = db.items.find(x => x.id === id);
+        if(i) {
+            i.isOut = !i.isOut;
+            db.logs.unshift({ t: new Date().toLocaleString(), u: currentUser, i: i.name, a: i.isOut ? "Ausgebucht" : "Eingebucht" });
+            sync();
+        }
+    }
+
+    function render() {
+        const nCat = document.getElementById('nCatSelect');
+        nCat.innerHTML = "";
+        (db.categories || []).forEach(c => nCat.innerHTML += `<option value="${c}">${c}</option>`);
+        const list = document.getElementById('list');
+        list.innerHTML = "";
+        const s = document.getElementById('srch').value.toLowerCase();
+        (db.items || []).filter(i => i.name.toLowerCase().includes(s)).forEach(i => {
+            list.innerHTML += `<div class="card" style="border-left-color: ${i.isOut ? '#e11d48' : '#059669'}">
+                ${i.img ? `<img src="${i.img}" class="thumb">` : ''}
+                <div style="flex:1"><b>${i.name}</b><br><small>${i.cat}</small></div>
+                <button onclick="toggleItem(${i.id})">${i.isOut ? 'Holen' : 'Weg'}</button>
+            </div>`;
+        });
+        document.getElementById('logBody').innerHTML = (db.logs || []).slice(0,20).map(l => 
+            `<div style="font-size:11px; background:white; padding:8px; border-radius:10px; margin-bottom:5px; border-left:3px solid var(--primary)">
+                <b>${l.u}</b>: ${l.i} (${l.a})<br>${l.t}</div>`).join('');
+    }
+
+    function switchTab(e, id) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(e) e.currentTarget.classList.add('active');
+    }
+</script>
+</body>
+</html>
