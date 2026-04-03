@@ -39,4 +39,168 @@
             display: flex; align-items: center; justify-content: center; z-index: 5;
         }
 
-        input, select { width:
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .qty-mini-select { width: auto; padding: 4px 8px; font-size: 0.8rem; margin: 0; background: #f1f5f9; }
+
+        .btn-status { display: block; width: 100%; padding: 18px; border: none; color: white; font-weight: bold; font-size: 1rem; text-transform: uppercase; }
+
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark); display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
+        .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; font-size: 0.8rem; }
+        .tab-btn.active { color: white; border-top: 4px solid var(--accent); background: rgba(255,255,255,0.05); }
+
+        .content { display: none; }
+        .content.active { display: block; }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-card">
+        <h2 style="color:var(--accent); margin-top:0;">Lager Login</h2>
+        <input type="text" id="loginUser" placeholder="Dein Name">
+        <input type="password" id="loginPass" placeholder="Passwort">
+        <button onclick="handleLogin()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">ANMELDEN</button>
+        <p id="loginErr" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">Login fehlgeschlagen!</p>
+    </div>
+</div>
+
+<div id="mainApp">
+    <div class="bg-layer"></div>
+    <div class="dark-overlay"></div>
+    
+    <div class="header">
+        <div class="header-info" id="userDisplay">...</div>
+        <h1>GR-LAGERVERWALTUNG</h1>
+        <div class="header-info" style="text-align:right;"><button onclick="logout()" style="background:none; border:none; color:#777; font-size:0.6rem;">LOGOUT</button></div>
+    </div>
+
+    <div class="content-area">
+        <div id="tab-lager" class="content active">
+            <div style="background:rgba(255,255,255,0.95); padding:12px; border-radius:15px; margin-bottom:15px; color:#333;">
+                <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
+                
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">LAGER:</label>
+                        <select id="filterLagerSelect" onchange="render()"></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">KATEGORIE:</label>
+                        <select id="filterCatSelect" onchange="render()"></select>
+                    </div>
+                </div>
+            </div>
+            <div id="itemList"></div>
+        </div>
+
+        <div id="tab-neu" class="content">
+            <div class="item-card" style="padding:20px;">
+                <h3 style="margin:0 0 15px 0; color:var(--primary);">Neuer Artikel</h3>
+                <input type="text" id="itemName" placeholder="Bezeichnung">
+                
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 2;">
+                        <label style="font-size:0.7rem; font-weight:bold;">Kategorie:</label>
+                        <select id="itemCatSelect"></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size:0.7rem; font-weight:bold;">Stückzahl:</label>
+                        <select id="itemQtySelect" class="qty-initial-select"></select>
+                    </div>
+                </div>
+
+                <label style="font-size:0.7rem; font-weight:bold;">Lagerplatz:</label>
+                <select id="itemLagerSelect"></select>
+                <input type="file" id="itemImg" accept="image/*" capture="environment">
+                <button onclick="saveItem()" style="width:100%; padding:18px; background:var(--success); color:white; border:none; border-radius:12px; font-weight:bold; margin-top:15px;">SPEICHERN</button>
+            </div>
+        </div>
+    </div>
+
+    <nav>
+        <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lagerliste</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu Anlegen</button>
+    </nav>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
+        authDomain: "gr-lagerverwaltung.firebaseapp.com",
+        databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "gr-lagerverwaltung",
+        storageBucket: "gr-lagerverwaltung.firebasestorage.app",
+        messagingSenderId: "561219570576",
+        appId: "1:561219570576:web:65824b199a12933fd88115"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref('lager_v96_qty');
+    let state = { user: null, items: [], cats: [], locations: [] };
+
+    function handleLogin() {
+        const u = document.getElementById('loginUser').value.trim();
+        const p = document.getElementById('loginPass').value;
+        if(u !== "" && p === "1234") { 
+            state.user = u;
+            localStorage.setItem('lagerAuthorizedUser', u);
+            startApp();
+        } else { document.getElementById('loginErr').style.display = 'block'; }
+    }
+
+    function startApp() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'flex';
+        document.getElementById('userDisplay').innerText = state.user;
+        
+        let qtyOpt = "";
+        for(let i=1; i<=100; i++) qtyOpt += `<option value="${i}">${i}</option>`;
+        document.getElementById('itemQtySelect').innerHTML = qtyOpt;
+
+        initApp();
+    }
+
+    function initApp() {
+        dbRef.on('value', snap => {
+            const data = snap.val() || {};
+            state.items = data.items || [];
+            state.cats = data.cats || ["Werkzeug", "Maschinen", "Material"];
+            state.locations = data.locations || ["Lager 1", "Lager 2"];
+            updateDropdowns();
+            render();
+        });
+    }
+
+    function updateDropdowns() {
+        const catHtml = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        const lagerHtml = state.locations.map(l => `<option value="${l}">${l}</option>`).join('');
+        document.getElementById('itemCatSelect').innerHTML = catHtml;
+        document.getElementById('filterCatSelect').innerHTML = `<option value="all">Alle Kategorien</option>` + catHtml;
+        document.getElementById('filterLagerSelect').innerHTML = `<option value="all">Alle Lager</option>` + lagerHtml;
+        document.getElementById('itemLagerSelect').innerHTML = lagerHtml;
+    }
+
+    function changeQty(id, newQty) {
+        const idx = state.items.findIndex(x => x.id === id);
+        if(idx !== -1) {
+            state.items[idx].qty = parseInt(newQty);
+            dbRef.child('items').set(state.items);
+        }
+    }
+
+    function render() {
+        const list = document.getElementById('itemList');
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const catFilter = document.getElementById('filterCatSelect').value;
+        const lagerFilter = document.getElementById('filterLagerSelect').value;
+        list.innerHTML = "";
+        
+        state.items.filter(i => {
+            const matchesSearch = i.name.toLowerCase().includes(search);
+            const matchesCat = (catFilter === "all" || i.cat === catFilter);
+            const matchesLager = (lagerFilter === "all" || i.lager === lagerFilter);
+            return matchesSearch && matchesCat && matchesLager;
+        }).sort((a,b) => b.id - a.id).forEach(i => {
+            const isOut = i.status !== "im Lager";
+            
+            // Drop
