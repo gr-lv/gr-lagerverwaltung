@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V91 - Zoom-Funktion</title>
+    <title>GR-Lagerverwaltung V90 - Tausch</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -13,36 +13,17 @@
         
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
 
-        /* NEU: LIGHTBOX / ZOOM LAYER */
-        #lightbox {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 200000;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-        #lightbox img {
-            max-width: 95%;
-            max-height: 85%;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(255,255,255,0.2);
-            object-fit: contain;
-        }
-
         /* LOGIN SCREEN */
         #login-screen { position: fixed; top:0; left:0; width:100vw; height:100vh; background: var(--dark); z-index: 100000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; border: 2px solid var(--accent); }
-        .login-card input { background: white; color: black; width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; font-size: 16px; box-sizing: border-box; }
+        .login-card input { background: white; color: black; }
 
         /* APP STRUKTUR */
         #mainApp { display: none; height: 100vh; flex-direction: column; position: relative; z-index: 10; }
         .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e293b url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: -2; }
         .dark-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: -1; }
 
+        /* HEADER */
         .header { background: var(--dark); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .header h1 { margin: 0; font-size: 1.1rem; flex: 1; text-align: center; font-weight: 900; }
         .header-info { font-size: 0.7rem; width: 70px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; }
@@ -54,6 +35,7 @@
 
         details { background: #f1f5f9; border-radius: 10px; margin-bottom: 10px; padding: 5px; color: #333; }
         summary { font-weight: bold; padding: 10px; cursor: pointer; outline: none; }
+        .manage-box { padding: 10px; border-top: 1px solid #ddd; max-height: 200px; overflow-y: auto; }
 
         input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .btn-status { display: block; width: 100%; padding: 18px; border: none; color: white; font-weight: bold; font-size: 1rem; text-transform: uppercase; }
@@ -67,10 +49,6 @@
     </style>
 </head>
 <body>
-
-<div id="lightbox" onclick="closeZoom()">
-    <img id="zoomImg" src="" alt="Vergrößert">
-</div>
 
 <div id="login-screen">
     <div class="login-card">
@@ -98,8 +76,14 @@
                 <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
                 
                 <div style="display: flex; gap: 5px; margin-top: 5px;">
-                    <div style="flex: 1;"><select id="filterLagerSelect" onchange="render()"></select></div>
-                    <div style="flex: 1;"><select id="filterCatSelect" onchange="render()"></select></div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">LAGER:</label>
+                        <select id="filterLagerSelect" onchange="render()"></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">KATEGORIE:</label>
+                        <select id="filterCatSelect" onchange="render()"></select>
+                    </div>
                 </div>
             </div>
             <div id="itemList"></div>
@@ -109,11 +93,31 @@
             <div class="item-card" style="padding:20px;">
                 <h3 style="margin:0 0 15px 0; color:var(--primary);">Neuer Artikel</h3>
                 <input type="text" id="itemName" placeholder="Bezeichnung">
+                <label style="font-size:0.7rem; font-weight:bold;">Kategorie:</label>
                 <select id="itemCatSelect"></select>
+                <label style="font-size:0.7rem; font-weight:bold;">Lagerplatz:</label>
                 <select id="itemLagerSelect"></select>
                 <input type="file" id="itemImg" accept="image/*" capture="environment">
                 <button onclick="saveItem()" style="width:100%; padding:18px; background:var(--success); color:white; border:none; border-radius:12px; font-weight:bold; margin-top:15px;">SPEICHERN</button>
             </div>
+
+            <details>
+                <summary>📂 Kategorien bearbeiten</summary>
+                <div class="manage-box" id="catManageList"></div>
+                <div style="display:flex; gap:5px; padding:10px;">
+                    <input type="text" id="newCatInput" placeholder="Neu...">
+                    <button onclick="addType('cats', 'newCatInput')" style="background:var(--success); border:none; color:white; padding:0 15px; border-radius:10px;">+</button>
+                </div>
+            </details>
+
+            <details>
+                <summary>🏠 Lagerplätze bearbeiten</summary>
+                <div class="manage-box" id="lagerManageList"></div>
+                <div style="display:flex; gap:5px; padding:10px;">
+                    <input type="text" id="newLagerInput" placeholder="Neu...">
+                    <button onclick="addType('locations', 'newLagerInput')" style="background:var(--success); border:none; color:white; padding:0 15px; border-radius:10px;">+</button>
+                </div>
+            </details>
         </div>
     </div>
 
@@ -168,25 +172,39 @@
         });
     }
 
-    // NEU: ZOOM FUNKTIONEN
-    function openZoom(src) {
-        if(!src || src.includes('via.placeholder')) return; // Platzhalter nicht zoomen
-        document.getElementById('zoomImg').src = src;
-        document.getElementById('lightbox').style.display = 'flex';
-    }
-
-    function closeZoom() {
-        document.getElementById('lightbox').style.display = 'none';
-        document.getElementById('zoomImg').src = "";
-    }
-
     function updateDropdowns() {
         const catHtml = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
         const lagerHtml = state.locations.map(l => `<option value="${l}">${l}</option>`).join('');
+        
         document.getElementById('itemCatSelect').innerHTML = catHtml;
         document.getElementById('filterCatSelect').innerHTML = `<option value="all">Alle Kategorien</option>` + catHtml;
         document.getElementById('filterLagerSelect').innerHTML = `<option value="all">Alle Lager</option>` + lagerHtml;
         document.getElementById('itemLagerSelect').innerHTML = lagerHtml;
+
+        document.getElementById('catManageList').innerHTML = state.cats.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${c}</span><span style="color:red;font-weight:bold;" onclick="deleteType('cats', '${c}')">X</span></div>`).join('');
+        document.getElementById('lagerManageList').innerHTML = state.locations.map(l => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${l}</span><span style="color:red;font-weight:bold;" onclick="deleteType('locations', '${l}')">X</span></div>`).join('');
+    }
+
+    function addType(key, inputId) {
+        const val = document.getElementById(inputId).value.trim();
+        if(!val || state[key].includes(val)) return;
+        state[key].push(val);
+        dbRef.child(key).set(state[key]);
+        document.getElementById(inputId).value = "";
+    }
+
+    function deleteType(key, val) {
+        if(confirm(`${val} löschen?`)) {
+            state[key] = state[key].filter(x => x !== val);
+            dbRef.child(key).set(state[key]);
+        }
+    }
+
+    function deleteItem(id) {
+        if(confirm("Löschen?")) {
+            state.items = state.items.filter(i => i.id !== id);
+            dbRef.child('items').set(state.items);
+        }
     }
 
     function toggleStatus(id) {
@@ -194,10 +212,6 @@
         const isIn = i.status === "im Lager";
         i.status = isIn ? "ausgeliehen" : "im Lager";
         i.outUser = isIn ? state.user : "";
-        if (isIn) {
-            const jetzt = new Date();
-            i.outDate = jetzt.toLocaleDateString('de-DE') + " " + jetzt.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
-        } else { i.outDate = ""; }
         dbRef.child('items').set(state.items);
     }
 
@@ -215,22 +229,15 @@
             return matchesSearch && matchesCat && matchesLager;
         }).sort((a,b) => b.id - a.id).forEach(i => {
             const isOut = i.status !== "im Lager";
-            const imgPath = i.img || 'https://via.placeholder.com/80';
-            
             list.innerHTML += `
                 <div class="item-card">
                     <button class="delete-btn" onclick="deleteItem(${i.id})">×</button>
                     <div style="padding:15px; display:flex; gap:15px; align-items:center;">
-                        <img src="${imgPath}" 
-                             onclick="openZoom('${imgPath}')"
-                             style="width:75px; height:75px; object-fit:cover; border-radius:10px; cursor:zoom-in;">
+                        <img src="${i.img || 'https://via.placeholder.com/80'}" style="width:75px; height:75px; object-fit:cover; border-radius:10px;">
                         <div style="flex:1;">
                             <b style="font-size:1.1rem;">${i.name}</b><br>
                             <small style="color:#666; font-weight:bold;">${i.cat} | ${i.lager || '?'}</small>
-                            ${isOut ? `<div style="color:var(--danger); font-weight:bold; font-size:0.8rem; margin-top:5px;">
-                                Bei: ${i.outUser}<br>
-                                <span style="font-size:0.7rem; color:#888;">Am: ${i.outDate || ''}</span>
-                            </div>` : ""}
+                            ${isOut ? `<div style="color:var(--danger); font-weight:bold; font-size:0.8rem; margin-top:5px;">Bei: ${i.outUser}</div>` : ""}
                         </div>
                     </div>
                     <button class="btn-status" style="background:${isOut ? 'var(--danger)' : 'var(--success)'}" onclick="toggleStatus(${i.id})">
@@ -243,7 +250,7 @@
     function saveItem() {
         const n = document.getElementById('itemName').value;
         if(!n) return;
-        const newItem = { id: Date.now(), name: n, cat: document.getElementById('itemCatSelect').value, lager: document.getElementById('itemLagerSelect').value, img: "", status: "im Lager", outDate: "" };
+        const newItem = { id: Date.now(), name: n, cat: document.getElementById('itemCatSelect').value, lager: document.getElementById('itemLagerSelect').value, img: "", status: "im Lager" };
         const f = document.getElementById('itemImg').files[0];
         if(f) {
             const r = new FileReader();
@@ -252,13 +259,6 @@
         } else { state.items.push(newItem); dbRef.child('items').set(state.items); }
         document.getElementById('itemName').value = "";
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
-    }
-
-    function deleteItem(id) {
-        if(confirm("Löschen?")) {
-            state.items = state.items.filter(i => i.id !== id);
-            dbRef.child('items').set(state.items);
-        }
     }
 
     function switchTab(e, id) {
