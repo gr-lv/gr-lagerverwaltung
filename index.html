@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung</title>
+    <title>GR-Lagerverwaltung V61</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -12,20 +12,13 @@
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --logout: #64748b; }
         
         body { 
-            margin: 0; padding: 0; 
-            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; 
             background: url('haus_background.jpg') no-repeat center center fixed; 
-            background-size: cover;
-            height: 100vh; overflow: hidden;
+            background-size: cover; height: 100vh; overflow: hidden;
         }
 
         .app-shell { height: 100vh; display: flex; flex-direction: column; background: rgba(15, 23, 42, 0.5); }
-
-        .header { 
-            background: rgba(15, 23, 42, 0.95); color: white; padding: 15px; 
-            text-align: center; border-bottom: 2px solid var(--accent); z-index: 2000;
-        }
-
+        .header { background: rgba(15, 23, 42, 0.95); color: white; padding: 15px; text-align: center; border-bottom: 2px solid var(--accent); z-index: 2000; }
         .content-area { flex: 1; overflow-y: auto; padding: 15px 15px 100px 15px; -webkit-overflow-scrolling: touch; }
 
         .glass { 
@@ -34,36 +27,35 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.5); position: relative;
         }
 
-        nav { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: #0f172a; display: flex; border-top: 2px solid var(--accent); z-index: 3000;
-        }
-
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; display: flex; border-top: 2px solid var(--accent); z-index: 3000; }
         .tab-btn { flex: 1; padding: 18px 5px; border: none; background: none; color: #9ca3af; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); }
 
-        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-
         .card { display: flex; align-items: center; gap: 15px; margin-bottom: 12px; padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); }
-        .thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 12px; background: white; }
-        
+        .thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 12px; background: white; cursor: zoom-in; }
         .btn-book { padding: 12px; border: none; border-radius: 10px; color: white; font-weight: bold; min-width: 100px; cursor: pointer; }
         
-        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
         
         .status-info { font-size: 0.75rem; color: #b91c1c; margin-top: 4px; font-weight: bold; background: rgba(220, 38, 38, 0.1); padding: 4px 8px; border-radius: 6px; display: inline-block; }
         
+        /* Zoom Overlay */
+        #zoomOverlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:5000; justify-content:center; align-items:center; }
+
         .content { display: none; }
         .content.active { display: block; }
     </style>
 </head>
 <body>
 
+<div id="zoomOverlay" onclick="this.style.display='none'"><img id="zoomImg" style="max-width:95%; max-height:90%; border:3px solid white; border-radius:10px;"></div>
+
 <div class="app-shell">
     <div class="header">
         <h1 style="margin:0; font-size:1.2rem; color:var(--accent);">GR-LAGERVERWALTUNG</h1>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-            <span id="displayUser" style="font-size:0.85rem;">👤 Nicht angemeldet</span>
+            <span id="displayUser" style="font-size:0.85rem;">👤 Lade...</span>
             <button onclick="askForName()" style="background:var(--primary); color:white; border:none; padding:6px 12px; border-radius:6px; font-size:0.75rem; cursor:pointer;">WECHSELN</button>
         </div>
     </div>
@@ -71,11 +63,9 @@
     <div class="content-area">
         <div id="tab-lager" class="content active">
             <div id="loginPrompt" class="glass" style="text-align:center; padding:40px 20px;">
-                <h2>Willkommen</h2>
-                <p>Bitte melden Sie sich an.</p>
+                <h2>Willkommen</h2><p>Bitte anmelden.</p>
                 <button class="btn-main" onclick="askForName()">JETZT ANMELDEN</button>
             </div>
-            
             <div id="lagerContent" style="display:none;">
                 <div class="glass">
                     <input type="text" id="searchInput" placeholder="🔍 Name suchen..." onkeyup="render()">
@@ -87,19 +77,21 @@
 
         <div id="tab-neu" class="content">
             <div class="glass">
-                <h2 style="margin-top:0">Neu Anlegen</h2>
+                <h2>Neu Anlegen</h2>
                 <input type="text" id="itemName" placeholder="Artikelname">
+                <input type="number" id="itemQty" placeholder="Menge (Stück)" value="1">
                 <select id="itemCatSelect"></select>
                 <input type="file" id="itemImg" accept="image/*" capture="environment" style="margin-top:10px;">
-                <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">SPEICHERN</button>
+                <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">ARTIKEL SPEICHERN</button>
+            </div>
+            <div class="glass" id="deleteSection">
+                <h3>Artikel entfernen</h3>
+                <div id="deleteList" style="font-size:0.8rem;"></div>
             </div>
         </div>
 
         <div id="tab-log" class="content">
-            <div class="glass">
-                <h2 style="margin-top:0">Logbuch</h2>
-                <div id="logList"></div>
-            </div>
+            <div class="glass"><h2>Logbuch</h2><div id="logList"></div></div>
         </div>
     </div>
 
@@ -111,7 +103,6 @@
 </div>
 
 <script>
-    const CURRENT_VERSION = 60;
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -123,10 +114,9 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    // Zurück zur stabilen Datenbank-Referenz
     const dbRef = firebase.database().ref('lager_v32_final');
 
-    let state = { user: localStorage.getItem('lagerUser') || null, items: [], logs: [], cats: ["Werkzeug", "Garten"], ver: CURRENT_VERSION };
+    let state = { user: localStorage.getItem('lagerUser') || null, items: [], logs: [], cats: ["Werkzeug", "Garten", "Elektro", "Haushalt"] };
 
     function init() {
         updateUserUI();
@@ -135,32 +125,25 @@
             if (data) {
                 state.items = data.items || [];
                 state.logs = data.logs || [];
-                state.cats = data.cats || ["Werkzeug", "Garten"];
+                state.cats = data.cats || ["Werkzeug", "Garten", "Elektro", "Haushalt"];
                 render();
             }
         });
     }
 
     function askForName() {
-        let n = prompt("Name eingeben:");
+        let n = prompt("Dein Name:");
         if (n && n.trim() !== "") {
             state.user = n.trim();
             localStorage.setItem('lagerUser', state.user);
-            if (state.user.toLowerCase() === "david janzen") {
-                addLog("System", "Anmeldung David Janzen");
-            }
+            if (state.user.toLowerCase() === "david janzen") addLog("System", "Login David Janzen");
             updateUserUI();
             sync();
         }
     }
 
     function addLog(item, action) {
-        state.logs.unshift({ 
-            time: new Date().toLocaleString('de-DE'), 
-            user: state.user || "System", 
-            item: item, 
-            action: action 
-        });
+        state.logs.unshift({ time: new Date().toLocaleString('de-DE'), user: state.user || "System", item: item, action: action });
     }
 
     function updateUserUI() {
@@ -183,19 +166,20 @@
         const isIn = i.status === "im Lager";
         i.status = isIn ? "unterwegs" : "im Lager";
         if (isIn) { i.outUser = state.user; i.outDate = new Date().toLocaleDateString('de-DE'); }
-        addLog(i.name, isIn ? "Auslagerung" : "Einlagerung");
+        addLog(i.name, isIn ? "Ausgelagert" : "Eingelagert");
         sync();
     }
 
     function saveItem() {
         const n = document.getElementById('itemName').value;
+        const q = document.getElementById('itemQty').value || 1;
         const c = document.getElementById('itemCatSelect').value;
         const f = document.getElementById('itemImg').files[0];
         if (!n) return alert("Name fehlt!");
         const reader = new FileReader();
         reader.onload = (e) => {
-            state.items.unshift({ id: Date.now(), name: n, cat: c, img: e.target.result || "", status: "im Lager", outUser: "", outDate: "" });
-            addLog(n, "Neu angelegt");
+            state.items.unshift({ id: Date.now(), name: n, qty: q, cat: c, img: e.target.result || "", status: "im Lager", outUser: "", outDate: "" });
+            addLog(n, `Neu (Menge: ${q})`);
             sync();
             document.getElementById('itemName').value = "";
             switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
@@ -203,11 +187,21 @@
         if (f) reader.readAsDataURL(f); else reader.onload({target:{result:""}});
     }
 
+    function deleteItem(id) {
+        if(confirm("Diesen Artikel wirklich unwiderruflich löschen?")) {
+            const idx = state.items.findIndex(x => x.id === id);
+            addLog(state.items[idx].name, "Gelöscht");
+            state.items.splice(idx, 1);
+            sync();
+        }
+    }
+
     function sync() { dbRef.set(state); }
 
     function render() {
         const fDrop = document.getElementById('filterCat');
         const sDrop = document.getElementById('itemCatSelect');
+        const dList = document.getElementById('deleteList');
         if(!fDrop) return;
         const sel = fDrop.value;
         fDrop.innerHTML = '<option value="">📂 Alle Kategorien</option>';
@@ -220,24 +214,12 @@
         const list = document.getElementById('itemList');
         const search = document.getElementById('searchInput').value.toLowerCase();
         list.innerHTML = "";
+        dList.innerHTML = "";
+
         state.items.filter(i => i.name.toLowerCase().includes(search) && (sel==="" || i.cat===sel)).forEach(i => {
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
                 <div class="card">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
+                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb" onclick="document.getElementById('zoomImg').src=this.src; document.getElementById('zoomOverlay').style.display='flex'">
                     <div style="flex:1">
-                        <b style="font-size:1rem;">${i.name}</b><br>
-                        <small style="color:#666;">${i.cat}</small><br>
-                        ${isOut ? `<div class="status-info">Ausgelagert von ${i.outUser} am ${i.outDate}</div>` : ""}
-                    </div>
-                    <button class="btn-book" onclick="toggleStatus(${i.id})" style="background:${isOut?'var(--danger)':'var(--success)'}">${isOut?'Einlagern':'Auslagern'}</button>
-                </div>`;
-        });
-
-        const lBox = document.getElementById('logList');
-        if(lBox) lBox.innerHTML = state.logs.slice(0,50).map(l => `<div style="font-size:0.8rem; margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:5px;"><b>${l.user}</b>: ${l.item==="System"?"":l.item} ${l.action} <br><small style="color:gray">${l.time}</small></div>`).join('');
-    }
-    init();
-</script>
-</body>
-</html>
+                        <b>${i.name}</b> <span style="background:#eee; padding:2px 6px; border-radius:5px; font-size:0.7rem;">x
