@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V90 - Tausch</title>
+    <title>GR-Lagerverwaltung V90 - Datum & Fix</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -16,14 +16,13 @@
         /* LOGIN SCREEN */
         #login-screen { position: fixed; top:0; left:0; width:100vw; height:100vh; background: var(--dark); z-index: 100000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; border: 2px solid var(--accent); }
-        .login-card input { background: white; color: black; }
+        .login-card input { background: white; color: black; width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; font-size: 16px; box-sizing: border-box; }
 
         /* APP STRUKTUR */
         #mainApp { display: none; height: 100vh; flex-direction: column; position: relative; z-index: 10; }
         .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e293b url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: -2; }
         .dark-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: -1; }
 
-        /* HEADER */
         .header { background: var(--dark); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .header h1 { margin: 0; font-size: 1.1rem; flex: 1; text-align: center; font-weight: 900; }
         .header-info { font-size: 0.7rem; width: 70px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; }
@@ -139,139 +138,3 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v90_multilager');
-    let state = { user: null, items: [], cats: [], locations: [] };
-
-    function handleLogin() {
-        const u = document.getElementById('loginUser').value.trim();
-        const p = document.getElementById('loginPass').value;
-        if(u !== "" && p === "1234") { 
-            state.user = u;
-            localStorage.setItem('lagerAuthorizedUser', u);
-            startApp();
-        } else { document.getElementById('loginErr').style.display = 'block'; }
-    }
-
-    function startApp() {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'flex';
-        document.getElementById('userDisplay').innerText = state.user;
-        initApp();
-    }
-
-    function logout() { localStorage.removeItem('lagerAuthorizedUser'); location.reload(); }
-
-    function initApp() {
-        dbRef.on('value', snap => {
-            const data = snap.val() || {};
-            state.items = data.items || [];
-            state.cats = data.cats || ["Werkzeug", "Maschinen"];
-            state.locations = data.locations || ["Lager 1", "Lager 2"];
-            updateDropdowns();
-            render();
-        });
-    }
-
-    function updateDropdowns() {
-        const catHtml = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
-        const lagerHtml = state.locations.map(l => `<option value="${l}">${l}</option>`).join('');
-        
-        document.getElementById('itemCatSelect').innerHTML = catHtml;
-        document.getElementById('filterCatSelect').innerHTML = `<option value="all">Alle Kategorien</option>` + catHtml;
-        document.getElementById('filterLagerSelect').innerHTML = `<option value="all">Alle Lager</option>` + lagerHtml;
-        document.getElementById('itemLagerSelect').innerHTML = lagerHtml;
-
-        document.getElementById('catManageList').innerHTML = state.cats.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${c}</span><span style="color:red;font-weight:bold;" onclick="deleteType('cats', '${c}')">X</span></div>`).join('');
-        document.getElementById('lagerManageList').innerHTML = state.locations.map(l => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${l}</span><span style="color:red;font-weight:bold;" onclick="deleteType('locations', '${l}')">X</span></div>`).join('');
-    }
-
-    function addType(key, inputId) {
-        const val = document.getElementById(inputId).value.trim();
-        if(!val || state[key].includes(val)) return;
-        state[key].push(val);
-        dbRef.child(key).set(state[key]);
-        document.getElementById(inputId).value = "";
-    }
-
-    function deleteType(key, val) {
-        if(confirm(`${val} löschen?`)) {
-            state[key] = state[key].filter(x => x !== val);
-            dbRef.child(key).set(state[key]);
-        }
-    }
-
-    function deleteItem(id) {
-        if(confirm("Löschen?")) {
-            state.items = state.items.filter(i => i.id !== id);
-            dbRef.child('items').set(state.items);
-        }
-    }
-
-    function toggleStatus(id) {
-        const i = state.items.find(x => x.id === id);
-        const isIn = i.status === "im Lager";
-        i.status = isIn ? "ausgeliehen" : "im Lager";
-        i.outUser = isIn ? state.user : "";
-        dbRef.child('items').set(state.items);
-    }
-
-    function render() {
-        const list = document.getElementById('itemList');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const catFilter = document.getElementById('filterCatSelect').value;
-        const lagerFilter = document.getElementById('filterLagerSelect').value;
-        list.innerHTML = "";
-        
-        state.items.filter(i => {
-            const matchesSearch = i.name.toLowerCase().includes(search);
-            const matchesCat = (catFilter === "all" || i.cat === catFilter);
-            const matchesLager = (lagerFilter === "all" || i.lager === lagerFilter);
-            return matchesSearch && matchesCat && matchesLager;
-        }).sort((a,b) => b.id - a.id).forEach(i => {
-            const isOut = i.status !== "im Lager";
-            list.innerHTML += `
-                <div class="item-card">
-                    <button class="delete-btn" onclick="deleteItem(${i.id})">×</button>
-                    <div style="padding:15px; display:flex; gap:15px; align-items:center;">
-                        <img src="${i.img || 'https://via.placeholder.com/80'}" style="width:75px; height:75px; object-fit:cover; border-radius:10px;">
-                        <div style="flex:1;">
-                            <b style="font-size:1.1rem;">${i.name}</b><br>
-                            <small style="color:#666; font-weight:bold;">${i.cat} | ${i.lager || '?'}</small>
-                            ${isOut ? `<div style="color:var(--danger); font-weight:bold; font-size:0.8rem; margin-top:5px;">Bei: ${i.outUser}</div>` : ""}
-                        </div>
-                    </div>
-                    <button class="btn-status" style="background:${isOut ? 'var(--danger)' : 'var(--success)'}" onclick="toggleStatus(${i.id})">
-                        ${isOut ? 'Einlagern' : 'Ausleihen'}
-                    </button>
-                </div>`;
-        });
-    }
-
-    function saveItem() {
-        const n = document.getElementById('itemName').value;
-        if(!n) return;
-        const newItem = { id: Date.now(), name: n, cat: document.getElementById('itemCatSelect').value, lager: document.getElementById('itemLagerSelect').value, img: "", status: "im Lager" };
-        const f = document.getElementById('itemImg').files[0];
-        if(f) {
-            const r = new FileReader();
-            r.onload = (e) => { newItem.img = e.target.result; state.items.push(newItem); dbRef.child('items').set(state.items); };
-            r.readAsDataURL(f);
-        } else { state.items.push(newItem); dbRef.child('items').set(state.items); }
-        document.getElementById('itemName').value = "";
-        switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
-    }
-
-    function switchTab(e, id) {
-        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        e.currentTarget.classList.add('active');
-    }
-
-    window.onload = () => {
-        const saved = localStorage.getItem('lagerAuthorizedUser');
-        if(saved) { state.user = saved; startApp(); }
-    };
-</script>
-</body>
-</html>
