@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V66</title>
+    <title>GR-Lagerverwaltung V67 - Fix</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -31,17 +31,34 @@
         input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .btn-main { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
         
-        .card { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid rgba(0,0,0,0.05); position: relative; }
-        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; background: #eee; }
+        .card { display: flex; align-items: center; gap: 12px; padding: 15px; border-bottom: 1px solid rgba(0,0,0,0.05); position: relative; }
+        .thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; background: #eee; flex-shrink: 0; }
         
-        /* Mengen-Buttons */
-        .qty-controls { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
-        .btn-qty { background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        /* Lösch-Button */
-        .btn-delete { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.1rem; }
-        .btn-delete:hover { color: var(--danger); }
+        /* Neuer Lösch-Button Style */
+        .delete-zone {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 12px;
+            z-index: 100;
+        }
+        .btn-delete-final {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger);
+            border: none;
+            border-radius: 8px;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
 
+        .qty-controls { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        .btn-qty { background: #cbd5e1; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.2rem; }
+        
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #0f172a; display: flex; border-top: 2px solid var(--accent); height: 70px; z-index: 2000; }
         .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.65rem; }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-top: 3px solid var(--accent); }
@@ -50,7 +67,6 @@
         .content.active { display: block; }
         
         #reader { width: 100%; border-radius: 15px; overflow: hidden; display: none; margin-bottom: 15px; border: 2px solid var(--accent); background: black; }
-        .scan-trigger { background: var(--accent); border: none; border-radius: 10px; width: 50px; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -75,7 +91,7 @@
             <div class="glass">
                 <div style="display:flex; gap:10px;">
                     <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()">
-                    <button class="scan-trigger" onclick="startScan('search')">📷</button>
+                    <button onclick="startScan('search')" style="background:var(--accent); border:none; border-radius:10px; width:50px; color:white;">📷</button>
                 </div>
             </div>
             <div id="itemList"></div>
@@ -86,13 +102,13 @@
                 <h2 style="margin-top:0">Neuer Artikel</h2>
                 <input type="text" id="itemName" placeholder="Artikelname">
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="itemBarcode" placeholder="Barcode / QR (Optional)">
-                    <button class="scan-trigger" onclick="startScan('new')">📷</button>
+                    <input type="text" id="itemBarcode" placeholder="Barcode scannen">
+                    <button onclick="startScan('new')" style="background:var(--accent); border:none; border-radius:10px; width:50px; color:white;">📷</button>
                 </div>
                 <input type="number" id="itemQty" placeholder="Menge" value="1">
                 <select id="itemCatSelect"></select>
                 <input type="file" id="itemImg" accept="image/*" capture="environment">
-                <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">ARTIKEL SPEICHERN</button>
+                <button class="btn-main" onclick="saveItem()" style="margin-top:15px;">SPEICHERN</button>
             </div>
         </div>
 
@@ -122,7 +138,7 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const dbRef = firebase.database().ref('lager_v32_final');
 
-    let state = { user: localStorage.getItem('lagerUser') || null, items: [], logs: [], cats: ["Werkzeug", "Garten", "Elektro", "Bau"] };
+    let state = { user: localStorage.getItem('lagerUser') || null, items: [], logs: [], cats: ["Werkzeug", "Garten", "Elektro", "Bau", "Haushalt"] };
     let html5QrCode = null;
 
     function init() {
@@ -146,13 +162,12 @@
             state.user = n.trim();
             localStorage.setItem('lagerUser', state.user);
             updateUserUI();
-            dbRef.child('logs').push({ time: new Date().toLocaleString(), user: state.user, action: "Eingeloggt" });
         }
     }
 
     function updateUserUI() {
         const isLogged = !!state.user;
-        document.getElementById('displayUser').innerText = isLogged ? "👤 " + state.user : "👤 Nicht angemeldet";
+        document.getElementById('displayUser').innerText = isLogged ? "👤 " + state.user : "👤 Gast";
         document.getElementById('loginSection').style.display = isLogged ? 'none' : 'block';
     }
 
@@ -162,18 +177,13 @@
         if(html5QrCode) html5QrCode.stop();
         html5QrCode = new Html5Qrcode("reader");
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-            if(target === 'search') {
-                document.getElementById('searchInput').value = text;
-                render();
-            } else {
-                document.getElementById('itemBarcode').value = text;
-            }
-            html5QrCode.stop().then(() => { readerDiv.style.display = 'none'; html5QrCode = null; });
-        }).catch(err => console.log(err));
+            if(target === 'search') { document.getElementById('searchInput').value = text; render(); }
+            else { document.getElementById('itemBarcode').value = text; }
+            html5QrCode.stop().then(() => { readerDiv.style.display = 'none'; });
+        }).catch(err => alert("Kamerafehler"));
     }
 
     function switchTab(e, id) {
-        if(html5QrCode) { html5QrCode.stop(); document.getElementById('reader').style.display = 'none'; }
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -182,13 +192,12 @@
 
     function changeQty(id, delta) {
         const idx = state.items.findIndex(x => x.id === id);
-        let current = parseInt(state.items[idx].qty || 0);
-        state.items[idx].qty = Math.max(0, current + delta);
+        state.items[idx].qty = Math.max(0, parseInt(state.items[idx].qty || 0) + delta);
         sync();
     }
 
     function deleteItem(id) {
-        if(confirm("Diesen Artikel wirklich löschen?")) {
+        if(confirm("Diesen Artikel löschen?")) {
             const idx = state.items.findIndex(x => x.id === id);
             state.logs.unshift({ time: new Date().toLocaleString(), user: state.user, item: state.items[idx].name, action: "Gelöscht" });
             state.items.splice(idx, 1);
@@ -197,20 +206,13 @@
     }
 
     function saveItem() {
-        if(!state.user) return alert("Anmeldung erforderlich!");
         const n = document.getElementById('itemName').value;
-        if(!n) return alert("Bitte Name eingeben!");
-        
+        if(!n) return alert("Name fehlt!");
         const newItem = {
-            id: Date.now(),
-            name: n,
-            barcode: document.getElementById('itemBarcode').value,
-            qty: document.getElementById('itemQty').value || 1,
-            cat: document.getElementById('itemCatSelect').value,
-            img: "", 
-            status: "im Lager"
+            id: Date.now(), name: n, barcode: document.getElementById('itemBarcode').value,
+            qty: document.getElementById('itemQty').value || 1, cat: document.getElementById('itemCatSelect').value,
+            img: "", status: "im Lager"
         };
-
         const f = document.getElementById('itemImg').files[0];
         const proceed = (imgData) => {
             newItem.img = imgData;
@@ -218,20 +220,13 @@
             state.logs.unshift({ time: new Date().toLocaleString(), user: state.user, item: n, action: "Neu angelegt" });
             sync();
             document.getElementById('itemName').value = "";
-            document.getElementById('itemBarcode').value = "";
             switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
         };
-
-        if(f) {
-            const reader = new FileReader();
-            reader.onload = (e) => proceed(e.target.result);
-            reader.readAsDataURL(f);
-        } else proceed("");
+        if(f) { const r = new FileReader(); r.onload = (e) => proceed(e.target.result); r.readAsDataURL(f); } else proceed("");
     }
 
     function toggleStatus(id) {
-        const idx = state.items.findIndex(x => x.id === id);
-        const i = state.items[idx];
+        const i = state.items.find(x => x.id === id);
         const isIn = i.status === "im Lager";
         i.status = isIn ? "unterwegs" : "im Lager";
         i.outUser = isIn ? state.user : "";
@@ -240,22 +235,21 @@
         sync();
     }
 
-    function sync() {
-        dbRef.set({ items: state.items, logs: state.logs, cats: state.cats });
-    }
+    function sync() { dbRef.set({ items: state.items, logs: state.logs, cats: state.cats }); }
 
     function render() {
         const list = document.getElementById('itemList');
         const search = document.getElementById('searchInput').value.toLowerCase();
         let html = "";
-
         state.items.filter(i => i.name.toLowerCase().includes(search) || (i.barcode && i.barcode.includes(search))).forEach(i => {
             const isOut = i.status !== "im Lager";
             html += `
                 <div class="glass card">
-                    <button class="btn-delete" onclick="deleteItem(${i.id})">🗑️</button>
+                    <div class="delete-zone">
+                        <button class="btn-delete-final" onclick="deleteItem(${i.id})">🗑️</button>
+                    </div>
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="thumb">
-                    <div style="flex:1">
+                    <div style="flex:1; padding-right:40px;">
                         <b style="font-size:1rem;">${i.name}</b><br>
                         <div class="qty-controls">
                             <button class="btn-qty" onclick="changeQty(${i.id}, -1)">–</button>
@@ -263,9 +257,9 @@
                             <button class="btn-qty" onclick="changeQty(${i.id}, 1)">+</button>
                             <small style="color:#666; margin-left:5px;">${i.cat}</small>
                         </div>
-                        ${isOut ? `<span style="color:red; font-size:0.7rem; font-weight:bold;">Ausgelagert: ${i.outUser}</span>` : ""}
+                        ${isOut ? `<span style="color:red; font-size:0.7rem; font-weight:bold;">Bei: ${i.outUser}</span>` : ""}
                     </div>
-                    <button onclick="toggleStatus(${i.id})" style="background:${isOut?'#dc2626':'#16a34a'}; color:white; border:none; padding:10px; border-radius:10px; cursor:pointer; font-weight:bold; min-width:85px; font-size:0.8rem;">
+                    <button onclick="toggleStatus(${i.id})" style="background:${isOut?'#dc2626':'#16a34a'}; color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; min-width:90px; font-size:0.8rem;">
                         ${isOut ? 'Einlagern' : 'Auslagern'}
                     </button>
                 </div>`;
@@ -273,7 +267,6 @@
         list.innerHTML = html;
         document.getElementById('logList').innerHTML = state.logs.slice(0,25).map(l => `<div style="font-size:0.75rem; border-bottom:1px solid #eee; padding:5px;"><b>${l.user}</b>: ${l.item || ''} ${l.action} <br><small style="color:gray;">${l.time}</small></div>`).join('');
     }
-
     init();
 </script>
 </body>
