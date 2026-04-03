@@ -3,41 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V90 - Tausch</title>
+    <title>GR-Lagerverwaltung V96</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --dark: #0f172a; }
-        
+        * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
 
         /* LOGIN SCREEN */
         #login-screen { position: fixed; top:0; left:0; width:100vw; height:100vh; background: var(--dark); z-index: 100000; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; border: 2px solid var(--accent); }
-        .login-card input { background: white; color: black; }
+        .login-card input { background: white; color: black; width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; }
 
         /* APP STRUKTUR */
         #mainApp { display: none; height: 100vh; flex-direction: column; position: relative; z-index: 10; }
         .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e293b url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: -2; }
         .dark-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: -1; }
 
-        /* HEADER */
         .header { background: var(--dark); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .header h1 { margin: 0; font-size: 1.1rem; flex: 1; text-align: center; font-weight: 900; }
-        .header-info { font-size: 0.7rem; width: 70px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; }
+        .header-info { font-size: 0.7rem; width: 70px; color: var(--accent); }
 
         .content-area { flex: 1; overflow-y: auto; padding: 15px 15px 120px 15px; -webkit-overflow-scrolling: touch; }
         
+        .filter-container { background: rgba(255,255,255,0.95); padding: 12px; border-radius: 15px; margin-bottom: 15px; color: #333; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; }
+
+        /* CARDS */
         .item-card { background: white; border-radius: 15px; margin-bottom: 15px; overflow: hidden; color: #333; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-        .delete-btn { position: absolute; top: 8px; right: 8px; background: var(--danger); color: white; border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; z-index: 5; }
+        
+        /* MÜLLEIMER BUTTON */
+        .delete-btn { 
+            position: absolute; top: 10px; right: 10px; background: #fee2e2; color: #dc2626; 
+            border: none; width: 35px; height: 35px; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5;
+        }
 
-        details { background: #f1f5f9; border-radius: 10px; margin-bottom: 10px; padding: 5px; color: #333; }
-        summary { font-weight: bold; padding: 10px; cursor: pointer; outline: none; }
-        .manage-box { padding: 10px; border-top: 1px solid #ddd; max-height: 200px; overflow-y: auto; }
-
-        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         .btn-status { display: block; width: 100%; padding: 18px; border: none; color: white; font-weight: bold; font-size: 1rem; text-transform: uppercase; }
 
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark); display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
@@ -56,7 +60,7 @@
         <input type="text" id="loginUser" placeholder="Dein Name">
         <input type="password" id="loginPass" placeholder="Passwort">
         <button onclick="handleLogin()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:bold; margin-top:15px; cursor:pointer;">ANMELDEN</button>
-        <p id="loginErr" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">Login fehlgeschlagen!</p>
+        <p id="loginErr" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">Falsches Passwort!</p>
     </div>
 </div>
 
@@ -72,18 +76,11 @@
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <div style="background:rgba(255,255,255,0.95); padding:12px; border-radius:15px; margin-bottom:15px; color:#333;">
+            <div class="filter-container">
                 <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()">
-                
                 <div style="display: flex; gap: 5px; margin-top: 5px;">
-                    <div style="flex: 1;">
-                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">LAGER:</label>
-                        <select id="filterLagerSelect" onchange="render()"></select>
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="font-size: 0.65rem; font-weight: bold; margin-left: 5px;">KATEGORIE:</label>
-                        <select id="filterCatSelect" onchange="render()"></select>
-                    </div>
+                    <select id="filterLagerSelect" onchange="render()"></select>
+                    <select id="filterCatSelect" onchange="render()"></select>
                 </div>
             </div>
             <div id="itemList"></div>
@@ -93,31 +90,23 @@
             <div class="item-card" style="padding:20px;">
                 <h3 style="margin:0 0 15px 0; color:var(--primary);">Neuer Artikel</h3>
                 <input type="text" id="itemName" placeholder="Bezeichnung">
-                <label style="font-size:0.7rem; font-weight:bold;">Kategorie:</label>
-                <select id="itemCatSelect"></select>
+                
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 2;">
+                        <label style="font-size:0.7rem; font-weight:bold;">Kategorie:</label>
+                        <select id="itemCatSelect"></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size:0.7rem; font-weight:bold;">Stückzahl:</label>
+                        <select id="itemQtySelect"></select>
+                    </div>
+                </div>
+
                 <label style="font-size:0.7rem; font-weight:bold;">Lagerplatz:</label>
                 <select id="itemLagerSelect"></select>
                 <input type="file" id="itemImg" accept="image/*" capture="environment">
                 <button onclick="saveItem()" style="width:100%; padding:18px; background:var(--success); color:white; border:none; border-radius:12px; font-weight:bold; margin-top:15px;">SPEICHERN</button>
             </div>
-
-            <details>
-                <summary>📂 Kategorien bearbeiten</summary>
-                <div class="manage-box" id="catManageList"></div>
-                <div style="display:flex; gap:5px; padding:10px;">
-                    <input type="text" id="newCatInput" placeholder="Neu...">
-                    <button onclick="addType('cats', 'newCatInput')" style="background:var(--success); border:none; color:white; padding:0 15px; border-radius:10px;">+</button>
-                </div>
-            </details>
-
-            <details>
-                <summary>🏠 Lagerplätze bearbeiten</summary>
-                <div class="manage-box" id="lagerManageList"></div>
-                <div style="display:flex; gap:5px; padding:10px;">
-                    <input type="text" id="newLagerInput" placeholder="Neu...">
-                    <button onclick="addType('locations', 'newLagerInput')" style="background:var(--success); border:none; color:white; padding:0 15px; border-radius:10px;">+</button>
-                </div>
-            </details>
         </div>
     </div>
 
@@ -139,7 +128,7 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    const dbRef = firebase.database().ref('lager_v90_multilager');
+    const dbRef = firebase.database().ref('lager_v96');
     let state = { user: null, items: [], cats: [], locations: [] };
 
     function handleLogin() {
@@ -156,17 +145,21 @@
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'flex';
         document.getElementById('userDisplay').innerText = state.user;
+        
+        // Stückzahl Dropdown füllen
+        let qtyHtml = "";
+        for(let i=1; i<=50; i++) qtyHtml += `<option value="${i}">${i}x</option>`;
+        document.getElementById('itemQtySelect').innerHTML = qtyHtml;
+
         initApp();
     }
-
-    function logout() { localStorage.removeItem('lagerAuthorizedUser'); location.reload(); }
 
     function initApp() {
         dbRef.on('value', snap => {
             const data = snap.val() || {};
             state.items = data.items || [];
-            state.cats = data.cats || ["Werkzeug", "Maschinen"];
-            state.locations = data.locations || ["Lager 1", "Lager 2"];
+            state.cats = data.cats || ["Werkzeug", "Material"];
+            state.locations = data.locations || ["Lager 1"];
             updateDropdowns();
             render();
         });
@@ -175,44 +168,10 @@
     function updateDropdowns() {
         const catHtml = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
         const lagerHtml = state.locations.map(l => `<option value="${l}">${l}</option>`).join('');
-        
         document.getElementById('itemCatSelect').innerHTML = catHtml;
         document.getElementById('filterCatSelect').innerHTML = `<option value="all">Alle Kategorien</option>` + catHtml;
         document.getElementById('filterLagerSelect').innerHTML = `<option value="all">Alle Lager</option>` + lagerHtml;
         document.getElementById('itemLagerSelect').innerHTML = lagerHtml;
-
-        document.getElementById('catManageList').innerHTML = state.cats.map(c => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${c}</span><span style="color:red;font-weight:bold;" onclick="deleteType('cats', '${c}')">X</span></div>`).join('');
-        document.getElementById('lagerManageList').innerHTML = state.locations.map(l => `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid #eee;"><span>${l}</span><span style="color:red;font-weight:bold;" onclick="deleteType('locations', '${l}')">X</span></div>`).join('');
-    }
-
-    function addType(key, inputId) {
-        const val = document.getElementById(inputId).value.trim();
-        if(!val || state[key].includes(val)) return;
-        state[key].push(val);
-        dbRef.child(key).set(state[key]);
-        document.getElementById(inputId).value = "";
-    }
-
-    function deleteType(key, val) {
-        if(confirm(`${val} löschen?`)) {
-            state[key] = state[key].filter(x => x !== val);
-            dbRef.child(key).set(state[key]);
-        }
-    }
-
-    function deleteItem(id) {
-        if(confirm("Löschen?")) {
-            state.items = state.items.filter(i => i.id !== id);
-            dbRef.child('items').set(state.items);
-        }
-    }
-
-    function toggleStatus(id) {
-        const i = state.items.find(x => x.id === id);
-        const isIn = i.status === "im Lager";
-        i.status = isIn ? "ausgeliehen" : "im Lager";
-        i.outUser = isIn ? state.user : "";
-        dbRef.child('items').set(state.items);
     }
 
     function render() {
@@ -231,11 +190,13 @@
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
                 <div class="item-card">
-                    <button class="delete-btn" onclick="deleteItem(${i.id})">×</button>
+                    <button class="delete-btn" onclick="deleteItem(${i.id})">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
                     <div style="padding:15px; display:flex; gap:15px; align-items:center;">
                         <img src="${i.img || 'https://via.placeholder.com/80'}" style="width:75px; height:75px; object-fit:cover; border-radius:10px;">
                         <div style="flex:1;">
-                            <b style="font-size:1.1rem;">${i.name}</b><br>
+                            <b style="font-size:1.1rem;">${i.qty || 1}x ${i.name}</b><br>
                             <small style="color:#666; font-weight:bold;">${i.cat} | ${i.lager || '?'}</small>
                             ${isOut ? `<div style="color:var(--danger); font-weight:bold; font-size:0.8rem; margin-top:5px;">Bei: ${i.outUser}</div>` : ""}
                         </div>
@@ -247,10 +208,33 @@
         });
     }
 
+    function toggleStatus(id) {
+        const i = state.items.find(x => x.id === id);
+        const isIn = i.status === "im Lager";
+        i.status = isIn ? "ausgeliehen" : "im Lager";
+        i.outUser = isIn ? state.user : "";
+        dbRef.child('items').set(state.items);
+    }
+
+    function deleteItem(id) {
+        if(confirm("Diesen Artikel endgültig löschen?")) {
+            state.items = state.items.filter(i => i.id !== id);
+            dbRef.child('items').set(state.items);
+        }
+    }
+
     function saveItem() {
         const n = document.getElementById('itemName').value;
         if(!n) return;
-        const newItem = { id: Date.now(), name: n, cat: document.getElementById('itemCatSelect').value, lager: document.getElementById('itemLagerSelect').value, img: "", status: "im Lager" };
+        const newItem = { 
+            id: Date.now(), 
+            name: n, 
+            qty: document.getElementById('itemQtySelect').value,
+            cat: document.getElementById('itemCatSelect').value, 
+            lager: document.getElementById('itemLagerSelect').value, 
+            img: "", 
+            status: "im Lager" 
+        };
         const f = document.getElementById('itemImg').files[0];
         if(f) {
             const r = new FileReader();
@@ -267,6 +251,8 @@
         document.getElementById(id).classList.add('active');
         e.currentTarget.classList.add('active');
     }
+
+    function logout() { localStorage.removeItem('lagerAuthorizedUser'); location.reload(); }
 
     window.onload = () => {
         const saved = localStorage.getItem('lagerAuthorizedUser');
