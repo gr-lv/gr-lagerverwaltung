@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V95</title>
+    <title>GR-Lagerverwaltung V96 - mit Bestätigung</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -13,26 +13,41 @@
         
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
 
-        /* LIGHTBOX / ZOOM */
+        /* TOAST BENACHRICHTIGUNG */
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: var(--success);
+            color: #fff;
+            text-align: center;
+            border-radius: 10px;
+            padding: 12px;
+            position: fixed;
+            z-index: 2000000;
+            left: 50%;
+            bottom: 85px;
+            transform: translateX(-50%);
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2s; }
+
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 85px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 85px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* RESTLICHES DESIGN (V95) */
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000000; justify-content: center; align-items: center; cursor: pointer; }
         #lightbox img { max-width: 95%; max-height: 85%; border-radius: 10px; border: 2px solid var(--accent); }
-
-        /* LOGIN */
         #login-screen { position: fixed; top:0; left:0; width:100vw; height:100vh; background: var(--dark); z-index: 999999; display: flex; align-items: center; justify-content: center; }
         .login-card { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; border: 2px solid var(--accent); }
-
-        /* APP */
         #mainApp { display: none; height: 100vh; flex-direction: column; position: relative; }
         .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e293b url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: -2; }
         .dark-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: -1; }
-
         .header { background: var(--dark); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .header h1 { margin: 0; font-size: 1.1rem; flex: 1; text-align: center; font-weight: 900; }
         .header-info { font-size: 0.7rem; width: 70px; color: var(--accent); }
-
         .content-area { flex: 1; overflow-y: auto; padding: 15px 10px 120px 10px; -webkit-overflow-scrolling: touch; }
         
-        /* KARTEN-DESIGN V95 */
         .item-card { 
             background: rgba(255, 255, 255, 0.95); 
             border-radius: 20px; 
@@ -48,47 +63,15 @@
         
         .item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
         .item-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; flex-shrink: 0; cursor: zoom-in; }
-        
         .item-info { display: flex; flex-direction: column; min-width: 0; }
-        .item-title-row { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
+        .item-title-row { display: flex; align-items: center; gap: 5px; }
         .item-title { font-weight: 800; font-size: 0.95rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .qty-select { 
-            padding: 1px 3px; 
-            border-radius: 5px; 
-            border: 1px solid #ccc; 
-            font-size: 0.75rem; 
-            background: white;
-            width: auto;
-            flex-shrink: 0;
-        }
-
-        /* BUTTONS RECHTS - JETZT KOMPAKTER */
+        .qty-select { padding: 1px 3px; border-radius: 5px; border: 1px solid #ccc; font-size: 0.75rem; background: white; flex-shrink: 0; }
         .action-group { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
-        
-        .btn-status-small { 
-            background: var(--success); 
-            color: white; 
-            border: none; 
-            padding: 8px 12px; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            font-size: 0.75rem;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        
-        .delete-icon-btn {
-            background: none;
-            border: none;
-            color: #999;
-            font-size: 1.1rem;
-            cursor: pointer;
-            padding: 4px;
-            flex-shrink: 0;
-        }
+        .btn-status-small { background: var(--success); color: white; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; font-size: 0.75rem; cursor: pointer; white-space: nowrap; }
+        .delete-icon-btn { background: none; border: none; color: #999; font-size: 1.1rem; cursor: pointer; padding: 4px; flex-shrink: 0; }
 
-        /* STANDARDS */
         input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         details { background: #f1f5f9; border-radius: 10px; margin-top: 10px; padding: 5px; color: #333; }
         summary { font-weight: bold; padding: 10px; cursor: pointer; }
@@ -100,6 +83,8 @@
     </style>
 </head>
 <body>
+
+<div id="toast">Stückzahl aktualisiert!</div>
 
 <div id="lightbox" onclick="this.style.display='none'"><img id="zoomImg" src=""></div>
 
@@ -157,7 +142,7 @@
 
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">Lager</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">Neu Anlegen</button>
     </nav>
 </div>
 
@@ -175,6 +160,14 @@
     firebase.initializeApp(firebaseConfig);
     const dbRef = firebase.database().ref('lager_v90_multilager');
     let state = { user: null, items: [], cats: [], locations: [] };
+
+    // Toast anzeigen
+    function showToast(text) {
+        const t = document.getElementById("toast");
+        t.innerText = text;
+        t.className = "show";
+        setTimeout(() => { t.className = t.className.replace("show", ""); }, 2500);
+    }
 
     function handleLogin() {
         const u = document.getElementById('loginUser').value.trim();
@@ -211,15 +204,6 @@
         document.getElementById('catManageList').innerHTML = state.cats.map(c => `<div style="color:#333; display:flex; justify-content:space-between; padding:5px;"><span>${c}</span><span style="color:red;" onclick="deleteType('cats', '${c}')">X</span></div>`).join('');
         document.getElementById('lagerManageList').innerHTML = state.locations.map(l => `<div style="color:#333; display:flex; justify-content:space-between; padding:5px;"><span>${l}</span><span style="color:red;" onclick="deleteType('locations', '${l}')">X</span></div>`).join('');
     }
-
-    function addType(k, i) {
-        const v = document.getElementById(i).value.trim();
-        if(!v || state[k].includes(v)) return;
-        state[k].push(v); dbRef.child(k).set(state[k]);
-        document.getElementById(i).value = "";
-    }
-
-    function deleteType(k, v) { if(confirm(`${v} löschen?`)) { state[k] = state[k].filter(x => x !== v); dbRef.child(k).set(state[k]); } }
 
     function render() {
         const list = document.getElementById('itemList');
@@ -263,9 +247,27 @@
         });
     }
 
-    function updateQty(id, val) { const i = state.items.find(x => x.id === id); i.qty = val; dbRef.child('items').set(state.items); }
-    function toggleStatus(id) { const i = state.items.find(x => x.id === id); const isIn = i.status === "im Lager"; i.status = isIn ? "ausgeliehen" : "im Lager"; i.outUser = isIn ? state.user : ""; dbRef.child('items').set(state.items); }
+    function updateQty(id, val) { 
+        const i = state.items.find(x => x.id === id); 
+        i.qty = val; 
+        dbRef.child('items').set(state.items).then(() => {
+            showToast(`✅ ${i.name}: ${val} Stück gespeichert`);
+        });
+    }
+
+    function toggleStatus(id) { 
+        const i = state.items.find(x => x.id === id); 
+        const isIn = i.status === "im Lager"; 
+        i.status = isIn ? "ausgeliehen" : "im Lager"; 
+        i.outUser = isIn ? state.user : ""; 
+        dbRef.child('items').set(state.items).then(() => {
+            showToast(isIn ? `📤 ${i.name} ausgeliehen` : `📥 ${i.name} eingelagert`);
+        });
+    }
+
     function deleteItem(id) { if(confirm("Löschen?")) { state.items = state.items.filter(i => i.id !== id); dbRef.child('items').set(state.items); } }
+    function addType(k, i) { const v = document.getElementById(i).value.trim(); if(!v || state[k].includes(v)) return; state[k].push(v); dbRef.child(k).set(state[k]); document.getElementById(i).value = ""; }
+    function deleteType(k, v) { if(confirm(`${v} löschen?`)) { state[k] = state[k].filter(x => x !== v); dbRef.child(k).set(state[k]); } }
     
     function saveItem() {
         const n = document.getElementById('itemName').value;
