@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V99 - Logbuch</title>
+    <title>GR-Lagerverwaltung V100</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --dark: #0f172a; }
-        
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
 
         /* TOAST */
@@ -24,7 +23,6 @@
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 85px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 85px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        /* DESIGN */
         #mainApp { display: none; height: 100vh; flex-direction: column; position: relative; }
         .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1e293b; z-index: -2; }
         .dark-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: -1; }
@@ -34,7 +32,6 @@
         
         .content-area { flex: 1; overflow-y: auto; padding: 15px 10px 120px 10px; -webkit-overflow-scrolling: touch; }
         
-        /* KARTEN */
         .item-card { 
             background: rgba(255, 255, 255, 0.95); border-radius: 20px; margin-bottom: 12px; padding: 10px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -42,15 +39,12 @@
         .item-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; }
         .qty-select { padding: 2px; border-radius: 6px; border: 1px solid #ccc; width: 60px !important; height: 28px; }
 
-        /* LOGBUCH DESIGN */
         .log-entry {
             background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent);
             padding: 10px; margin-bottom: 8px; border-radius: 0 10px 10px 0; font-size: 0.85rem;
         }
         .log-date { font-size: 0.7rem; color: var(--accent); font-weight: bold; }
-        .log-user { font-weight: bold; color: #fff; }
 
-        /* NAV */
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark); display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .tab-btn.active { color: white; border-top: 4px solid var(--accent); background: rgba(255,255,255,0.05); }
@@ -58,12 +52,12 @@
         .content { display: none; }
         .content.active { display: block; }
         
-        input, select { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #ccc; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; }
     </style>
 </head>
 <body>
 
-<div id="toast">Aktion geloggt!</div>
+<div id="toast">Aktion ausgeführt</div>
 
 <div id="login-screen" style="position:fixed; inset:0; background:var(--dark); z-index:9999; display:flex; align-items:center; justify-content:center;">
     <div style="background:rgba(255,255,255,0.1); padding:30px; border-radius:20px; width:80%; max-width:300px; text-align:center;">
@@ -78,7 +72,7 @@
     <div class="bg-layer"></div><div class="dark-overlay"></div>
     <div class="header">
         <div style="font-size:0.7rem; width:70px; color:var(--accent);" id="userDisplay"></div>
-        <h1>LAGER V99</h1>
+        <h1>GR-LAGER V100</h1>
         <div style="text-align:right; width:70px;"><button onclick="logout()" style="background:none; border:none; color:#777; font-size:0.6rem;">LOGOUT</button></div>
     </div>
 
@@ -86,11 +80,6 @@
         <div id="tab-lager" class="content active">
             <input type="text" id="searchInput" placeholder="🔍 Suchen..." onkeyup="render()" style="background:white;">
             <div id="itemList"></div>
-        </div>
-
-        <div id="tab-log" class="content">
-            <h3 style="color:var(--accent); margin-top:0;">📜 Verlaufs-Log</h3>
-            <div id="logList"></div>
         </div>
 
         <div id="tab-neu" class="content">
@@ -102,12 +91,17 @@
                 <button onclick="saveItem()" style="width:100%; padding:15px; background:var(--success); color:white; border:none; border-radius:10px; font-weight:bold;">SPEICHERN</button>
             </div>
         </div>
+
+        <div id="tab-log" class="content">
+            <h3 style="color:var(--accent); margin-top:0;">📜 Logbuch</h3>
+            <div id="logList"></div>
+        </div>
     </div>
 
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')"><span>📦</span>Lager</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')"><span>📜</span>Logbuch</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-neu')"><span>➕</span>Neu</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-log')"><span>📜</span>Logbuch</button>
     </nav>
 </div>
 
@@ -124,7 +118,9 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let state = { user: null, items: [], logs: [] };
+    // ZURÜCK AUF ALTEN PFAD DAMIT DATEN DA SIND:
+    const mainRef = db.ref('lager_v90_multilager'); 
+    let state = { user: null, items: [], logs: [], cats: [] };
 
     function showToast(text) {
         const t = document.getElementById("toast");
@@ -132,7 +128,6 @@
         setTimeout(() => { t.className = ""; }, 2500);
     }
 
-    // LOG-FUNKTION
     function addLog(msg) {
         const newLog = {
             date: new Date().toLocaleString('de-DE'),
@@ -140,14 +135,14 @@
             text: msg,
             ts: Date.now()
         };
-        db.ref('lager_v99/logs').push(newLog);
+        mainRef.child('logs').push(newLog);
     }
 
     function handleLogin() {
         const u = document.getElementById('loginUser').value.trim();
         if(u && document.getElementById('loginPass').value === "1234") {
             state.user = u;
-            localStorage.setItem('lagerUserV99', u);
+            localStorage.setItem('lagerUserV100', u);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'flex';
             document.getElementById('userDisplay').innerText = u;
@@ -156,10 +151,15 @@
     }
 
     function initApp() {
-        db.ref('lager_v99').on('value', snap => {
+        mainRef.on('value', snap => {
             const data = snap.val() || {};
-            state.items = Object.values(data.items || {});
+            // Items sind als Objekt in Firebase, wir brauchen ein Array mit Keys
+            const rawItems = data.items || {};
+            state.items = Object.keys(rawItems).map(key => ({...rawItems[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
+            state.cats = data.cats || ["Werkzeug", "Basteln", "Spiele"];
+            
+            document.getElementById('itemCatSelect').innerHTML = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
             render();
             renderLogs();
         });
@@ -170,27 +170,27 @@
         const s = document.getElementById('searchInput').value.toLowerCase();
         list.innerHTML = "";
         
-        state.items.filter(i => i.name.toLowerCase().includes(s)).forEach(i => {
+        state.items.filter(i => i.name.toLowerCase().includes(s)).sort((a,b) => b.ts - a.ts).forEach(i => {
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
                 <div class="item-card">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img src="${i.img || 'https://via.placeholder.com/50'}" class="item-thumb">
-                        <div>
-                            <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">
+                    <div style="display:flex; align-items:center; gap:10px; flex:1;">
+                        <img src="${i.img || 'https://via.placeholder.com/55'}" class="item-thumb">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold; display:flex; align-items:center; gap:5px; color:#333;">
                                 ${i.name}
                                 <select class="qty-select" onchange="changeQty('${i.key}', this)">
                                     ${Array.from({length:20}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
                                 </select>
                             </div>
-                            <div style="font-size:0.7rem; color:#666;">${i.cat} ${isOut ? '| 🚩 '+i.outUser : ''}</div>
+                            <div style="font-size:0.7rem; color:#777;">${i.cat} ${isOut ? ' | <span style="color:red; font-weight:bold;">Bei: '+i.outUser+'</span>' : ''}</div>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:5px;">
-                        <button onclick="toggleItem('${i.key}')" style="background:${isOut?'var(--danger)':'var(--success)'}; color:white; border:none; padding:8px; border-radius:8px; font-size:0.7rem; font-weight:bold;">
+                        <button onclick="toggleItem('${i.key}')" style="background:${isOut?'var(--danger)':'var(--success)'}; color:white; border:none; padding:8px 12px; border-radius:10px; font-size:0.75rem; font-weight:bold; min-width:85px;">
                             ${isOut?'Einlagern':'Auslagern'}
                         </button>
-                        <button onclick="deleteItem('${i.key}')" style="background:none; border:none; font-size:1rem;">🗑️</button>
+                        <button onclick="deleteItem('${i.key}')" style="background:none; border:none; font-size:1.1rem; color:#999;">🗑️</button>
                     </div>
                 </div>`;
         });
@@ -201,26 +201,25 @@
         list.innerHTML = state.logs.slice(0, 50).map(l => `
             <div class="log-entry">
                 <div class="log-date">${l.date}</div>
-                <div><span class="log-user">${l.user}:</span> ${l.text}</div>
+                <div><span style="color:white; font-weight:bold;">${l.user}:</span> ${l.text}</div>
             </div>
         `).join('');
     }
 
     function changeQty(key, el) {
         const i = state.items.find(x => x.key === key);
-        if(confirm(`Menge für ${i.name} auf ${el.value} ändern?`)) {
-            addLog(`geänderte Stückzahl für ${i.name} von ${i.qty} auf ${el.value}`);
-            db.ref('lager_v99/items/'+key).update({qty: el.value});
-            showToast("Stückzahl aktualisiert");
+        if(confirm(`Menge für "${i.name}" auf ${el.value} ändern?`)) {
+            addLog(`Stückzahl ${i.name} geändert: ${i.qty} -> ${el.value}`);
+            mainRef.child('items/'+key).update({qty: el.value});
+            showToast("Gespeichert");
         } else { render(); }
     }
 
     function toggleItem(key) {
         const i = state.items.find(x => x.key === key);
         const isIn = i.status === "im Lager";
-        const msg = isIn ? `hat ${i.name} AUSGELAGERT` : `hat ${i.name} wieder EINGELAGERT`;
-        addLog(msg);
-        db.ref('lager_v99/items/'+key).update({
+        addLog(isIn ? `AUSGELAGERT: ${i.name}` : `EINGELAGERT: ${i.name}`);
+        mainRef.child('items/'+key).update({
             status: isIn ? "ausgeliehen" : "im Lager",
             outUser: isIn ? state.user : ""
         });
@@ -229,24 +228,31 @@
 
     function deleteItem(key) {
         const i = state.items.find(x => x.key === key);
-        if(confirm("Löschen?")) {
-            addLog(`hat den Artikel ${i.name} GELÖSCHT`);
-            db.ref('lager_v99/items/'+key).remove();
+        if(confirm(`"${i.name}" wirklich löschen?`)) {
+            addLog(`GELÖSCHT: ${i.name}`);
+            mainRef.child('items/'+key).remove();
         }
     }
 
     function saveItem() {
         const n = document.getElementById('itemName').value;
         if(!n) return;
-        const key = db.ref('lager_v99/items').push().key;
-        const newItem = { key: key, name: n, cat: "Diverses", qty: 1, status: "im Lager", img: "" };
+        const newRef = mainRef.child('items').push();
+        const newItem = { name: n, cat: document.getElementById('itemCatSelect').value, qty: 1, status: "im Lager", img: "", ts: Date.now() };
         
         const f = document.getElementById('itemImg').files[0];
         if(f) {
             const r = new FileReader();
-            r.onload = (e) => { newItem.img = e.target.result; db.ref('lager_v99/items/'+key).set(newItem); addLog(`neuen Artikel angelegt: ${n}`); };
+            r.onload = (e) => { 
+                newItem.img = e.target.result; 
+                newRef.set(newItem); 
+                addLog(`NEU ANGELEGT: ${n}`);
+            };
             r.readAsDataURL(f);
-        } else { db.ref('lager_v99/items/'+key).set(newItem); addLog(`neuen Artikel angelegt: ${n}`); }
+        } else { 
+            newRef.set(newItem); 
+            addLog(`NEU ANGELEGT: ${n}`); 
+        }
         
         document.getElementById('itemName').value = "";
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
@@ -259,10 +265,10 @@
         e.currentTarget.classList.add('active');
     }
 
-    function logout() { localStorage.removeItem('lagerUserV99'); location.reload(); }
+    function logout() { localStorage.removeItem('lagerUserV100'); location.reload(); }
 
     window.onload = () => {
-        const saved = localStorage.getItem('lagerUserV99');
+        const saved = localStorage.getItem('lagerUserV100');
         if(saved) {
             state.user = saved;
             document.getElementById('login-screen').style.display = 'none';
