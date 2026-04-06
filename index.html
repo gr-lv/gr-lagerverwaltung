@@ -3,33 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V102</title>
+    <title>GR-Lagerverwaltung V103 - Original Hintergrund</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --dark: #0f172a; --card-bg: #f8fafc; }
-        
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
+        :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --dark: #0f172a; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; overflow: hidden; }
+
+        /* NEU: ORIGINAL HINTERGRUND OHNE OVERLAY */
+        .bg-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('haus_background.jpg') no-repeat center center;
+            background-size: cover; z-index: -2;
+        }
 
         /* HEADER */
-        .header { background: #030712; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
+        .header { background: #030712; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
         .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; }
 
-        /* CONTENT */
+        /* CONTENT AREA */
         .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 20px; box-sizing: border-box; }
 
-        /* KARTEN DESIGN (Wie Screenshot) */
+        /* KARTEN DESIGN */
         .item-card { 
             background: white; border-radius: 15px; margin-bottom: 15px; padding: 15px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
         }
         .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; border: 1px solid #ddd; }
         .qty-select { padding: 5px; border-radius: 8px; border: 1px solid #ccc; width: 80px; font-weight: bold; font-size: 1rem; }
 
-        /* REITER / NAV */
+        /* NAV */
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); }
         .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-top: 4px solid var(--accent); }
@@ -38,42 +44,44 @@
         .content.active { display: block; }
 
         /* FORMULAR DESIGN */
-        .form-section { background: white; color: #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .form-section { background: white; color: #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
         .form-section h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; }
         
-        .admin-box { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; margin-top: 10px; border: 1px solid #444; }
+        .admin-box { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; margin-top: 10px; border: 1px solid #444; color: white; }
         .flex-row { display: flex; gap: 10px; align-items: center; }
         
-        .btn-add { background: #eee; border: 1px solid #ccc; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; margin-top: 15px; }
+        .btn-add { background: #eee; border: 1px solid #ccc; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; color: black; }
+        .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; margin-top: 15px; cursor: pointer; }
 
         /* LOGBUCH */
-        .log-entry { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 10px; border-radius: 0 10px 10px 0; }
+        .log-entry { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 10px; border-radius: 0 10px 10px 0; color: white; }
         .log-date { font-size: 0.75rem; color: var(--accent); margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
-<div id="login-screen" style="position:fixed; inset:0; background:var(--dark); z-index:9999; display:flex; align-items:center; justify-content:center;">
+<div id="login-screen" style="position:fixed; inset:0; background:var(--dark); z-index:9999; display:flex; align-items:center; justify-content:center; color:white;">
     <div style="background:rgba(255,255,255,0.1); padding:40px; border-radius:25px; width:85%; max-width:350px; text-align:center;">
         <h2 style="color:var(--accent); margin-bottom:20px;">LAGER LOGIN</h2>
         <input type="text" id="loginUser" placeholder="Nutzername">
         <input type="password" id="loginPass" placeholder="Passwort">
-        <button onclick="handleLogin()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; margin-top:15px; font-weight:bold;">ANMELDEN</button>
+        <button onclick="handleLogin()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; margin-top:15px; font-weight:bold; cursor:pointer;">ANMELDEN</button>
     </div>
 </div>
 
 <div id="mainApp" style="display:none; flex-direction:column; height:100vh;">
+    <div class="bg-layer"></div>
+
     <div class="header">
         <div id="userDisplay" style="font-size:0.8rem; color:var(--accent); font-weight:bold;"></div>
         <h1>GR-LAGERVERWALTUNG</h1>
-        <button onclick="logout()" style="background:none; border:none; color:#666; font-size:0.7rem;">LOGOUT</button>
+        <button onclick="logout()" style="background:none; border:none; color:#666; font-size:0.7rem; cursor:pointer;">LOGOUT</button>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()" style="margin-bottom:15px; border:none; box-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+            <input type="text" id="searchInput" placeholder="🔍 Artikel suchen..." onkeyup="render()" style="margin-bottom:15px; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
             <div id="itemList"></div>
         </div>
 
@@ -100,7 +108,7 @@
             <details class="admin-box">
                 <summary style="cursor:pointer; font-weight:bold; color:var(--accent);">⚙️ Listen bearbeiten (Regal/Fach/Kat)</summary>
                 
-                <div style="margin-top:15px;">
+                <div style="margin-top:15px; color:white;">
                     <small>Kategorie hinzufügen:</small>
                     <div class="flex-row">
                         <input type="text" id="newCatInput" placeholder="Neue Kat...">
@@ -108,7 +116,7 @@
                     </div>
                 </div>
 
-                <div style="margin-top:15px;">
+                <div style="margin-top:15px; color:white;">
                     <small>Regal hinzufügen:</small>
                     <div class="flex-row">
                         <input type="text" id="newRegalInput" placeholder="Regal Name...">
@@ -116,7 +124,7 @@
                     </div>
                 </div>
 
-                <div style="margin-top:15px;">
+                <div style="margin-top:15px; color:white;">
                     <small>Fach hinzufügen:</small>
                     <div class="flex-row">
                         <input type="text" id="newFachInput" placeholder="Fach Nr...">
@@ -169,7 +177,7 @@
         const u = document.getElementById('loginUser').value.trim();
         if(u && document.getElementById('loginPass').value === "1234") {
             state.user = u;
-            localStorage.setItem('lagerUserV102', u);
+            localStorage.setItem('lagerUserV103', u);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'flex';
             document.getElementById('userDisplay').innerText = u.toUpperCase();
@@ -235,10 +243,10 @@
                         </div>
                     </div>
                     <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-                        <button onclick="toggleItem('${i.key}')" style="background:${isOut?'#e11d48':'#16a34a'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:100px;">
+                        <button onclick="toggleItem('${i.key}')" style="background:${isOut ? '#dc2626' : '#16a34a'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:100px; cursor:pointer;">
                             ${isOut?'Einlagern':'Auslagern'}
                         </button>
-                        <button onclick="deleteItem('${i.key}')" style="background:none; border:none; font-size:1.2rem; opacity:0.3;">🗑️</button>
+                        <button onclick="deleteItem('${i.key}')" style="background:none; border:none; font-size:1.2rem; opacity:0.3; cursor:pointer;">🗑️</button>
                     </div>
                 </div>`;
         });
@@ -311,10 +319,10 @@
         e.currentTarget.classList.add('active');
     }
 
-    function logout() { localStorage.removeItem('lagerUserV102'); location.reload(); }
+    function logout() { localStorage.removeItem('lagerUserV103'); location.reload(); }
 
     window.onload = () => {
-        const saved = localStorage.getItem('lagerUserV102');
+        const saved = localStorage.getItem('lagerUserV103');
         if(saved) {
             state.user = saved;
             document.getElementById('login-screen').style.display = 'none';
