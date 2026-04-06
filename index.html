@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V108</title>
+    <title>GR-Lagerverwaltung V109</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -23,18 +23,21 @@
 
         .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 20px; box-sizing: border-box; }
 
-        /* ARTIKEL KARTE */
+        /* ARTIKEL KARTE MIT MÜLLEIMER */
         .item-card { 
             background: rgba(255, 255, 255, 0.95); border-radius: 15px; margin-bottom: 15px; padding: 15px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
-            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4); position: relative;
         }
         .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 10px; border: 1px solid #ddd; }
         
-        .qty-select { 
-            padding: 5px; border-radius: 8px; border: 1px solid #ccc; 
-            width: 70px; font-weight: bold; font-size: 1rem; background: #fff;
+        .delete-btn {
+            position: absolute; top: 10px; right: 10px; background: none; border: none;
+            font-size: 1.2rem; cursor: pointer; opacity: 0.3; transition: opacity 0.2s;
         }
+        .delete-btn:hover { opacity: 1; }
+
+        .qty-select { padding: 5px; border-radius: 8px; border: 1px solid #ccc; width: 70px; font-weight: bold; font-size: 1rem; }
 
         .log-entry { 
             background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px);
@@ -42,25 +45,23 @@
             border-radius: 0 12px 12px 0; color: white;
         }
 
-        .form-section { background: white; color: #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; }
+        .form-section { background: white; color: #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
         
         .camera-container {
             display: flex; align-items: center; gap: 10px; background: #f1f5f9;
-            padding: 12px; border-radius: 10px; border: 2px dashed var(--accent);
-            margin: 10px 0; cursor: pointer;
+            padding: 12px; border-radius: 10px; border: 2px dashed var(--accent); margin: 10px 0;
         }
-        #imagePreview { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; display: none; border: 2px solid var(--success); }
+        #imagePreview { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; display: none; }
 
-        .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; margin-top: 15px; cursor: pointer; }
+        .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
         
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); }
-        .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-        .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-top: 4px solid var(--accent); }
+        .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .tab-btn.active { color: white; border-top: 4px solid var(--accent); }
         .content { display: none; }
         .content.active { display: block; }
-        
-        .admin-box { background: rgba(0,0,0,0.7); border-radius: 10px; padding: 15px; margin-top: 10px; border: 1px solid #444; color: white; }
+        .admin-box { background: rgba(0,0,0,0.7); border-radius: 10px; padding: 15px; margin-top: 10px; color: white; }
         .flex-row { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
     </style>
 </head>
@@ -81,21 +82,21 @@
 
         <div id="tab-neu" class="content">
             <div class="form-section">
-                <h3 style="margin-top:0;">Neuer Artikel</h3>
-                <small>Lager / Gebäude</small><select id="itemLagerSelect"></select>
+                <h3>Neuer Artikel</h3>
+                <small>Lager</small><select id="itemLagerSelect"></select>
                 <input type="text" id="itemName" placeholder="Bezeichnung">
-                <div class="flex-row"><div style="flex:1;"><small>Kategorie</small><select id="itemCatSelect"></select></div></div>
-                <div class="flex-row" style="margin-top:10px;">
+                <small>Kategorie</small><select id="itemCatSelect"></select>
+                <div class="flex-row">
                     <div style="flex:1;"><small>Regal</small><select id="itemRegalSelect"></select></div>
                     <div style="flex:1;"><small>Fach</small><select id="itemFachSelect"></select></div>
                 </div>
                 <div class="camera-container" onclick="document.getElementById('itemImg').click()">
-                    <span class="camera-icon">📸</span>
-                    <span id="cameraText" style="flex:1; font-weight:bold; font-size:0.9rem; color:#475569;">Foto aufnehmen/wählen</span>
+                    <span style="font-size:1.5rem;">📸</span>
+                    <span id="cameraText" style="flex:1; font-weight:bold;">Foto aufnehmen/wählen</span>
                     <img id="imagePreview" src="">
                 </div>
                 <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
-                <button onclick="saveItem()" class="btn-save">ARTIKEL SPEICHERN</button>
+                <button onclick="saveItem()" class="btn-save">SPEICHERN</button>
             </div>
 
             <details class="admin-box">
@@ -110,7 +111,7 @@
         </div>
 
         <div id="tab-log" class="content">
-            <h3 style="color:white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin-top:0;">📜 Logbuch</h3>
+            <h3 style="color:white;">📜 Logbuch</h3>
             <div id="logList"></div>
         </div>
     </div>
@@ -152,8 +153,8 @@
             const data = snap.val() || {};
             state.items = Object.keys(data.items || {}).map(key => ({...data.items[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
-            state.cats = data.cats || ["Allgemein"];
-            state.regale = data.regale || ["A1"];
+            state.cats = data.cats || ["Werkzeug"];
+            state.regale = data.regale || ["R1"];
             state.faecher = data.faecher || ["F1"];
             state.locations = data.locations || ["Lager"];
             
@@ -176,15 +177,13 @@
             const isOut = i.status !== "im Lager";
             list.innerHTML += `
                 <div class="item-card">
+                    <button class="delete-btn" onclick="deleteItem('${i.key}', '${i.name}')">🗑️</button>
                     <div style="display:flex; align-items:center; gap:12px; flex:1;">
                         <img src="${i.img || 'https://via.placeholder.com/60'}" class="item-thumb">
                         <div style="flex:1;">
-                            <div style="font-weight:900; font-size:1.1rem;">${i.name}</div>
-                            <div style="font-size:0.75rem; color:#666;">
-                                🏠 ${i.location} | 📍 ${i.regal}/${i.fach}
-                            </div>
+                            <div style="font-weight:900; font-size:1.1rem; padding-right:25px;">${i.name}</div>
+                            <div style="font-size:0.75rem; color:#666;">🏠 ${i.location} | 📍 ${i.regal}/${i.fach}</div>
                             <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
-                                <small style="font-weight:bold;">Menge:</small>
                                 <select class="qty-select" onchange="changeQty('${i.key}', this)">
                                     ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
                                 </select>
@@ -192,11 +191,18 @@
                             </div>
                         </div>
                     </div>
-                    <button onclick="toggleItem('${i.key}')" style="background:${isOut?'#dc2626':'#16a34a'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:90px; cursor:pointer;">
+                    <button onclick="toggleItem('${i.key}')" style="background:${isOut?'#dc2626':'#16a34a'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:80px;">
                         ${isOut?'Ein':'Aus'}
                     </button>
                 </div>`;
         });
+    }
+
+    function deleteItem(key, name) {
+        if(confirm(`Möchtest du "${name}" wirklich unwiderruflich löschen?`)) {
+            mainRef.child('items/'+key).remove();
+            mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `GELÖSCHT: ${name}`, ts: Date.now() });
+        }
     }
 
     function renderLogs() {
@@ -223,7 +229,7 @@
 
     function finishSave(data) {
         mainRef.child('items').push(data);
-        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${data.name} (${data.qty}x)`, ts: Date.now() });
+        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${data.name}`, ts: Date.now() });
         document.getElementById('itemName').value = "";
         document.getElementById('imagePreview').style.display = 'none';
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
@@ -231,14 +237,15 @@
 
     function changeQty(key, el) {
         const i = state.items.find(x => x.key === key);
-        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `MENGE: ${i.name} (${i.qty} -> ${el.value})`, ts: Date.now() });
         mainRef.child('items/'+key).update({qty: parseInt(el.value)});
+        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `MENGE: ${i.name} -> ${el.value}`, ts: Date.now() });
     }
 
     function toggleItem(key) {
         const i = state.items.find(x => x.key === key);
         const isIn = i.status === "im Lager";
         mainRef.child('items/'+key).update({ status: isIn ? "ausgeliehen" : "im Lager", outUser: isIn ? state.user : "" });
+        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: isIn ? `AUS: ${i.name}` : `EIN: ${i.name}`, ts: Date.now() });
     }
 
     function addListOption(type, inputId) {
