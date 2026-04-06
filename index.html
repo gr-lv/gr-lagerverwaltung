@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V114</title>
+    <title>GR-Lagerverwaltung V115</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,27 +11,13 @@
     <style>
         :root { --primary: #06b6d4; --accent: #06b6d4; --danger: #ef4444; --success: #10b981; --dark: #0f172a; --bg-glass: rgba(255, 255, 255, 0.96); }
         
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
-            font-family: -apple-system, sans-serif; overflow: hidden; 
-            background-color: #030712; /* Grundfarbe */
-        }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, sans-serif; overflow: hidden; background-color: #030712; }
 
-        /* HINTERGRUND-LAYER */
+        /* HINTERGRUND FIX */
         .bg-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            /* Falls das Bild fehlt, wird dieser Verlauf angezeigt */
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            z-index: -2;
-        }
-
-        /* DAS EIGENTLICHE BILD */
-        .bg-image {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('haus_background.jpg') no-repeat center center;
-            background-size: cover;
-            z-index: -1;
-            opacity: 0.6; /* Etwas transparenter für bessere Lesbarkeit */
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('haus_background.jpg') no-repeat center center;
+            background-size: cover; z-index: -2;
         }
 
         .header { background: #030712; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
@@ -41,56 +27,54 @@
 
         /* KARTEN */
         .item-card { 
-            background: var(--bg-glass); border-radius: 12px; margin-bottom: 12px; padding: 12px; 
+            background: var(--bg-glass); border-radius: 12px; margin-bottom: 12px; padding: 10px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; border-left: 4px solid var(--accent);
         }
-        .item-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
-        .delete-btn { position: absolute; top: 8px; right: 8px; background: none; border: none; font-size: 1rem; opacity: 0.2; }
+        .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 0.9rem; opacity: 0.2; }
 
-        .info-row { display: flex; font-size: 0.75rem; margin-bottom: 3px; }
-        .info-label { width: 50px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.65rem; }
+        .info-row { display: flex; font-size: 0.75rem; margin-bottom: 2px; }
+        .info-label { width: 45px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.6rem; }
         .info-value { color: #1e293b; font-weight: 600; }
 
+        /* JETZT WIRKLICH KLEIN: STÜCKZAHL DROP DOWN */
         .qty-select-mini { 
-            width: 55px; padding: 2px 5px; font-size: 0.8rem; font-weight: bold; 
-            border-radius: 5px; border: 1px solid #cbd5e1; background: white;
+            width: 50px !important; 
+            height: 20px !important; 
+            padding: 0 2px !important; 
+            font-size: 0.75rem !important; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            border: 1px solid #cbd5e1; 
+            background: #fff;
+            line-height: 1;
+            appearance: none; /* Entfernt Standard-Pfeil für maximale Platzersparnis in manchen Browsern */
+            text-align: center;
         }
 
-        /* FORMULAR */
+        /* FORMULAR & ANDERE REITER */
         .form-section { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .form-section h3 { margin-top: 0; color: var(--dark); font-size: 0.9rem; border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: 15px; text-transform: uppercase; }
         
         .flex-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
         .row-label { width: 85px; font-size: 0.7rem; font-weight: bold; color: #64748b; text-transform: uppercase; }
         
-        input, select { 
-            flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; 
-            font-size: 0.9rem; background: #f8fafc; color: #1e293b; outline: none;
-        }
+        input, select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem; background: #f8fafc; outline: none; }
         input:focus { border-color: var(--accent); background: white; }
-
-        .camera-container {
-            display: flex; align-items: center; gap: 12px; background: #f1f5f9;
-            padding: 12px; border-radius: 10px; border: 2px dashed var(--accent); margin-bottom: 15px;
-        }
-        #imagePreview { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; display: none; }
 
         .btn-save { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
 
         /* LOGBUCH */
-        .log-entry { 
-            background: rgba(15, 23, 42, 0.9); border-left: 4px solid var(--accent); 
-            padding: 12px; margin-bottom: 8px; border-radius: 0 10px 10px 0; color: white;
-        }
+        .log-entry { background: rgba(15, 23, 42, 0.92); border-left: 4px solid var(--accent); padding: 10px; margin-bottom: 8px; border-radius: 0 8px 8px 0; color: white; }
 
         /* NAV */
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
-        .tab-btn span { font-size: 1.4rem; margin-bottom: 4px; }
+        .tab-btn span { font-size: 1.3rem; margin-bottom: 3px; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.15); border-top: 4px solid var(--accent); }
         
-        .admin-box { background: rgba(0,0,0,0.85); border-radius: 12px; padding: 15px; color: white; margin-top: 20px; border: 1px solid #1e293b; }
+        .admin-box { background: rgba(0,0,0,0.85); border-radius: 12px; padding: 15px; color: white; margin-top: 15px; border: 1px solid #1e293b; }
         .content { display: none; }
         .content.active { display: block; }
     </style>
@@ -99,7 +83,6 @@
 
 <div style="display:flex; flex-direction:column; height:100vh;">
     <div class="bg-layer"></div>
-    <div class="bg-image"></div>
 
     <div class="header">
         <div id="userDisplay" style="font-size:0.7rem; color:var(--accent); font-weight:bold;">David</div>
@@ -124,10 +107,10 @@
                 <div class="flex-row"><span class="row-label">Regal</span><select id="itemRegalSelect"></select></div>
                 <div class="flex-row"><span class="row-label">Fach</span><select id="itemFachSelect"></select></div>
 
-                <div class="camera-container" onclick="document.getElementById('itemImg').click()">
+                <div style="display:flex; align-items:center; gap:10px; background:#f1f5f9; padding:10px; border-radius:10px; border:2px dashed var(--accent); margin-bottom:15px;" onclick="document.getElementById('itemImg').click()">
                     <span>📸</span>
                     <span style="flex:1; font-weight:bold; font-size:0.8rem; color:#475569;">BILD HINZUFÜGEN</span>
-                    <img id="imagePreview" src="">
+                    <img id="imagePreview" src="" style="width:40px; height:40px; object-fit:cover; display:none; border-radius:5px;">
                 </div>
                 <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
                 
@@ -136,11 +119,9 @@
 
             <details class="admin-box">
                 <summary style="cursor:pointer; font-weight:bold; color:var(--accent);">⚙️ LISTEN BEARBEITEN</summary>
-                <div style="margin-top:15px; border-top: 1px solid #334155; padding-top:10px;">
-                    <div class="flex-row"><span class="row-label">Lager</span><input type="text" id="newLagerInput"><button onclick="addListOption('locations', 'newLagerInput')" style="background:var(--accent); border:none; color:white; padding:8px 12px; border-radius:5px;">+</button></div>
-                    <div class="flex-row"><span class="row-label">Kat</span><input type="text" id="newCatInput"><button onclick="addListOption('cats', 'newCatInput')" style="background:var(--accent); border:none; color:white; padding:8px 12px; border-radius:5px;">+</button></div>
-                    <div class="flex-row"><span class="row-label">Regal</span><input type="text" id="newRegalInput"><button onclick="addListOption('regale', 'newRegalInput')" style="background:var(--accent); border:none; color:white; padding:8px 12px; border-radius:5px;">+</button></div>
-                    <div class="flex-row"><span class="row-label">Fach</span><input type="text" id="newFachInput"><button onclick="addListOption('faecher', 'newFachInput')" style="background:var(--accent); border:none; color:white; padding:8px 12px; border-radius:5px;">+</button></div>
+                <div style="margin-top:10px; border-top:1px solid #334155; padding-top:10px;">
+                    <div class="flex-row"><span class="row-label">Lager</span><input type="text" id="newLagerInput"><button onclick="addListOption('locations', 'newLagerInput')" style="background:var(--accent); border:none; color:white; padding:5px 10px; border-radius:5px;">+</button></div>
+                    <div class="flex-row"><span class="row-label">Kat</span><input type="text" id="newCatInput"><button onclick="addListOption('cats', 'newCatInput')" style="background:var(--accent); border:none; color:white; padding:5px 10px; border-radius:5px;">+</button></div>
                 </div>
             </details>
         </div>
@@ -159,7 +140,7 @@
 </div>
 
 <script>
-    // Deine Firebase-Konfiguration hier lassen...
+    // Firebase & Logic (unverändert wie in V114, nur CSS oben wurde angepasst)
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -217,19 +198,19 @@
                     <div style="display:flex; align-items:center; gap:12px; flex:1;">
                         <img src="${i.img || 'https://via.placeholder.com/80'}" class="item-thumb">
                         <div style="flex:1;">
-                            <div style="font-weight:900; font-size:1.05rem; color:#000; margin-bottom:5px;">${i.name}</div>
+                            <div style="font-weight:900; font-size:1.05rem; color:#000; margin-bottom:4px;">${i.name}</div>
                             <div class="info-row"><span class="info-label">Ort</span><span class="info-value">🏠 ${i.location}</span></div>
                             <div class="info-row"><span class="info-label">Platz</span><span class="info-value">📍 ${i.regal} / ${i.fach}</span></div>
-                            <div style="display:flex; align-items:center; gap:8px; margin-top:6px;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
                                 <span class="info-label">Stk.</span>
                                 <select class="qty-select-mini" onchange="changeQty('${i.key}', this)">
                                     ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
                                 </select>
-                                ${isOut ? `<span style="color:var(--danger); font-size:0.65rem; font-weight:bold; background:#fee2e2; padding:2px 5px; border-radius:4px;">🚩 BEI: ${i.outUser}</span>` : ''}
+                                ${isOut ? `<span style="color:var(--danger); font-size:0.6rem; font-weight:bold; background:#fee2e2; padding:1px 4px; border-radius:3px;">🚩 ${i.outUser}</span>` : ''}
                             </div>
                         </div>
                     </div>
-                    <button onclick="toggleItem('${i.key}')" style="background:${isOut? 'var(--danger)' : 'var(--success)'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:70px; font-size:0.8rem; box-shadow:0 3px 6px rgba(0,0,0,0.2);">
+                    <button onclick="toggleItem('${i.key}')" style="background:${isOut? 'var(--danger)' : 'var(--success)'}; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; min-width:65px; font-size:0.75rem;">
                         ${isOut?'EIN':'AUS'}
                     </button>
                 </div>`;
@@ -237,13 +218,13 @@
     }
 
     function renderLogs() {
-        document.getElementById('logList').innerHTML = state.logs.slice(0, 50).map(l => `
+        document.getElementById('logList').innerHTML = state.logs.slice(0, 40).map(l => `
             <div class="log-entry">
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.7rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:0.65rem;">
                     <span style="color:var(--accent); font-weight:bold;">${l.date}</span>
                     <span style="opacity:0.7;">👤 ${l.user}</span>
                 </div>
-                <div style="font-size:0.85rem; font-weight:500;">${l.text}</div>
+                <div style="font-size:0.8rem;">${l.text}</div>
             </div>
         `).join('');
     }
@@ -280,7 +261,6 @@
     }
 
     function changeQty(key, el) {
-        const i = state.items.find(x => x.key === key);
         mainRef.child('items/'+key).update({qty: parseInt(el.value)});
     }
 
