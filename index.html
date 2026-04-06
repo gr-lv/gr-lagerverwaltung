@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V100</title>
+    <title>GR-Lagerverwaltung V101</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -37,7 +37,7 @@
             color: #333; display: flex; align-items: center; justify-content: space-between; gap: 8px;
         }
         .item-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 12px; border: 1px solid #ddd; }
-        .qty-select { padding: 2px; border-radius: 6px; border: 1px solid #ccc; width: 60px !important; height: 28px; }
+        .qty-select { padding: 2px; border-radius: 6px; border: 1px solid #ccc; width: 65px !important; height: 28px; font-weight: bold; }
 
         .log-entry {
             background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent);
@@ -52,7 +52,8 @@
         .content { display: none; }
         .content.active { display: block; }
         
-        input, select { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        label { font-size: 0.8rem; color: #666; margin-left: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -72,7 +73,7 @@
     <div class="bg-layer"></div><div class="dark-overlay"></div>
     <div class="header">
         <div style="font-size:0.7rem; width:70px; color:var(--accent);" id="userDisplay"></div>
-        <h1>GR-LAGER V100</h1>
+        <h1>GR-LAGER V101</h1>
         <div style="text-align:right; width:70px;"><button onclick="logout()" style="background:none; border:none; color:#777; font-size:0.6rem;">LOGOUT</button></div>
     </div>
 
@@ -85,10 +86,20 @@
         <div id="tab-neu" class="content">
             <div style="background:white; color:#333; padding:15px; border-radius:15px;">
                 <h3 style="margin:0 0 10px 0;">Neuer Artikel</h3>
-                <input type="text" id="itemName" placeholder="Bezeichnung">
+                
+                <label>Bezeichnung</label>
+                <input type="text" id="itemName" placeholder="z.B. Schere">
+                
+                <label>Kategorie</label>
                 <select id="itemCatSelect"></select>
+                
+                <label>Lagerplatz</label>
+                <select id="itemLagerSelect"></select>
+                
+                <label>Foto hinzufügen</label>
                 <input type="file" id="itemImg" accept="image/*" capture="environment">
-                <button onclick="saveItem()" style="width:100%; padding:15px; background:var(--success); color:white; border:none; border-radius:10px; font-weight:bold;">SPEICHERN</button>
+                
+                <button onclick="saveItem()" style="width:100%; padding:15px; background:var(--success); color:white; border:none; border-radius:10px; font-weight:bold; margin-top:10px;">ARTIKEL SPEICHERN</button>
             </div>
         </div>
 
@@ -118,9 +129,8 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    // ZURÜCK AUF ALTEN PFAD DAMIT DATEN DA SIND:
     const mainRef = db.ref('lager_v90_multilager'); 
-    let state = { user: null, items: [], logs: [], cats: [] };
+    let state = { user: null, items: [], logs: [], cats: [], locations: [] };
 
     function showToast(text) {
         const t = document.getElementById("toast");
@@ -142,7 +152,7 @@
         const u = document.getElementById('loginUser').value.trim();
         if(u && document.getElementById('loginPass').value === "1234") {
             state.user = u;
-            localStorage.setItem('lagerUserV100', u);
+            localStorage.setItem('lagerUserV101', u);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'flex';
             document.getElementById('userDisplay').innerText = u;
@@ -153,13 +163,16 @@
     function initApp() {
         mainRef.on('value', snap => {
             const data = snap.val() || {};
-            // Items sind als Objekt in Firebase, wir brauchen ein Array mit Keys
             const rawItems = data.items || {};
             state.items = Object.keys(rawItems).map(key => ({...rawItems[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
             state.cats = data.cats || ["Werkzeug", "Basteln", "Spiele"];
+            state.locations = data.locations || ["Regal 1", "Schrank A"];
             
+            // Dropdowns füllen
             document.getElementById('itemCatSelect').innerHTML = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('itemLagerSelect').innerHTML = state.locations.map(l => `<option value="${l}">${l}</option>`).join('');
+            
             render();
             renderLogs();
         });
@@ -180,14 +193,14 @@
                             <div style="font-weight:bold; display:flex; align-items:center; gap:5px; color:#333;">
                                 ${i.name}
                                 <select class="qty-select" onchange="changeQty('${i.key}', this)">
-                                    ${Array.from({length:20}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
+                                    ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
                                 </select>
                             </div>
-                            <div style="font-size:0.7rem; color:#777;">${i.cat} ${isOut ? ' | <span style="color:red; font-weight:bold;">Bei: '+i.outUser+'</span>' : ''}</div>
+                            <div style="font-size:0.7rem; color:#777;">${i.cat} | ${i.lager || 'Kein Ort'} ${isOut ? ' | <span style="color:red; font-weight:bold;">Bei: '+i.outUser+'</span>' : ''}</div>
                         </div>
                     </div>
                     <div style="display:flex; align-items:center; gap:5px;">
-                        <button onclick="toggleItem('${i.key}')" style="background:${isOut?'var(--danger)':'var(--success)'}; color:white; border:none; padding:8px 12px; border-radius:10px; font-size:0.75rem; font-weight:bold; min-width:85px;">
+                        <button onclick="toggleItem('${i.key}')" style="background:${isOut?'var(--danger)':'var(--success)'}; color:white; border:none; padding:8px 10px; border-radius:10px; font-size:0.75rem; font-weight:bold; min-width:80px;">
                             ${isOut?'Einlagern':'Auslagern'}
                         </button>
                         <button onclick="deleteItem('${i.key}')" style="background:none; border:none; font-size:1.1rem; color:#999;">🗑️</button>
@@ -238,7 +251,15 @@
         const n = document.getElementById('itemName').value;
         if(!n) return;
         const newRef = mainRef.child('items').push();
-        const newItem = { name: n, cat: document.getElementById('itemCatSelect').value, qty: 1, status: "im Lager", img: "", ts: Date.now() };
+        const newItem = { 
+            name: n, 
+            cat: document.getElementById('itemCatSelect').value, 
+            lager: document.getElementById('itemLagerSelect').value,
+            qty: 1, 
+            status: "im Lager", 
+            img: "", 
+            ts: Date.now() 
+        };
         
         const f = document.getElementById('itemImg').files[0];
         if(f) {
@@ -246,12 +267,12 @@
             r.onload = (e) => { 
                 newItem.img = e.target.result; 
                 newRef.set(newItem); 
-                addLog(`NEU ANGELEGT: ${n}`);
+                addLog(`NEU ANGELEGT: ${n} (${newItem.lager})`);
             };
             r.readAsDataURL(f);
         } else { 
             newRef.set(newItem); 
-            addLog(`NEU ANGELEGT: ${n}`); 
+            addLog(`NEU ANGELEGT: ${n} (${newItem.lager})`); 
         }
         
         document.getElementById('itemName').value = "";
@@ -265,10 +286,10 @@
         e.currentTarget.classList.add('active');
     }
 
-    function logout() { localStorage.removeItem('lagerUserV100'); location.reload(); }
+    function logout() { localStorage.removeItem('lagerUserV101'); location.reload(); }
 
     window.onload = () => {
-        const saved = localStorage.getItem('lagerUserV100');
+        const saved = localStorage.getItem('lagerUserV101');
         if(saved) {
             state.user = saved;
             document.getElementById('login-screen').style.display = 'none';
