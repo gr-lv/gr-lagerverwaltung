@@ -3,64 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V116 - Mini-Menüs</title>
+    <title>GR-Lagerverwaltung V117 - Komplett</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #06b6d4; --accent: #06b6d4; --danger: #ef4444; --success: #10b981; --dark: #0f172a; --bg-glass: rgba(255, 255, 255, 0.96); }
+        :root { 
+            --accent: #06b6d4; 
+            --danger: #ef4444; 
+            --success: #10b981; 
+            --dark-bg: #030712; 
+            --glass: rgba(255, 255, 255, 0.95); 
+        }
         
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, sans-serif; overflow: hidden; background-color: #030712; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, sans-serif; overflow: hidden; background-color: var(--dark-bg); }
 
-        /* HINTERGRUND */
+        /* HINTERGRUND MIT OVERLAY */
         .bg-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('haus_background.jpg') no-repeat center center;
             background-size: cover; z-index: -2;
         }
 
-        .header { background: #030712; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
+        /* HEADER */
+        .header { background: var(--dark-bg); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
         .header h1 { margin: 0; font-size: 1.1rem; letter-spacing: 1px; font-weight: 900; text-transform: uppercase; }
 
         .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 15px; box-sizing: border-box; }
 
-        /* KARTEN-STYLING */
+        /* ARTIKEL KARTEN */
         .item-card { 
-            background: var(--bg-glass); border-radius: 12px; margin-bottom: 12px; padding: 10px; 
+            background: var(--glass); border-radius: 12px; margin-bottom: 12px; padding: 12px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; border-left: 4px solid var(--accent);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; border-left: 5px solid var(--accent);
         }
-        .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
+        .item-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 0.9rem; opacity: 0.2; cursor: pointer; }
 
-        /* INFORMATIONEN */
-        .info-row { display: flex; font-size: 0.75rem; margin-bottom: 2px; align-items: center; }
-        .info-label { width: 45px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.6rem; }
-        .info-value { color: #1e293b; font-weight: 600; }
+        .info-row { display: flex; font-size: 0.75rem; margin-bottom: 3px; align-items: center; }
+        .info-label { width: 45px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.65rem; }
+        .info-value { color: #1e293b; font-weight: 700; }
 
-        /* --- DIE KLEINEN DROPDOWN MENÜS --- */
+        /* DIE MINI DROPDOWNS */
         .qty-select-mini { 
-            width: 48px !important;    /* Sehr schmal */
-            height: 18px !important;   /* Extrem flach */
+            width: 50px !important; 
+            height: 20px !important; 
             padding: 0 2px !important; 
-            font-size: 0.7rem !important; 
-            font-weight: 800; 
-            border-radius: 3px; 
+            font-size: 0.8rem !important; 
+            font-weight: bold; 
+            border-radius: 4px; 
             border: 1px solid var(--accent); 
-            background: #fff;
-            color: #000;
+            background: white;
             line-height: 1;
             cursor: pointer;
-            -webkit-appearance: none;  /* Entfernt Browser-Standard-Styling */
-            appearance: none;
-            text-align: center;
         }
 
-        /* NAVIGATION & BUTTONS */
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); }
+        /* FORMULARE & INPUTS */
+        .form-section { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .form-section h3 { margin: 0 0 15px 0; color: #1e293b; font-size: 0.9rem; border-bottom: 2px solid var(--accent); padding-bottom: 5px; text-transform: uppercase; }
+        
+        .flex-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .row-label { width: 85px; font-size: 0.7rem; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        
+        input, select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem; outline: none; transition: 0.2s; }
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2); }
+
+        .btn-save { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
+
+        /* LOGBUCH */
+        .log-entry { background: rgba(15, 23, 42, 0.9); border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 8px; border-radius: 0 10px 10px 0; color: white; }
+
+        /* NAVIGATION */
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark-bg); display: flex; height: 70px; border-top: 2px solid var(--accent); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
+        .tab-btn span { font-size: 1.4rem; margin-bottom: 4px; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.15); border-top: 4px solid var(--accent); }
         
+        .admin-box { background: rgba(0,0,0,0.8); border-radius: 12px; padding: 15px; color: white; margin-top: 20px; border: 1px solid #1e293b; }
         .content { display: none; }
         .content.active { display: block; }
     </style>
@@ -77,48 +97,203 @@
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
+            <div class="flex-row" style="background:white; padding:5px; border-radius:10px; margin-bottom:15px; border: 2px solid var(--accent);">
+                <span style="padding-left:10px;">🔍</span>
+                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="border:none;">
+            </div>
             <div id="itemList"></div>
+        </div>
+
+        <div id="tab-neu" class="content">
+            <div class="form-section">
+                <h3>📦 Artikel hinzufügen</h3>
+                <div class="flex-row"><span class="row-label">Name</span><input type="text" id="itemName" placeholder="Eingeben..."></div>
+                <div class="flex-row"><span class="row-label">Lager</span><select id="itemLagerSelect"></select></div>
+                <div class="flex-row"><span class="row-label">Kategorie</span><select id="itemCatSelect"></select></div>
+                <div class="flex-row"><span class="row-label">Regal</span><select id="itemRegalSelect"></select></div>
+                <div class="flex-row"><span class="row-label">Fach</span><select id="itemFachSelect"></select></div>
+
+                <div style="display:flex; align-items:center; gap:12px; background:#f1f5f9; padding:12px; border-radius:10px; border:2px dashed var(--accent); margin-bottom:15px;" onclick="document.getElementById('itemImg').click()">
+                    <span>📸</span>
+                    <span style="flex:1; font-weight:bold; font-size:0.8rem; color:#475569;">BILD HINZUFÜGEN</span>
+                    <img id="imagePreview" src="" style="width:45px; height:45px; object-fit:cover; display:none; border-radius:6px; border:1px solid var(--accent);">
+                </div>
+                <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                
+                <button onclick="saveItem()" class="btn-save">SPEICHERN</button>
+            </div>
+
+            <details class="admin-box">
+                <summary style="cursor:pointer; font-weight:bold; color:var(--accent);">⚙️ LISTEN BEARBEITEN</summary>
+                <div style="margin-top:15px; border-top: 1px solid #334155; padding-top:10px;">
+                    <div class="flex-row"><span class="row-label">Lager</span><input type="text" id="newLagerInput"><button onclick="addListOption('locations', 'newLagerInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                    <div class="flex-row"><span class="row-label">Kat</span><input type="text" id="newCatInput"><button onclick="addListOption('cats', 'newCatInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                    <div class="flex-row"><span class="row-label">Regal</span><input type="text" id="newRegalInput"><button onclick="addListOption('regale', 'newRegalInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                    <div class="flex-row"><span class="row-label">Fach</span><input type="text" id="newFachInput"><button onclick="addListOption('faecher', 'newFachInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                </div>
+            </details>
+        </div>
+
+        <div id="tab-log" class="content">
+            <h3 style="color:white; margin:0 0 15px 0; border-left: 4px solid var(--accent); padding-left:10px;">📜 LOGBUCH</h3>
+            <div id="logList"></div>
         </div>
     </div>
 
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')"><span>📦</span>Lager</button>
-        <button class="tab-btn"><span>➕</span>Neu</button>
-        <button class="tab-btn"><span>📜</span>Logbuch</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')"><span>➕</span>Neu</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-log')"><span>📜</span>Logbuch</button>
     </nav>
 </div>
 
 <script>
-    // Hier nur die Render-Logik zur Veranschaulichung der Menüs
-    const mockItems = [
-        { key: "1", name: "Schere", location: "Büro", regal: "R1", fach: "F2", qty: 12, img: "" },
-        { key: "2", name: "Kreide", location: "Lager", regal: "R4", fach: "F1", qty: 2, img: "" }
-    ];
+    const firebaseConfig = {
+        apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
+        authDomain: "gr-lagerverwaltung.firebaseapp.com",
+        databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "gr-lagerverwaltung",
+        storageBucket: "gr-lagerverwaltung.firebasestorage.app",
+        messagingSenderId: "561219570576",
+        appId: "1:561219570576:web:65824b199a12933fd88115"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const mainRef = db.ref('lager_v90_multilager');
+    let state = { user: "David", items: [], logs: [], cats: [], regale: [], faecher: [], locations: [] };
+
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => { preview.src = e.target.result; preview.style.display = 'block'; }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function initApp() {
+        mainRef.on('value', snap => {
+            const data = snap.val() || {};
+            state.items = Object.keys(data.items || {}).map(key => ({...data.items[key], key: key}));
+            state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
+            state.cats = data.cats || ["Werkzeug"];
+            state.regale = data.regale || ["R1"];
+            state.faecher = data.faecher || ["F1"];
+            state.locations = data.locations || ["Haupthaus"];
+            
+            ['itemLagerSelect', 'itemCatSelect', 'itemRegalSelect', 'itemFachSelect'].forEach((id, idx) => {
+                const keys = ['locations', 'cats', 'regale', 'faecher'][idx];
+                document.getElementById(id).innerHTML = state[keys].map(v => `<option value="${v}">${v}</option>`).join('');
+            });
+            
+            render();
+            renderLogs();
+        });
+    }
 
     function render() {
         const list = document.getElementById('itemList');
-        list.innerHTML = mockItems.map(i => `
-            <div class="item-card">
-                <div style="display:flex; align-items:center; gap:12px; flex:1;">
-                    <img src="https://via.placeholder.com/65" class="item-thumb">
-                    <div style="flex:1;">
-                        <div style="font-weight:900; font-size:1rem; color:#000; margin-bottom:4px;">${i.name}</div>
-                        <div class="info-row"><span class="info-label">Ort</span><span class="info-value">🏠 ${i.location}</span></div>
-                        <div class="info-row">
-                            <span class="info-label">Stk.</span>
-                            <select class="qty-select-mini">
-                                ${[...Array(20).keys()].map(n => `<option ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
-                            </select>
+        const s = document.getElementById('searchInput').value.toLowerCase();
+        list.innerHTML = "";
+        
+        state.items.filter(i => i.name.toLowerCase().includes(s)).sort((a,b) => b.ts - a.ts).forEach(i => {
+            const isOut = i.status !== "im Lager";
+            list.innerHTML += `
+                <div class="item-card">
+                    <button class="delete-btn" onclick="deleteItem('${i.key}', '${i.name}')">🗑️</button>
+                    <div style="display:flex; align-items:center; gap:12px; flex:1;">
+                        <img src="${i.img || 'https://via.placeholder.com/80'}" class="item-thumb">
+                        <div style="flex:1;">
+                            <div style="font-weight:900; font-size:1.05rem; color:#000; margin-bottom:5px;">${i.name}</div>
+                            <div class="info-row"><span class="info-label">Ort</span><span class="info-value">🏠 ${i.location}</span></div>
+                            <div class="info-row"><span class="info-label">Platz</span><span class="info-value">📍 ${i.regal} / ${i.fach}</span></div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
+                                <span class="info-label">Stk.</span>
+                                <select class="qty-select-mini" onchange="changeQty('${i.key}', this)">
+                                    ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
+                                </select>
+                                ${isOut ? `<span style="color:var(--danger); font-size:0.6rem; font-weight:bold; background:#fee2e2; padding:1px 4px; border-radius:3px;">🚩 ${i.outUser}</span>` : ''}
+                            </div>
                         </div>
                     </div>
+                    <button onclick="toggleItem('${i.key}')" style="background:${isOut? 'var(--danger)' : 'var(--success)'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:65px; font-size:0.8rem;">
+                        ${isOut?'EIN':'AUS'}
+                    </button>
+                </div>`;
+        });
+    }
+
+    function renderLogs() {
+        document.getElementById('logList').innerHTML = state.logs.slice(0, 30).map(l => `
+            <div class="log-entry">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.65rem;">
+                    <span style="color:var(--accent); font-weight:bold;">${l.date}</span>
+                    <span style="opacity:0.7;">👤 ${l.user}</span>
                 </div>
-                <button style="background:var(--success); color:white; border:none; padding:8px; border-radius:8px; font-weight:bold; min-width:60px; font-size:0.7rem;">AUS</button>
+                <div style="font-size:0.85rem;">${l.text}</div>
             </div>
         `).join('');
     }
 
-    function switchTab(e, id) { render(); } // Nur Demo
-    window.onload = render;
+    function saveItem() {
+        const n = document.getElementById('itemName').value;
+        if(!n) return;
+        const newItem = { 
+            name: n, location: document.getElementById('itemLagerSelect').value,
+            cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, 
+            fach: document.getElementById('itemFachSelect').value, qty: 1, status: "im Lager", img: "", ts: Date.now() 
+        };
+        const file = document.getElementById('itemImg').files[0];
+        if(file) {
+            const r = new FileReader();
+            r.onload = (e) => { newItem.img = e.target.result; finishSave(newItem); };
+            r.readAsDataURL(file);
+        } else { finishSave(newItem); }
+    }
+
+    function finishSave(data) {
+        mainRef.child('items').push(data);
+        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${data.name}`, ts: Date.now() });
+        document.getElementById('itemName').value = "";
+        document.getElementById('imagePreview').style.display = 'none';
+        switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
+    }
+
+    function deleteItem(key, name) {
+        if(confirm(`"${name}" wirklich löschen?`)) {
+            mainRef.child('items/'+key).remove();
+            mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `GELÖSCHT: ${name}`, ts: Date.now() });
+        }
+    }
+
+    function changeQty(key, el) {
+        mainRef.child('items/'+key).update({qty: parseInt(el.value)});
+    }
+
+    function toggleItem(key) {
+        const i = state.items.find(x => x.key === key);
+        const isIn = i.status === "im Lager";
+        mainRef.child('items/'+key).update({ status: isIn ? "ausgeliehen" : "im Lager", outUser: isIn ? state.user : "" });
+        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: isIn ? `AUS: ${i.name}` : `EIN: ${i.name}`, ts: Date.now() });
+    }
+
+    function addListOption(type, inputId) {
+        const val = document.getElementById(inputId).value.trim();
+        if(!val) return;
+        const newList = [...(state[type] || []), val];
+        mainRef.child(type).set(newList);
+        document.getElementById(inputId).value = "";
+    }
+
+    function switchTab(e, id) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        e.currentTarget.classList.add('active');
+    }
+
+    window.onload = initApp;
 </script>
 </body>
 </html>
