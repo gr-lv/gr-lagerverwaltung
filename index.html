@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V106</title>
+    <title>GR-Lagerverwaltung V107</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -23,7 +23,6 @@
 
         .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 20px; box-sizing: border-box; }
 
-        /* KARTEN */
         .item-card { 
             background: rgba(255, 255, 255, 0.95); border-radius: 15px; margin-bottom: 15px; padding: 15px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
@@ -31,33 +30,33 @@
         }
         .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; border: 1px solid #ddd; }
 
-        /* LOGBUCH */
         .log-entry { 
             background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px);
             border-left: 5px solid var(--accent); padding: 15px; margin-bottom: 12px; 
             border-radius: 0 12px 12px 0; color: white;
         }
 
-        /* FORMULAR */
         .form-section { background: white; color: #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; }
         
-        /* NEU: KAMERA BUTTON STYLING */
+        /* KAMERA & GALERIE CONTAINER */
         .camera-container {
             display: flex;
             align-items: center;
             gap: 10px;
             background: #f1f5f9;
-            padding: 10px;
+            padding: 12px;
             border-radius: 10px;
-            border: 2px dashed #cbd5e1;
+            border: 2px dashed var(--accent);
             margin: 10px 0;
             cursor: pointer;
+            transition: background 0.3s;
         }
-        .camera-icon { font-size: 1.5rem; }
+        .camera-container:active { background: #e2e8f0; }
+        .camera-icon { font-size: 1.6rem; }
         #imagePreview { 
-            width: 50px; height: 50px; object-fit: cover; border-radius: 5px; 
-            display: none; border: 1px solid var(--accent); 
+            width: 55px; height: 55px; object-fit: cover; border-radius: 8px; 
+            display: none; border: 2px solid var(--success); 
         }
 
         .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; margin-top: 15px; cursor: pointer; }
@@ -78,7 +77,6 @@
     <div class="header">
         <div id="userDisplay" style="font-size:0.8rem; color:var(--accent); font-weight:bold;"></div>
         <h1>GR-LAGERVERWALTUNG</h1>
-        <button onclick="logout()" style="background:none; border:none; color:#666; font-size:0.7rem;">LOGOUT</button>
     </div>
 
     <div class="content-area">
@@ -105,13 +103,13 @@
                     <div style="flex:1;"><small>Fach</small><select id="itemFachSelect"></select></div>
                 </div>
 
-                <small style="display:block; margin-top:10px;">Foto aufnehmen</small>
+                <small style="display:block; margin-top:10px;">Bild hinzufügen (Kamera oder Galerie)</small>
                 <div class="camera-container" onclick="document.getElementById('itemImg').click()">
                     <span class="camera-icon">📸</span>
-                    <span id="cameraText" style="flex:1; font-weight:bold; font-size:0.9rem;">Foto schießen</span>
+                    <span id="cameraText" style="flex:1; font-weight:bold; font-size:0.9rem; color:#475569;">Foto aufnehmen oder wählen</span>
                     <img id="imagePreview" src="">
                 </div>
-                <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
+                <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
                 
                 <button onclick="saveItem()" class="btn-save">ARTIKEL SPEICHERN</button>
             </div>
@@ -141,7 +139,7 @@
 </div>
 
 <script>
-    // Firebase & State (wie V105)
+    // Firebase Konfiguration (wie gehabt)
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -157,7 +155,6 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "David", items: [], logs: [], cats: [], regale: [], faecher: [], locations: [] };
 
-    // NEU: Vorschau-Funktion für das Foto
     function previewImage(input) {
         const preview = document.getElementById('imagePreview');
         const text = document.getElementById('cameraText');
@@ -166,7 +163,8 @@
             reader.onload = function(e) {
                 preview.src = e.target.result;
                 preview.style.display = 'block';
-                text.innerText = "Foto bereit!";
+                text.innerText = "Bild ausgewählt!";
+                text.style.color = "var(--success)";
             }
             reader.readAsDataURL(input.files[0]);
         }
@@ -177,10 +175,10 @@
             const data = snap.val() || {};
             state.items = Object.keys(data.items || {}).map(key => ({...data.items[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
-            state.cats = data.cats || ["Basteln"];
-            state.regale = data.regale || ["R1"];
+            state.cats = data.cats || ["Allgemein"];
+            state.regale = data.regale || ["A1"];
             state.faecher = data.faecher || ["F1"];
-            state.locations = data.locations || ["Haupthaus"];
+            state.locations = data.locations || ["Lager"];
             updateSelects();
             render();
             renderLogs();
@@ -244,10 +242,10 @@
     function finishSave(data) {
         mainRef.child('items').push(data);
         mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${data.name}`, ts: Date.now() });
-        // Reset Form
         document.getElementById('itemName').value = "";
         document.getElementById('imagePreview').style.display = 'none';
-        document.getElementById('cameraText').innerText = "Foto schießen";
+        document.getElementById('cameraText').innerText = "Foto aufnehmen oder wählen";
+        document.getElementById('cameraText').style.color = "#475569";
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
     }
 
@@ -257,6 +255,12 @@
         const newList = [...(state[type] || []), val];
         mainRef.child(type).set(newList);
         document.getElementById(inputId).value = "";
+    }
+
+    function toggleItem(key) {
+        const i = state.items.find(x => x.key === key);
+        const isIn = i.status === "im Lager";
+        mainRef.child('items/'+key).update({ status: isIn ? "ausgeliehen" : "im Lager", outUser: isIn ? state.user : "" });
     }
 
     function switchTab(e, id) {
