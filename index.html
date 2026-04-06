@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V104</title>
+    <title>GR-Lagerverwaltung V105</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -12,21 +12,17 @@
         :root { --primary: #2563eb; --accent: #06b6d4; --danger: #dc2626; --success: #16a34a; --dark: #0f172a; }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; overflow: hidden; }
 
-        /* HINTERGRUND */
         .bg-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: url('haus_background.jpg') no-repeat center center;
             background-size: cover; z-index: -2;
         }
 
-        /* HEADER */
         .header { background: #030712; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
         .header h1 { margin: 0; font-size: 1.2rem; letter-spacing: 2px; font-weight: 900; text-transform: uppercase; }
 
-        /* CONTENT AREA */
         .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 20px; box-sizing: border-box; }
 
-        /* KARTEN DESIGN (Lagerliste) */
         .item-card { 
             background: rgba(255, 255, 255, 0.95); border-radius: 15px; margin-bottom: 15px; padding: 15px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
@@ -35,27 +31,13 @@
         .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 10px; border: 1px solid #ddd; }
         .qty-select { padding: 5px; border-radius: 8px; border: 1px solid #ccc; width: 80px; font-weight: bold; font-size: 1rem; }
 
-        /* LOGBUCH DESIGN - JETZT MIT BESSERER LESBARKEIT */
         .log-entry { 
-            background: rgba(0, 0, 0, 0.75); /* Dunkler Hintergrund für Kontrast */
-            backdrop-filter: blur(5px); /* Edler Glaseffekt */
-            border-left: 5px solid var(--accent); 
-            padding: 15px; 
-            margin-bottom: 12px; 
-            border-radius: 0 12px 12px 0; 
-            color: white;
-            box-shadow: 2px 4px 10px rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px);
+            border-left: 5px solid var(--accent); padding: 15px; margin-bottom: 12px; 
+            border-radius: 0 12px 12px 0; color: white;
         }
-        .log-date { 
-            font-size: 0.8rem; 
-            color: var(--accent); 
-            font-weight: bold; 
-            margin-bottom: 6px; 
-            display: block;
-        }
-        .log-text { font-size: 1rem; line-height: 1.4; }
+        .log-date { font-size: 0.8rem; color: var(--accent); font-weight: bold; margin-bottom: 6px; display: block; }
 
-        /* NAV */
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); }
         .tab-btn { flex: 1; border: none; background: none; color: #9ca3af; font-weight: bold; font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
         .tab-btn.active { color: white; background: rgba(255,255,255,0.1); border-top: 4px solid var(--accent); }
@@ -63,11 +45,10 @@
         .content { display: none; }
         .content.active { display: block; }
 
-        /* FORMULAR DESIGN */
         .form-section { background: white; color: #333; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
         input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; font-size: 1rem; box-sizing: border-box; }
-        .admin-box { background: rgba(0,0,0,0.6); border-radius: 10px; padding: 15px; margin-top: 10px; border: 1px solid #444; color: white; }
-        .flex-row { display: flex; gap: 10px; align-items: center; }
+        .admin-box { background: rgba(0,0,0,0.7); border-radius: 10px; padding: 15px; margin-top: 10px; border: 1px solid #444; color: white; }
+        .flex-row { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
         .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1.1rem; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
@@ -84,7 +65,6 @@
 
 <div id="mainApp" style="display:none; flex-direction:column; height:100vh;">
     <div class="bg-layer"></div>
-
     <div class="header">
         <div id="userDisplay" style="font-size:0.8rem; color:var(--accent); font-weight:bold;"></div>
         <h1>GR-LAGERVERWALTUNG</h1>
@@ -100,24 +80,32 @@
         <div id="tab-neu" class="content">
             <div class="form-section">
                 <h3 style="margin-top:0;">Neuer Artikel</h3>
-                <input type="text" id="itemName" placeholder="Bezeichnung (z.B. Schere)">
+                
+                <small>Lager / Gebäude</small>
+                <select id="itemLagerSelect"></select>
+
+                <input type="text" id="itemName" placeholder="Bezeichnung">
+                
                 <div class="flex-row">
                     <div style="flex:1;"><small>Kategorie</small><select id="itemCatSelect"></select></div>
                 </div>
+
                 <div class="flex-row" style="margin-top:10px;">
                     <div style="flex:1;"><small>Regal</small><select id="itemRegalSelect"></select></div>
                     <div style="flex:1;"><small>Fach</small><select id="itemFachSelect"></select></div>
                 </div>
+
                 <small style="display:block; margin-top:10px;">Foto</small>
                 <input type="file" id="itemImg" accept="image/*" capture="environment">
+                
                 <button onclick="saveItem()" class="btn-save">SPEICHERN</button>
             </div>
 
             <details class="admin-box">
-                <summary style="cursor:pointer; font-weight:bold; color:var(--accent);">⚙️ Listen bearbeiten</summary>
+                <summary style="cursor:pointer; font-weight:bold; color:var(--accent);">⚙️ Listen & Lager bearbeiten</summary>
                 <div style="margin-top:15px;">
-                    <small>Kategorie / Regal / Fach hinzufügen...</small>
-                    <div class="flex-row"><input type="text" id="newCatInput" placeholder="Neu..."><button onclick="addListOption('cats', 'newCatInput')" style="padding:10px;">+</button></div>
+                    <div class="flex-row"><input type="text" id="newLagerInput" placeholder="Neues Lager..."><button onclick="addListOption('locations', 'newLagerInput')" style="padding:10px;">+</button></div>
+                    <div class="flex-row"><input type="text" id="newCatInput" placeholder="Neue Kat..."><button onclick="addListOption('cats', 'newCatInput')" style="padding:10px;">+</button></div>
                     <div class="flex-row"><input type="text" id="newRegalInput" placeholder="Regal..."><button onclick="addListOption('regale', 'newRegalInput')" style="padding:10px;">+</button></div>
                     <div class="flex-row"><input type="text" id="newFachInput" placeholder="Fach..."><button onclick="addListOption('faecher', 'newFachInput')" style="padding:10px;">+</button></div>
                 </div>
@@ -125,7 +113,7 @@
         </div>
 
         <div id="tab-log" class="content">
-            <h3 style="color:white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin-top:0; text-transform:uppercase; letter-spacing:1px;">📜 Logbuch Verlauf</h3>
+            <h3 style="color:white; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); margin-top:0;">📜 Logbuch</h3>
             <div id="logList"></div>
         </div>
     </div>
@@ -151,22 +139,17 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: null, items: [], logs: [], cats: [], regale: [], faecher: [] };
+    let state = { user: null, items: [], logs: [], cats: [], regale: [], faecher: [], locations: [] };
 
     function addLog(msg) {
-        mainRef.child('logs').push({
-            date: new Date().toLocaleString('de-DE'),
-            user: state.user,
-            text: msg,
-            ts: Date.now()
-        });
+        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: msg, ts: Date.now() });
     }
 
     function handleLogin() {
         const u = document.getElementById('loginUser').value.trim();
         if(u && document.getElementById('loginPass').value === "1234") {
             state.user = u;
-            localStorage.setItem('lagerUserV104', u);
+            localStorage.setItem('lagerUserV105', u);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('mainApp').style.display = 'flex';
             document.getElementById('userDisplay').innerText = u.toUpperCase();
@@ -177,20 +160,26 @@
     function initApp() {
         mainRef.on('value', snap => {
             const data = snap.val() || {};
-            const rawItems = data.items || {};
-            state.items = Object.keys(rawItems).map(key => ({...rawItems[key], key: key}));
+            state.items = Object.keys(data.items || {}).map(key => ({...data.items[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
-            state.cats = data.cats || ["Basteln", "Werkzeug", "Spiele"];
-            state.regale = data.regale || ["Regal 1", "Regal 2"];
-            state.faecher = data.faecher || ["Fach 1", "Fach 2"];
             
-            document.getElementById('itemCatSelect').innerHTML = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('itemRegalSelect').innerHTML = state.regale.map(r => `<option value="${r}">${r}</option>`).join('');
-            document.getElementById('itemFachSelect').innerHTML = state.faecher.map(f => `<option value="${f}">${f}</option>`).join('');
+            // Listen
+            state.cats = data.cats || ["Basteln", "Werkzeug"];
+            state.regale = data.regale || ["Regal 1"];
+            state.faecher = data.faecher || ["Fach 1"];
+            state.locations = data.locations || ["Haupthaus", "Garage"];
             
+            updateSelects();
             render();
             renderLogs();
         });
+    }
+
+    function updateSelects() {
+        document.getElementById('itemLagerSelect').innerHTML = state.locations.map(l => `<option value="${l}">${l}</option>`).join('');
+        document.getElementById('itemCatSelect').innerHTML = state.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.getElementById('itemRegalSelect').innerHTML = state.regale.map(r => `<option value="${r}">${r}</option>`).join('');
+        document.getElementById('itemFachSelect').innerHTML = state.faecher.map(f => `<option value="${f}">${f}</option>`).join('');
     }
 
     function render() {
@@ -206,7 +195,9 @@
                         <img src="${i.img || 'https://via.placeholder.com/60'}" class="item-thumb">
                         <div style="flex:1;">
                             <div style="font-weight:900; font-size:1.1rem; color:#000;">${i.name}</div>
-                            <div style="font-size:0.75rem; color:#666;">${i.cat} | 📍 ${i.regal || '-'}/${i.fach || '-'}</div>
+                            <div style="font-size:0.7rem; color:#666;">
+                                ${i.cat} | 🏠 ${i.location || 'Lager'} | 📍 ${i.regal || '-'}/${i.fach || '-'}
+                            </div>
                             <div style="margin-top:5px;">
                                 <select class="qty-select" onchange="changeQty('${i.key}', this)">
                                     ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
@@ -226,7 +217,7 @@
         document.getElementById('logList').innerHTML = state.logs.slice(0, 50).map(l => `
             <div class="log-entry">
                 <span class="log-date">${l.date}</span>
-                <div class="log-text"><b>${l.user}:</b> ${l.text}</div>
+                <div><b>${l.user}:</b> ${l.text}</div>
             </div>
         `).join('');
     }
@@ -235,8 +226,11 @@
         const n = document.getElementById('itemName').value;
         if(!n) return;
         const newItem = { 
-            name: n, cat: document.getElementById('itemCatSelect').value, 
-            regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value,
+            name: n, 
+            location: document.getElementById('itemLagerSelect').value,
+            cat: document.getElementById('itemCatSelect').value, 
+            regal: document.getElementById('itemRegalSelect').value, 
+            fach: document.getElementById('itemFachSelect').value,
             qty: 1, status: "im Lager", img: "", ts: Date.now() 
         };
         const file = document.getElementById('itemImg').files[0];
@@ -249,9 +243,17 @@
 
     function finishSave(data) {
         mainRef.child('items').push(data);
-        addLog(`NEU: ${data.name} (${data.regal}/${data.fach})`);
+        addLog(`NEU: ${data.name} in ${data.location} (${data.regal}/${data.fach})`);
         document.getElementById('itemName').value = "";
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
+    }
+
+    function addListOption(type, inputId) {
+        const val = document.getElementById(inputId).value.trim();
+        if(!val) return;
+        const newList = [...(state[type] || []), val];
+        mainRef.child(type).set(newList);
+        document.getElementById(inputId).value = "";
     }
 
     function toggleItem(key) {
@@ -267,14 +269,6 @@
         mainRef.child('items/'+key).update({qty: el.value});
     }
 
-    function addListOption(type, inputId) {
-        const val = document.getElementById(inputId).value.trim();
-        if(!val) return;
-        const newList = [...state[type], val];
-        mainRef.child(type).set(newList);
-        document.getElementById(inputId).value = "";
-    }
-
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -282,10 +276,10 @@
         e.currentTarget.classList.add('active');
     }
 
-    function logout() { localStorage.removeItem('lagerUserV104'); location.reload(); }
+    function logout() { localStorage.removeItem('lagerUserV105'); location.reload(); }
 
     window.onload = () => {
-        const saved = localStorage.getItem('lagerUserV104');
+        const saved = localStorage.getItem('lagerUserV105');
         if(saved) {
             state.user = saved;
             document.getElementById('login-screen').style.display = 'none';
