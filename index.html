@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V119 - Login</title>
+    <title>GR-Lagerverwaltung V120</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -17,32 +17,34 @@
             --glass: rgba(255, 255, 255, 0.95); 
         }
         
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, sans-serif; overflow: hidden; background-color: var(--dark-bg); }
+        /* GLOBALER HINTERGRUND FÜR ALLES */
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            font-family: -apple-system, sans-serif; overflow: hidden; 
+            background: var(--dark-bg);
+        }
 
-        /* HINTERGRUND */
-        .bg-layer {
+        /* DIESER LAYER SORGT DAFÜR, DASS DAS BILD IMMER DA IST */
+        .global-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('haus_background.jpg') no-repeat center center;
-            background-size: cover; z-index: -2;
+            background-size: cover; 
+            z-index: -10;
         }
 
         /* LOGIN SCREEN */
         #loginScreen {
-            position: fixed; inset: 0; background: var(--dark-bg); z-index: 100;
+            position: fixed; inset: 0; z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
-            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('haus_background.jpg');
-            background-size: cover;
         }
-        .login-card { background: rgba(15, 23, 42, 0.9); padding: 30px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .login-card h2 { margin-top: 0; color: var(--accent); letter-spacing: 2px; }
+        .login-card { background: rgba(15, 23, 42, 0.9); padding: 30px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .login-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; box-sizing: border-box; }
-        .login-input:focus { border-color: var(--accent); }
-        .login-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; background: var(--accent); color: white; cursor: pointer; margin-top: 10px; }
+        .login-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; background: var(--accent); color: white; cursor: pointer; }
 
         /* HEADER */
-        .header { background: var(--dark-bg); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
-        .header h1 { margin: 0; font-size: 1.1rem; letter-spacing: 1px; font-weight: 900; text-transform: uppercase; flex: 1; text-align: center; }
-        .logout-btn { background: none; border: none; color: var(--accent); font-size: 1.4rem; cursor: pointer; width: 40px; text-align: right; }
+        .header { background: rgba(3, 7, 18, 0.9); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
+        .header h1 { margin: 0; font-size: 1rem; letter-spacing: 1px; font-weight: 900; text-transform: uppercase; flex: 1; text-align: center; }
+        .logout-btn { background: none; border: none; color: var(--accent); font-size: 1.3rem; cursor: pointer; width: 40px; text-align: right; }
 
         .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 15px; box-sizing: border-box; }
 
@@ -50,57 +52,48 @@
         .item-card { 
             background: var(--glass); border-radius: 12px; margin-bottom: 12px; padding: 10px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; border-left: 5px solid var(--accent);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); position: relative; border-left: 5px solid var(--accent);
         }
         .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
-        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 0.9rem; opacity: 0.2; }
+        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 0.8rem; opacity: 0.2; }
 
         .info-row { display: flex; font-size: 0.75rem; margin-bottom: 2px; align-items: center; }
-        .info-label { width: 45px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.6rem; }
+        .info-label { width: 40px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.6rem; }
         .info-value { color: #1e293b; font-weight: 700; }
 
-        /* MINI DROPDOWN */
+        /* MINI DROPDOWN - RADIKAL KLEIN */
         .qty-select-mini { 
-            width: 45px !important; height: 18px !important; padding: 0 !important; 
+            width: 42px !important; height: 18px !important; padding: 0 !important; 
             font-size: 0.75rem !important; font-weight: bold; border-radius: 4px; 
             border: 1px solid var(--accent); background: white; line-height: 1; text-align: center;
         }
 
-        /* FORMULARE */
-        .form-section { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; }
-        .form-section h3 { margin: 0 0 15px 0; color: #1e293b; font-size: 0.9rem; border-bottom: 2px solid var(--accent); padding-bottom: 5px; text-transform: uppercase; }
-        .flex-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-        .row-label { width: 85px; font-size: 0.7rem; font-weight: bold; color: #64748b; text-transform: uppercase; }
-        input, select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem; outline: none; }
-
-        .btn-save { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; }
-
         /* NAVIGATION */
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark-bg); display: flex; height: 70px; border-top: 2px solid var(--accent); }
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: 70px; border-top: 2px solid var(--accent); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
-        .tab-btn span { font-size: 1.4rem; margin-bottom: 4px; }
-        .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.15); border-top: 4px solid var(--accent); }
+        .tab-btn span { font-size: 1.3rem; margin-bottom: 4px; }
+        .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
         
-        .admin-box { background: rgba(0,0,0,0.8); border-radius: 12px; padding: 15px; color: white; margin-top: 15px; border: 1px solid #1e293b; }
+        .form-section { background: white; padding: 15px; border-radius: 12px; }
         .content { display: none; }
         .content.active { display: block; }
-        .log-entry { background: rgba(15, 23, 42, 0.9); border-left: 4px solid var(--accent); padding: 10px; margin-bottom: 8px; border-radius: 0 10px 10px 0; color: white; }
+        .log-entry { background: rgba(15, 23, 42, 0.85); border-left: 4px solid var(--accent); padding: 10px; margin-bottom: 8px; border-radius: 0 10px 10px 0; color: white; }
     </style>
 </head>
 <body>
 
+<div class="global-bg"></div>
+
 <div id="loginScreen">
     <div class="login-card">
-        <h2 style="font-weight:900;">LOGIN</h2>
+        <h2 style="font-weight:900; color:var(--accent); margin-bottom:20px;">LAGER LOGIN</h2>
         <input type="text" id="loginName" class="login-input" placeholder="Dein Name...">
-        <input type="password" id="loginPass" class="login-input" placeholder="Passwort ">
+        <input type="password" id="loginPass" class="login-input" placeholder="Passwort (1234)">
         <button class="login-btn" onclick="checkLogin()">STARTEN</button>
     </div>
 </div>
 
 <div id="mainApp" style="display:none; flex-direction:column; height:100vh;">
-    <div class="bg-layer"></div>
-
     <div class="header">
         <div id="userDisplay" style="font-size:0.7rem; color:var(--accent); font-weight:bold; width:60px;"></div>
         <h1>GR-LAGERVERWALTUNG</h1>
@@ -109,34 +102,27 @@
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <div class="flex-row" style="background:white; padding:5px; border-radius:10px; margin-bottom:15px; border: 2px solid var(--accent);">
-                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="border:none;">
+            <div style="display:flex; background:white; padding:8px; border-radius:10px; margin-bottom:15px; border: 2px solid var(--accent);">
+                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; border:none; outline:none; font-size:1rem;">
             </div>
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content">
             <div class="form-section">
-                <h3>📦 Neuer Artikel</h3>
-                <div class="flex-row"><span class="row-label">Name</span><input type="text" id="itemName"></div>
-                <div class="flex-row"><span class="row-label">Lager</span><select id="itemLagerSelect"></select></div>
-                <div class="flex-row"><span class="row-label">Kat.</span><select id="itemCatSelect"></select></div>
-                <div class="flex-row"><span class="row-label">Regal</span><select id="itemRegalSelect"></select></div>
-                <div class="flex-row"><span class="row-label">Fach</span><select id="itemFachSelect"></select></div>
-                <div style="background:#f1f5f9; padding:12px; border-radius:10px; border:2px dashed var(--accent); margin-bottom:15px; text-align:center;" onclick="document.getElementById('itemImg').click()">
-                    <span id="camText">📸 BILD HINZUFÜGEN</span>
-                    <img id="imagePreview" src="" style="width:100%; height:80px; object-fit:contain; display:none; margin-top:10px;">
+                <h3 style="margin-top:0; border-bottom:2px solid var(--accent); padding-bottom:5px;">NEUER ARTIKEL</h3>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <input type="text" id="itemName" placeholder="Bezeichnung">
+                    <select id="itemLagerSelect"></select>
+                    <select id="itemCatSelect"></select>
+                    <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px dashed var(--accent); text-align:center;" onclick="document.getElementById('itemImg').click()">
+                        <span id="camText">📸 BILD HINZUFÜGEN</span>
+                        <img id="imagePreview" src="" style="width:100%; height:80px; object-fit:contain; display:none;">
+                    </div>
+                    <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                    <button onclick="saveItem()" style="background:var(--accent); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold;">SPEICHERN</button>
                 </div>
-                <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
-                <button onclick="saveItem()" class="btn-save">SPEICHERN</button>
             </div>
-            
-            <details class="admin-box">
-                <summary style="cursor:pointer; color:var(--accent);">⚙️ Listen</summary>
-                <div style="margin-top:10px;">
-                    <input type="text" id="newLagerInput" placeholder="Neu..."><button onclick="addListOption('locations', 'newLagerInput')">+</button>
-                </div>
-            </details>
         </div>
 
         <div id="tab-log" class="content">
@@ -165,7 +151,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: "", items: [], logs: [], cats: [], regale: [], faecher: [], locations: [] };
+    let state = { user: "", items: [], logs: [], cats: [], locations: [] };
 
     function checkLogin() {
         const name = document.getElementById('loginName').value.trim();
@@ -176,7 +162,7 @@
             document.getElementById('mainApp').style.display = 'flex';
             document.getElementById('userDisplay').innerText = name.toUpperCase();
             initApp();
-        } else { alert("Falscher Name oder Passwort!"); }
+        } else { alert("Login fehlgeschlagen!"); }
     }
 
     function logout() { location.reload(); }
@@ -199,14 +185,10 @@
             state.items = Object.keys(data.items || {}).map(key => ({...data.items[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
             state.cats = data.cats || ["Allgemein"];
-            state.regale = data.regale || ["-"];
-            state.faecher = data.faecher || ["-"];
             state.locations = data.locations || ["Lager"];
             
-            ['itemLagerSelect', 'itemCatSelect', 'itemRegalSelect', 'itemFachSelect'].forEach((id, idx) => {
-                const keys = ['locations', 'cats', 'regale', 'faecher'][idx];
-                document.getElementById(id).innerHTML = state[keys].map(v => `<option value="${v}">${v}</option>`).join('');
-            });
+            document.getElementById('itemLagerSelect').innerHTML = state.locations.map(v => `<option value="${v}">${v}</option>`).join('');
+            document.getElementById('itemCatSelect').innerHTML = state.cats.map(v => `<option value="${v}">${v}</option>`).join('');
             render();
             renderLogs();
         });
@@ -222,7 +204,7 @@
                 <div style="display:flex; align-items:center; gap:10px; flex:1;">
                     <img src="${i.img || 'https://via.placeholder.com/80'}" class="item-thumb">
                     <div style="flex:1;">
-                        <div style="font-weight:900; font-size:1rem;">${i.name}</div>
+                        <div style="font-weight:900; font-size:1rem; color:#000;">${i.name}</div>
                         <div class="info-row"><span class="info-label">Ort</span><span class="info-value">🏠 ${i.location}</span></div>
                         <div class="info-row"><span class="info-label">Stk.</span>
                             <select class="qty-select-mini" onchange="changeQty('${i.key}', this)">
@@ -244,7 +226,7 @@
     function saveItem() {
         const n = document.getElementById('itemName').value;
         if(!n) return;
-        const newItem = { name: n, location: document.getElementById('itemLagerSelect').value, cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value, qty: 1, status: "im Lager", img: document.getElementById('imagePreview').src || "", ts: Date.now() };
+        const newItem = { name: n, location: document.getElementById('itemLagerSelect').value, cat: document.getElementById('itemCatSelect').value, qty: 1, status: "im Lager", img: document.getElementById('imagePreview').src || "", ts: Date.now() };
         mainRef.child('items').push(newItem);
         mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${n}`, ts: Date.now() });
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
@@ -259,7 +241,6 @@
 
     function changeQty(key, el) { mainRef.child('items/'+key).update({qty: parseInt(el.value)}); }
     function deleteItem(key, name) { if(confirm(`Löschen?`)) mainRef.child('items/'+key).remove(); }
-    function addListOption(type, id) { const v = document.getElementById(id).value; if(v) { mainRef.child(type).set([...(state[type] || []), v]); document.getElementById(id).value=""; } }
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
