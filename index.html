@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V121</title>
+    <title>GR-Lagerverwaltung V122</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -17,27 +17,38 @@
             --glass: rgba(255, 255, 255, 0.95); 
         }
         
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, sans-serif; overflow: hidden; background-color: var(--dark-bg); }
+        body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: -apple-system, sans-serif; background-color: var(--dark-bg); color: white; overflow: hidden; }
 
-        /* FIX: HINTERGRUNDBILD ÜBERALL */
+        /* HINTERGRUND EBENE */
         .global-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('haus_background.jpg') no-repeat center center;
-            background-size: cover; z-index: -10;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('haus_background.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: 1; /* Muss niedriger sein als der Content */
         }
 
-        /* LOGIN */
-        #loginScreen { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; }
-        .login-card { background: rgba(15, 23, 42, 0.9); padding: 30px; border-radius: 20px; text-align: center; border: 2px solid var(--accent); width: 280px; color: white; }
-        .login-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; outline: none; box-sizing: border-box; }
-        .login-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; background: var(--accent); color: white; cursor: pointer; }
+        /* CONTAINER FÜR DEN INHALT */
+        #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; }
 
-        /* APP LAYOUT */
-        .header { background: rgba(3, 7, 18, 0.9); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
-        .header h1 { margin: 0; font-size: 1rem; letter-spacing: 1px; font-weight: 900; text-transform: uppercase; flex: 1; text-align: center; }
-        .logout-btn { background: none; border: none; color: var(--accent); font-size: 1.3rem; cursor: pointer; }
+        /* LOGIN SCREEN */
+        #loginScreen { 
+            position: fixed; inset: 0; z-index: 1000; 
+            display: flex; align-items: center; justify-content: center; 
+            background: rgba(3, 7, 18, 0.8);
+        }
+        .login-card { 
+            background: #1e293b; padding: 30px; border-radius: 20px; 
+            text-align: center; border: 2px solid var(--accent); width: 280px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .login-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; box-sizing: border-box; }
+        .login-btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: bold; background: var(--accent); color: white; cursor: pointer; font-size: 1rem; }
 
-        .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 15px; box-sizing: border-box; }
+        /* HEADER */
+        .header { background: rgba(3, 7, 18, 0.9); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
+        .header h1 { margin: 0; font-size: 0.95rem; font-weight: 900; text-transform: uppercase; flex: 1; text-align: center; color: white; letter-spacing: 1px; }
+
+        .content-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; }
 
         /* ARTIKEL KARTEN */
         .item-card { 
@@ -45,29 +56,29 @@
             color: #333; display: flex; align-items: center; justify-content: space-between; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.5); position: relative; border-left: 5px solid var(--accent);
         }
-        .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
-        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 0.8rem; opacity: 0.2; }
+        .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; background: #eee; }
+        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; opacity: 0.2; font-size: 0.8rem; }
 
         .info-row { display: flex; font-size: 0.75rem; margin-bottom: 2px; align-items: center; }
         .info-label { width: 42px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.6rem; }
         .info-value { color: #1e293b; font-weight: 700; }
 
-        /* MINI DROPDOWN */
+        /* DROPDOWN MINI */
         .qty-select-mini { 
-            width: 42px !important; height: 18px !important; padding: 0 !important; 
-            font-size: 0.75rem !important; font-weight: bold; border-radius: 4px; 
-            border: 1px solid var(--accent); background: white; line-height: 1; text-align: center;
+            width: 45px !important; height: 20px !important; 
+            font-size: 0.8rem !important; font-weight: bold; border-radius: 4px; 
+            border: 1px solid var(--accent); background: white; text-align: center;
         }
 
-        /* NAVIGATION */
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: 70px; border-top: 2px solid var(--accent); }
-        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
+        /* NAVI */
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 75px; border-top: 2px solid var(--accent); z-index: 100; }
+        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
-        
+
         .form-section { background: white; padding: 15px; border-radius: 12px; color: #333; }
         .content { display: none; }
         .content.active { display: block; }
-        .log-entry { background: rgba(15, 23, 42, 0.85); border-left: 4px solid var(--accent); padding: 10px; margin-bottom: 8px; border-radius: 0 10px 10px 0; color: white; }
+        .log-entry { background: rgba(15, 23, 42, 0.9); border-left: 4px solid var(--accent); padding: 10px; margin-bottom: 8px; border-radius: 0 10px 10px 0; }
     </style>
 </head>
 <body>
@@ -76,42 +87,41 @@
 
 <div id="loginScreen">
     <div class="login-card">
-        <h2 style="margin-top:0; color:var(--accent);">LAGER LOGIN</h2>
-        <input type="text" id="loginName" class="login-input" placeholder="Name">
+        <h2 style="color:var(--accent); margin-bottom:20px;">LAGER LOGIN</h2>
+        <input type="text" id="loginName" class="login-input" placeholder="Name" autofocus>
         <input type="password" id="loginPass" class="login-input" placeholder="Passwort">
         <button class="login-btn" onclick="checkLogin()">STARTEN</button>
     </div>
 </div>
 
-<div id="mainApp" style="display:none; flex-direction:column; height:100vh;">
+<div id="ui-wrapper" style="display:none;">
     <div class="header">
         <div id="userDisplay" style="font-size:0.7rem; color:var(--accent); font-weight:bold; width:60px;"></div>
         <h1>GR-LAGERVERWALTUNG</h1>
-        <button class="logout-btn" onclick="logout()">🚪</button>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--accent); font-size:1.3rem;">🚪</button>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <div style="background:white; padding:8px; border-radius:10px; margin-bottom:15px; border: 2px solid var(--accent);">
-                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; border:none; outline:none; font-size:1rem;">
+            <div style="background:white; padding:8px; border-radius:10px; margin-bottom:15px; border:2px solid var(--accent);">
+                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; border:none; outline:none; font-size:1rem; color:#333;">
             </div>
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content">
             <div class="form-section">
-                <h3 style="margin-top:0; border-bottom:2px solid var(--accent); padding-bottom:5px;">NEUER ARTIKEL</h3>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <input type="text" id="itemName" placeholder="Bezeichnung">
-                    <select id="itemLagerSelect"></select>
-                    <div style="display:flex; gap:5px;">
-                        <select id="itemRegalSelect"></select>
-                        <select id="itemFachSelect"></select>
+                <h3 style="margin-top:0; border-bottom:2px solid var(--accent); color:#000;">NEUER ARTIKEL</h3>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <input type="text" id="itemName" placeholder="Name des Artikels" style="padding:12px; border:1px solid #ccc; border-radius:8px;">
+                    <select id="itemLagerSelect" style="padding:10px; border-radius:8px;"></select>
+                    <div style="display:flex; gap:10px;">
+                        <select id="itemRegalSelect" style="flex:1; padding:10px; border-radius:8px;"></select>
+                        <select id="itemFachSelect" style="flex:1; padding:10px; border-radius:8px;"></select>
                     </div>
-                    <select id="itemCatSelect"></select>
-                    <div style="background:#f1f5f9; padding:15px; border-radius:10px; border:2px dashed var(--accent); text-align:center;" onclick="document.getElementById('itemImg').click()">
+                    <div style="background:#f1f5f9; padding:20px; border-radius:10px; border:2px dashed var(--accent); text-align:center;" onclick="document.getElementById('itemImg').click()">
                         <span id="camText">📸 BILD HINZUFÜGEN</span>
-                        <img id="imagePreview" src="" style="width:100%; height:80px; object-fit:contain; display:none;">
+                        <img id="imagePreview" src="" style="width:100%; height:100px; object-fit:contain; display:none;">
                     </div>
                     <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
                     <button onclick="saveItem()" style="background:var(--accent); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold;">SPEICHERN</button>
@@ -147,19 +157,22 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], logs: [], cats: [], locations: [], regale: [], faecher: [] };
 
+    // Enter-Taste Login
+    document.getElementById('loginPass').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkLogin(); });
+
     function checkLogin() {
         const name = document.getElementById('loginName').value.trim();
         const pass = document.getElementById('loginPass').value.trim();
         if(name && pass === "1234") {
             state.user = name;
             document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'flex';
+            document.getElementById('ui-wrapper').style.display = 'flex';
             document.getElementById('userDisplay').innerText = name.toUpperCase();
             initApp();
-        } else { alert("Falscher Login!"); }
+        } else {
+            alert("Name fehlt oder Passwort falsch!");
+        }
     }
-
-    function logout() { location.reload(); }
 
     function previewImage(input) {
         if (input.files && input.files[0]) {
@@ -178,13 +191,11 @@
             const data = snap.val() || {};
             state.items = Object.keys(data.items || {}).map(key => ({...data.items[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
-            state.cats = data.cats || ["Allgemein"];
             state.locations = data.locations || ["Lager"];
             state.regale = data.regale || ["-"];
             state.faecher = data.faecher || ["-"];
             
             document.getElementById('itemLagerSelect').innerHTML = state.locations.map(v => `<option value="${v}">${v}</option>`).join('');
-            document.getElementById('itemCatSelect').innerHTML = state.cats.map(v => `<option value="${v}">${v}</option>`).join('');
             document.getElementById('itemRegalSelect').innerHTML = state.regale.map(v => `<option value="${v}">${v}</option>`).join('');
             document.getElementById('itemFachSelect').innerHTML = state.faecher.map(v => `<option value="${v}">${v}</option>`).join('');
             render();
@@ -202,38 +213,33 @@
                 <div style="display:flex; align-items:center; gap:10px; flex:1;">
                     <img src="${i.img || 'https://via.placeholder.com/80'}" class="item-thumb">
                     <div style="flex:1;">
-                        <div style="font-weight:900; font-size:1rem; color:#000;">${i.name}</div>
+                        <div style="font-weight:900; font-size:1.05rem; color:#000;">${i.name}</div>
                         <div class="info-row"><span class="info-label">Ort</span><span class="info-value">🏠 ${i.location}</span></div>
                         <div class="info-row"><span class="info-label">Platz</span><span class="info-value">📍 ${i.regal || '-'} / ${i.fach || '-'}</span></div>
                         <div class="info-row"><span class="info-label">Stk.</span>
                             <select class="qty-select-mini" onchange="changeQty('${i.key}', this)">
                                 ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
                             </select>
-                            ${isOut ? `<span style="color:var(--danger); font-size:0.6rem; margin-left:5px; font-weight:bold;">🚩 ${i.outUser}</span>` : ''}
+                            ${isOut ? `<span style="color:var(--danger); font-size:0.65rem; margin-left:5px; font-weight:bold;">🚩 ${i.outUser}</span>` : ''}
                         </div>
                     </div>
                 </div>
-                <button onclick="toggleItem('${i.key}')" style="background:${isOut? 'var(--danger)' : 'var(--success)'}; color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; min-width:65px;">${isOut?'EIN':'AUS'}</button>
+                <button onclick="toggleItem('${i.key}')" style="background:${isOut? 'var(--danger)' : 'var(--success)'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:65px;">${isOut?'EIN':'AUS'}</button>
             </div>`;
         }).join('');
     }
 
     function renderLogs() {
-        document.getElementById('logList').innerHTML = state.logs.slice(0, 30).map(l => `<div class="log-entry"><div style="display:flex; justify-content:space-between; font-size:0.6rem;"><span>${l.date}</span><b>${l.user}</b></div><div>${l.text}</div></div>`).join('');
+        document.getElementById('logList').innerHTML = state.logs.slice(0, 30).map(l => `<div class="log-entry"><div style="display:flex; justify-content:space-between; font-size:0.65rem; opacity:0.7;"><span>${l.date}</span><b>${l.user}</b></div><div style="font-size:0.9rem;">${l.text}</div></div>`).join('');
     }
 
     function saveItem() {
         const n = document.getElementById('itemName').value;
         if(!n) return;
         const newItem = { 
-            name: n, 
-            location: document.getElementById('itemLagerSelect').value, 
-            regal: document.getElementById('itemRegalSelect').value,
-            fach: document.getElementById('itemFachSelect').value,
-            cat: document.getElementById('itemCatSelect').value, 
-            qty: 1, status: "im Lager", 
-            img: document.getElementById('imagePreview').src || "", 
-            ts: Date.now() 
+            name: n, location: document.getElementById('itemLagerSelect').value, 
+            regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value,
+            qty: 1, status: "im Lager", img: document.getElementById('imagePreview').src || "", ts: Date.now() 
         };
         mainRef.child('items').push(newItem);
         mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${n}`, ts: Date.now() });
