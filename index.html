@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V122</title>
+    <title>GR-Lagerverwaltung V117 - Komplett</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -17,119 +17,125 @@
             --glass: rgba(255, 255, 255, 0.95); 
         }
         
-        body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: -apple-system, sans-serif; background-color: var(--dark-bg); color: white; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, sans-serif; overflow: hidden; background-color: var(--dark-bg); }
 
-        /* HINTERGRUND EBENE */
-        .global-bg {
+        /* HINTERGRUND MIT OVERLAY */
+        .bg-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('haus_background.jpg') no-repeat center center;
-            background-size: cover;
-            z-index: 1; /* Muss niedriger sein als der Content */
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('haus_background.jpg') no-repeat center center;
+            background-size: cover; z-index: -2;
         }
-
-        /* CONTAINER FÜR DEN INHALT */
-        #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; }
-
-        /* LOGIN SCREEN */
-        #loginScreen { 
-            position: fixed; inset: 0; z-index: 1000; 
-            display: flex; align-items: center; justify-content: center; 
-            background: rgba(3, 7, 18, 0.8);
-        }
-        .login-card { 
-            background: #1e293b; padding: 30px; border-radius: 20px; 
-            text-align: center; border: 2px solid var(--accent); width: 280px; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-        }
-        .login-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; box-sizing: border-box; }
-        .login-btn { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: bold; background: var(--accent); color: white; cursor: pointer; font-size: 1rem; }
 
         /* HEADER */
-        .header { background: rgba(3, 7, 18, 0.9); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
-        .header h1 { margin: 0; font-size: 0.95rem; font-weight: 900; text-transform: uppercase; flex: 1; text-align: center; color: white; letter-spacing: 1px; }
+        .header { background: var(--dark-bg); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); color: white; }
+        .header h1 { margin: 0; font-size: 1.1rem; letter-spacing: 1px; font-weight: 900; text-transform: uppercase; }
 
-        .content-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 90px; }
+        .content-area { flex: 1; height: calc(100vh - 140px); overflow-y: auto; padding: 15px; box-sizing: border-box; }
 
         /* ARTIKEL KARTEN */
         .item-card { 
-            background: var(--glass); border-radius: 12px; margin-bottom: 12px; padding: 10px; 
+            background: var(--glass); border-radius: 12px; margin-bottom: 12px; padding: 12px; 
             color: #333; display: flex; align-items: center; justify-content: space-between; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); position: relative; border-left: 5px solid var(--accent);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); position: relative; border-left: 5px solid var(--accent);
         }
-        .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; background: #eee; }
-        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; opacity: 0.2; font-size: 0.8rem; }
+        .item-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 1px solid #ddd; }
+        .delete-btn { position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 0.9rem; opacity: 0.2; cursor: pointer; }
 
-        .info-row { display: flex; font-size: 0.75rem; margin-bottom: 2px; align-items: center; }
-        .info-label { width: 42px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.6rem; }
+        .info-row { display: flex; font-size: 0.75rem; margin-bottom: 3px; align-items: center; }
+        .info-label { width: 45px; font-weight: bold; color: #64748b; text-transform: uppercase; font-size: 0.65rem; }
         .info-value { color: #1e293b; font-weight: 700; }
 
-        /* DROPDOWN MINI */
+        /* DIE MINI DROPDOWNS */
         .qty-select-mini { 
-            width: 45px !important; height: 20px !important; 
-            font-size: 0.8rem !important; font-weight: bold; border-radius: 4px; 
-            border: 1px solid var(--accent); background: white; text-align: center;
+            width: 50px !important; 
+            height: 20px !important; 
+            padding: 0 2px !important; 
+            font-size: 0.8rem !important; 
+            font-weight: bold; 
+            border-radius: 4px; 
+            border: 1px solid var(--accent); 
+            background: white;
+            line-height: 1;
+            cursor: pointer;
         }
 
-        /* NAVI */
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 75px; border-top: 2px solid var(--accent); z-index: 100; }
-        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
-        .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
+        /* FORMULARE & INPUTS */
+        .form-section { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .form-section h3 { margin: 0 0 15px 0; color: #1e293b; font-size: 0.9rem; border-bottom: 2px solid var(--accent); padding-bottom: 5px; text-transform: uppercase; }
+        
+        .flex-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .row-label { width: 85px; font-size: 0.7rem; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        
+        input, select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.9rem; outline: none; transition: 0.2s; }
+        input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2); }
 
-        .form-section { background: white; padding: 15px; border-radius: 12px; color: #333; }
+        .btn-save { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; text-transform: uppercase; cursor: pointer; letter-spacing: 1px; }
+
+        /* LOGBUCH */
+        .log-entry { background: rgba(15, 23, 42, 0.9); border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 8px; border-radius: 0 10px 10px 0; color: white; }
+
+        /* NAVIGATION */
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--dark-bg); display: flex; height: 70px; border-top: 2px solid var(--accent); }
+        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; text-transform: uppercase; font-weight: bold; }
+        .tab-btn span { font-size: 1.4rem; margin-bottom: 4px; }
+        .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.15); border-top: 4px solid var(--accent); }
+        
+        .admin-box { background: rgba(0,0,0,0.8); border-radius: 12px; padding: 15px; color: white; margin-top: 20px; border: 1px solid #1e293b; }
         .content { display: none; }
         .content.active { display: block; }
-        .log-entry { background: rgba(15, 23, 42, 0.9); border-left: 4px solid var(--accent); padding: 10px; margin-bottom: 8px; border-radius: 0 10px 10px 0; }
     </style>
 </head>
 <body>
 
-<div class="global-bg"></div>
+<div style="display:flex; flex-direction:column; height:100vh;">
+    <div class="bg-layer"></div>
 
-<div id="loginScreen">
-    <div class="login-card">
-        <h2 style="color:var(--accent); margin-bottom:20px;">LAGER LOGIN</h2>
-        <input type="text" id="loginName" class="login-input" placeholder="Name" autofocus>
-        <input type="password" id="loginPass" class="login-input" placeholder="Passwort">
-        <button class="login-btn" onclick="checkLogin()">STARTEN</button>
-    </div>
-</div>
-
-<div id="ui-wrapper" style="display:none;">
     <div class="header">
-        <div id="userDisplay" style="font-size:0.7rem; color:var(--accent); font-weight:bold; width:60px;"></div>
+        <div id="userDisplay" style="font-size:0.7rem; color:var(--accent); font-weight:bold;">David</div>
         <h1>GR-LAGERVERWALTUNG</h1>
-        <button onclick="location.reload()" style="background:none; border:none; color:var(--accent); font-size:1.3rem;">🚪</button>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <div style="background:white; padding:8px; border-radius:10px; margin-bottom:15px; border:2px solid var(--accent);">
-                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; border:none; outline:none; font-size:1rem; color:#333;">
+            <div class="flex-row" style="background:white; padding:5px; border-radius:10px; margin-bottom:15px; border: 2px solid var(--accent);">
+                <span style="padding-left:10px;">🔍</span>
+                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="border:none;">
             </div>
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content">
             <div class="form-section">
-                <h3 style="margin-top:0; border-bottom:2px solid var(--accent); color:#000;">NEUER ARTIKEL</h3>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <input type="text" id="itemName" placeholder="Name des Artikels" style="padding:12px; border:1px solid #ccc; border-radius:8px;">
-                    <select id="itemLagerSelect" style="padding:10px; border-radius:8px;"></select>
-                    <div style="display:flex; gap:10px;">
-                        <select id="itemRegalSelect" style="flex:1; padding:10px; border-radius:8px;"></select>
-                        <select id="itemFachSelect" style="flex:1; padding:10px; border-radius:8px;"></select>
-                    </div>
-                    <div style="background:#f1f5f9; padding:20px; border-radius:10px; border:2px dashed var(--accent); text-align:center;" onclick="document.getElementById('itemImg').click()">
-                        <span id="camText">📸 BILD HINZUFÜGEN</span>
-                        <img id="imagePreview" src="" style="width:100%; height:100px; object-fit:contain; display:none;">
-                    </div>
-                    <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
-                    <button onclick="saveItem()" style="background:var(--accent); color:white; border:none; padding:15px; border-radius:10px; font-weight:bold;">SPEICHERN</button>
+                <h3>📦 Artikel hinzufügen</h3>
+                <div class="flex-row"><span class="row-label">Name</span><input type="text" id="itemName" placeholder="Eingeben..."></div>
+                <div class="flex-row"><span class="row-label">Lager</span><select id="itemLagerSelect"></select></div>
+                <div class="flex-row"><span class="row-label">Kategorie</span><select id="itemCatSelect"></select></div>
+                <div class="flex-row"><span class="row-label">Regal</span><select id="itemRegalSelect"></select></div>
+                <div class="flex-row"><span class="row-label">Fach</span><select id="itemFachSelect"></select></div>
+
+                <div style="display:flex; align-items:center; gap:12px; background:#f1f5f9; padding:12px; border-radius:10px; border:2px dashed var(--accent); margin-bottom:15px;" onclick="document.getElementById('itemImg').click()">
+                    <span>📸</span>
+                    <span style="flex:1; font-weight:bold; font-size:0.8rem; color:#475569;">BILD HINZUFÜGEN</span>
+                    <img id="imagePreview" src="" style="width:45px; height:45px; object-fit:cover; display:none; border-radius:6px; border:1px solid var(--accent);">
                 </div>
+                <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                
+                <button onclick="saveItem()" class="btn-save">SPEICHERN</button>
             </div>
+
+            <details class="admin-box">
+                <summary style="cursor:pointer; font-weight:bold; color:var(--accent);">⚙️ LISTEN BEARBEITEN</summary>
+                <div style="margin-top:15px; border-top: 1px solid #334155; padding-top:10px;">
+                    <div class="flex-row"><span class="row-label">Lager</span><input type="text" id="newLagerInput"><button onclick="addListOption('locations', 'newLagerInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                    <div class="flex-row"><span class="row-label">Kat</span><input type="text" id="newCatInput"><button onclick="addListOption('cats', 'newCatInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                    <div class="flex-row"><span class="row-label">Regal</span><input type="text" id="newRegalInput"><button onclick="addListOption('regale', 'newRegalInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                    <div class="flex-row"><span class="row-label">Fach</span><input type="text" id="newFachInput"><button onclick="addListOption('faecher', 'newFachInput')" style="background:var(--accent); border:none; color:white; padding:8px; border-radius:5px;">+</button></div>
+                </div>
+            </details>
         </div>
 
         <div id="tab-log" class="content">
+            <h3 style="color:white; margin:0 0 15px 0; border-left: 4px solid var(--accent); padding-left:10px;">📜 LOGBUCH</h3>
             <div id="logList"></div>
         </div>
     </div>
@@ -137,7 +143,7 @@
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')"><span>📦</span>Lager</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-neu')"><span>➕</span>Neu</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')"><span>📜</span>Log</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-log')"><span>📜</span>Logbuch</button>
     </nav>
 </div>
 
@@ -155,33 +161,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: "", items: [], logs: [], cats: [], locations: [], regale: [], faecher: [] };
-
-    // Enter-Taste Login
-    document.getElementById('loginPass').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkLogin(); });
-
-    function checkLogin() {
-        const name = document.getElementById('loginName').value.trim();
-        const pass = document.getElementById('loginPass').value.trim();
-        if(name && pass === "1234") {
-            state.user = name;
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('ui-wrapper').style.display = 'flex';
-            document.getElementById('userDisplay').innerText = name.toUpperCase();
-            initApp();
-        } else {
-            alert("Name fehlt oder Passwort falsch!");
-        }
-    }
+    let state = { user: "David", items: [], logs: [], cats: [], regale: [], faecher: [], locations: [] };
 
     function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = (e) => { 
-                document.getElementById('imagePreview').src = e.target.result;
-                document.getElementById('imagePreview').style.display = 'block';
-                document.getElementById('camText').style.display = 'none';
-            }
+            reader.onload = (e) => { preview.src = e.target.result; preview.style.display = 'block'; }
             reader.readAsDataURL(input.files[0]);
         }
     }
@@ -191,13 +177,16 @@
             const data = snap.val() || {};
             state.items = Object.keys(data.items || {}).map(key => ({...data.items[key], key: key}));
             state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
-            state.locations = data.locations || ["Lager"];
-            state.regale = data.regale || ["-"];
-            state.faecher = data.faecher || ["-"];
+            state.cats = data.cats || ["Werkzeug"];
+            state.regale = data.regale || ["R1"];
+            state.faecher = data.faecher || ["F1"];
+            state.locations = data.locations || ["Haupthaus"];
             
-            document.getElementById('itemLagerSelect').innerHTML = state.locations.map(v => `<option value="${v}">${v}</option>`).join('');
-            document.getElementById('itemRegalSelect').innerHTML = state.regale.map(v => `<option value="${v}">${v}</option>`).join('');
-            document.getElementById('itemFachSelect').innerHTML = state.faecher.map(v => `<option value="${v}">${v}</option>`).join('');
+            ['itemLagerSelect', 'itemCatSelect', 'itemRegalSelect', 'itemFachSelect'].forEach((id, idx) => {
+                const keys = ['locations', 'cats', 'regale', 'faecher'][idx];
+                document.getElementById(id).innerHTML = state[keys].map(v => `<option value="${v}">${v}</option>`).join('');
+            });
+            
             render();
             renderLogs();
         });
@@ -206,44 +195,80 @@
     function render() {
         const list = document.getElementById('itemList');
         const s = document.getElementById('searchInput').value.toLowerCase();
-        list.innerHTML = state.items.filter(i => i.name.toLowerCase().includes(s)).sort((a,b) => b.ts - a.ts).map(i => {
+        list.innerHTML = "";
+        
+        state.items.filter(i => i.name.toLowerCase().includes(s)).sort((a,b) => b.ts - a.ts).forEach(i => {
             const isOut = i.status !== "im Lager";
-            return `<div class="item-card">
-                <button class="delete-btn" onclick="deleteItem('${i.key}', '${i.name}')">🗑️</button>
-                <div style="display:flex; align-items:center; gap:10px; flex:1;">
-                    <img src="${i.img || 'https://via.placeholder.com/80'}" class="item-thumb">
-                    <div style="flex:1;">
-                        <div style="font-weight:900; font-size:1.05rem; color:#000;">${i.name}</div>
-                        <div class="info-row"><span class="info-label">Ort</span><span class="info-value">🏠 ${i.location}</span></div>
-                        <div class="info-row"><span class="info-label">Platz</span><span class="info-value">📍 ${i.regal || '-'} / ${i.fach || '-'}</span></div>
-                        <div class="info-row"><span class="info-label">Stk.</span>
-                            <select class="qty-select-mini" onchange="changeQty('${i.key}', this)">
-                                ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
-                            </select>
-                            ${isOut ? `<span style="color:var(--danger); font-size:0.65rem; margin-left:5px; font-weight:bold;">🚩 ${i.outUser}</span>` : ''}
+            list.innerHTML += `
+                <div class="item-card">
+                    <button class="delete-btn" onclick="deleteItem('${i.key}', '${i.name}')">🗑️</button>
+                    <div style="display:flex; align-items:center; gap:12px; flex:1;">
+                        <img src="${i.img || 'https://via.placeholder.com/80'}" class="item-thumb">
+                        <div style="flex:1;">
+                            <div style="font-weight:900; font-size:1.05rem; color:#000; margin-bottom:5px;">${i.name}</div>
+                            <div class="info-row"><span class="info-label">Ort</span><span class="info-value">🏠 ${i.location}</span></div>
+                            <div class="info-row"><span class="info-label">Platz</span><span class="info-value">📍 ${i.regal} / ${i.fach}</span></div>
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:5px;">
+                                <span class="info-label">Stk.</span>
+                                <select class="qty-select-mini" onchange="changeQty('${i.key}', this)">
+                                    ${Array.from({length:50}, (_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
+                                </select>
+                                ${isOut ? `<span style="color:var(--danger); font-size:0.6rem; font-weight:bold; background:#fee2e2; padding:1px 4px; border-radius:3px;">🚩 ${i.outUser}</span>` : ''}
+                            </div>
                         </div>
                     </div>
-                </div>
-                <button onclick="toggleItem('${i.key}')" style="background:${isOut? 'var(--danger)' : 'var(--success)'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:65px;">${isOut?'EIN':'AUS'}</button>
-            </div>`;
-        }).join('');
+                    <button onclick="toggleItem('${i.key}')" style="background:${isOut? 'var(--danger)' : 'var(--success)'}; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold; min-width:65px; font-size:0.8rem;">
+                        ${isOut?'EIN':'AUS'}
+                    </button>
+                </div>`;
+        });
     }
 
     function renderLogs() {
-        document.getElementById('logList').innerHTML = state.logs.slice(0, 30).map(l => `<div class="log-entry"><div style="display:flex; justify-content:space-between; font-size:0.65rem; opacity:0.7;"><span>${l.date}</span><b>${l.user}</b></div><div style="font-size:0.9rem;">${l.text}</div></div>`).join('');
+        document.getElementById('logList').innerHTML = state.logs.slice(0, 30).map(l => `
+            <div class="log-entry">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.65rem;">
+                    <span style="color:var(--accent); font-weight:bold;">${l.date}</span>
+                    <span style="opacity:0.7;">👤 ${l.user}</span>
+                </div>
+                <div style="font-size:0.85rem;">${l.text}</div>
+            </div>
+        `).join('');
     }
 
     function saveItem() {
         const n = document.getElementById('itemName').value;
         if(!n) return;
         const newItem = { 
-            name: n, location: document.getElementById('itemLagerSelect').value, 
-            regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value,
-            qty: 1, status: "im Lager", img: document.getElementById('imagePreview').src || "", ts: Date.now() 
+            name: n, location: document.getElementById('itemLagerSelect').value,
+            cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, 
+            fach: document.getElementById('itemFachSelect').value, qty: 1, status: "im Lager", img: "", ts: Date.now() 
         };
-        mainRef.child('items').push(newItem);
-        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${n}`, ts: Date.now() });
+        const file = document.getElementById('itemImg').files[0];
+        if(file) {
+            const r = new FileReader();
+            r.onload = (e) => { newItem.img = e.target.result; finishSave(newItem); };
+            r.readAsDataURL(file);
+        } else { finishSave(newItem); }
+    }
+
+    function finishSave(data) {
+        mainRef.child('items').push(data);
+        mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `NEU: ${data.name}`, ts: Date.now() });
+        document.getElementById('itemName').value = "";
+        document.getElementById('imagePreview').style.display = 'none';
         switchTab({currentTarget: document.querySelectorAll('.tab-btn')[0]}, 'tab-lager');
+    }
+
+    function deleteItem(key, name) {
+        if(confirm(`"${name}" wirklich löschen?`)) {
+            mainRef.child('items/'+key).remove();
+            mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: `GELÖSCHT: ${name}`, ts: Date.now() });
+        }
+    }
+
+    function changeQty(key, el) {
+        mainRef.child('items/'+key).update({qty: parseInt(el.value)});
     }
 
     function toggleItem(key) {
@@ -253,14 +278,22 @@
         mainRef.child('logs').push({ date: new Date().toLocaleString('de-DE'), user: state.user, text: isIn ? `AUS: ${i.name}` : `EIN: ${i.name}`, ts: Date.now() });
     }
 
-    function changeQty(key, el) { mainRef.child('items/'+key).update({qty: parseInt(el.value)}); }
-    function deleteItem(key, name) { if(confirm(`Löschen?`)) mainRef.child('items/'+key).remove(); }
+    function addListOption(type, inputId) {
+        const val = document.getElementById(inputId).value.trim();
+        if(!val) return;
+        const newList = [...(state[type] || []), val];
+        mainRef.child(type).set(newList);
+        document.getElementById(inputId).value = "";
+    }
+
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         e.currentTarget.classList.add('active');
     }
+
+    window.onload = initApp;
 </script>
 </body>
 </html>
