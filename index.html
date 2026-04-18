@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V134</title>
+    <title>GR-Lagerverwaltung V135</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -27,38 +27,33 @@
 
         /* ITEM CARDS */
         .item-card { background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; position: relative; }
-        .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #eee; }
-        .qr-side { display: flex; flex-direction: column; align-items: center; min-width: 45px; cursor: pointer; }
         .qr-img { width: 45px; height: 45px; background: white; padding: 2px; border: 1px solid #ddd; }
         .item-info { flex: 1; min-width: 0; }
         
-        /* STATUS BUTTONS */
-        .btn-status { border: none; padding: 10px 15px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; min-width: 60px; }
+        .btn-status { border: none; padding: 10px 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; min-width: 70px; font-size: 0.75rem; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
 
-        /* MODALS */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
-        .modal img { max-width: 90%; max-height: 60%; border-radius: 10px; border: 3px solid var(--accent); background: white; }
-        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 2.5rem; color: white; cursor: pointer; }
+        /* LOG ENTRIES */
+        .log-entry { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); font-size: 0.8rem; }
+        .log-ts { opacity: 0.5; font-size: 0.65rem; display: block; margin-top: 4px; }
 
-        /* PRINT STYLES */
+        /* PRINT */
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: fixed; left: 0; top: 0; width: 100%; display: block !important; padding: 10mm; background: white; color: black; text-align: center; }
-            .no-print { display: none !important; }
         }
         #print-area { display: none; }
 
-        /* FORM STYLES */
+        /* UI ELEMENTS */
         .form-card { background: white; border-radius: 12px; padding: 15px; color: #000; margin-bottom: 20px; }
         .form-row { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; }
-        .form-label { width: 80px; font-size: 0.7rem; font-weight: bold; color: #666; text-transform: uppercase; }
-        .form-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; box-sizing: border-box; }
+        .form-label { width: 70px; font-size: 0.7rem; font-weight: bold; color: #666; }
+        .form-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; }
         
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 75px; border-top: 2px solid var(--accent); z-index: 100; }
-        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
         .content { display: none; }
         .content.active { display: block; }
@@ -69,26 +64,25 @@
 <div class="global-bg no-print"></div>
 
 <div id="print-area">
-    <h2 id="p-name" style="margin: 0; font-size: 24pt;"></h2>
-    <div id="p-loc" style="font-size: 16pt; margin: 10px 0; border-bottom: 2px solid black; padding-bottom: 5px;"></div>
-    <img id="p-qr" src="" style="width: 150px; height: 150px; margin-top: 10px;">
+    <h2 id="p-name" style="margin: 0;"></h2>
+    <div id="p-loc" style="font-size: 14pt; margin: 10px 0; border-bottom: 1px solid black;"></div>
+    <img id="p-qr" src="" style="width: 140px;">
 </div>
 
 <div id="ui-wrapper" class="no-print">
     <div class="header">
         <div class="user-area">
-            <button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem;">📷</button>
+            <button onclick="alert('Scanner...')">📷</button>
             <span id="displayUserName">DAVID</span>
         </div>
         <h1>GR-LAGER</h1>
-        <button onclick="location.reload()" style="background:none; border:none; font-size:1.3rem; color:var(--accent);">🚪</button>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--accent);">🚪</button>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
             <div style="background:white; padding:10px; border-radius:12px; margin-bottom:15px;">
-                <select id="catFilter" onchange="render()" style="width:100%; padding:8px; border:1px solid var(--accent); border-radius:6px; font-weight:bold;"></select>
-                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:6px; box-sizing:border-box;">
+                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; box-sizing:border-box;">
             </div>
             <div id="itemList"></div>
         </div>
@@ -97,22 +91,22 @@
             <div class="form-card">
                 <div class="form-row"><span class="form-label">Name</span><input type="text" id="itemName" class="form-input"></div>
                 <div class="form-row"><span class="form-label">Lager</span><select id="itemLagerSelect" class="form-input"></select></div>
-                <div class="form-row"><span class="form-label">Kat</span><select id="itemCatSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Regal</span><select id="itemRegalSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Fach</span><select id="itemFachSelect" class="form-input"></select></div>
-                <div style="border:2px dashed var(--accent); padding:10px; text-align:center; margin:10px 0; border-radius:8px;" onclick="document.getElementById('itemImg').click()">
-                    <span id="camText">📷 BILD HINZUFÜGEN</span>
-                    <img id="imagePreview" style="width:100%; height:80px; object-fit:contain; display:none;">
-                </div>
-                <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
                 <button onclick="saveAndPrint()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;">SPEICHERN & DRUCKEN</button>
             </div>
+        </div>
+
+        <div id="tab-log" class="content">
+            <h3 style="color:var(--accent); margin-top:0;">📜 LOGBUCH</h3>
+            <div id="logList"></div>
         </div>
     </div>
 
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">📦 LAGER</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">➕ NEU</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOG</button>
     </nav>
 </div>
 
@@ -130,29 +124,37 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { items: [] };
+    let state = { user: "DAVID", items: [], logs: [] };
 
     function initApp() {
         mainRef.on('value', snap => {
             const data = snap.val() || {};
             state.items = Object.keys(data.items || {}).map(k => ({...data.items[k], key: k}));
+            state.logs = Object.values(data.logs || {}).sort((a,b) => b.ts - a.ts);
             
             const fill = (id, list) => {
                 const el = document.getElementById(id);
                 if(el) el.innerHTML = (list || ["-"]).map(v => `<option value="${v}">${v}</option>`).join('');
             };
-            fill('itemLagerSelect', data.locations); fill('itemCatSelect', data.cats); 
-            fill('itemRegalSelect', data.regale); fill('itemFachSelect', data.faecher);
-            document.getElementById('catFilter').innerHTML = `<option value="ALL">ALLE</option>` + (data.cats || []).map(v => `<option value="${v}">${v}</option>`).join('');
+            fill('itemLagerSelect', data.locations); fill('itemRegalSelect', data.regale); fill('itemFachSelect', data.faecher);
             render();
+            renderLogs();
+        });
+    }
+
+    function writeLog(text) {
+        mainRef.child('logs').push({
+            user: state.user,
+            text: text,
+            ts: Date.now(),
+            date: new Date().toLocaleString('de-DE')
         });
     }
 
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
-        const f = document.getElementById('catFilter').value;
         document.getElementById('itemList').innerHTML = state.items
-            .filter(i => (f === "ALL" || i.cat === f) && i.name.toLowerCase().includes(s))
+            .filter(i => i.name.toLowerCase().includes(s))
             .map(i => {
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${i.key}`;
                 const isOut = i.status !== "im Lager";
@@ -162,62 +164,64 @@
                     <div class="item-info">
                         <div style="font-weight:900;">${i.name}</div>
                         <div style="font-size:0.65rem; color:#555;">📍 ${i.location || '??'} | ${i.regal || '-'}/${i.fach || '-'}</div>
+                        <select onchange="changeQty('${i.key}', '${i.name}', ${i.qty}, this)" style="margin-top:4px;">
+                            ${Array.from({length:20},(_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
+                        </select>
                     </div>
-                    <button onclick="toggleStatus('${i.key}')" class="btn-status ${isOut ? 'btn-out' : 'btn-in'}">
+                    <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${isOut ? 'btn-out' : 'btn-in'}">
                         ${isOut ? 'AUS' : 'EIN'}
                     </button>
-                    <button onclick="deleteItem('${i.key}')" style="background:none; border:none; opacity:0.2;">🗑️</button>
                 </div>`;
             }).join('');
     }
 
-    function toggleStatus(key) {
-        const i = state.items.find(x => x.key === key);
-        const isIn = i.status === "im Lager";
-        mainRef.child('items/'+key).update({ status: isIn ? "ausgeliehen" : "im Lager" });
+    function toggleStatus(key, name, oldStatus) {
+        const newStatus = (oldStatus === "im Lager") ? "ausgeliehen" : "im Lager";
+        mainRef.child('items/'+key).update({ status: newStatus });
+        writeLog(`${name}: Status geändert von [${oldStatus}] zu [${newStatus}]`);
+    }
+
+    function changeQty(key, name, oldQty, el) {
+        const newQty = parseInt(el.value);
+        if(oldQty === newQty) return;
+        mainRef.child('items/'+key).update({ qty: newQty });
+        writeLog(`${name}: Menge geändert von [${oldQty}] zu [${newQty}]`);
     }
 
     function saveAndPrint() {
         const n = document.getElementById('itemName').value;
-        const loc = document.getElementById('itemLagerSelect').value;
-        const r = document.getElementById('itemRegalSelect').value;
-        const f = document.getElementById('itemFachSelect').value;
         if(!n) return;
+        const itemData = {
+            name: n,
+            location: document.getElementById('itemLagerSelect').value,
+            regal: document.getElementById('itemRegalSelect').value,
+            fach: document.getElementById('itemFachSelect').value,
+            status: "im Lager", qty: 1, ts: Date.now()
+        };
 
         const newRef = mainRef.child('items').push();
-        const key = newRef.key;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${key}`;
+        newRef.set(itemData);
+        
+        writeLog(`NEUER ARTIKEL: ${n} angelegt in ${itemData.location} (${itemData.regal}/${itemData.fach})`);
 
-        newRef.set({
-            name: n, location: loc, regal: r, fach: f,
-            cat: document.getElementById('itemCatSelect').value,
-            img: document.getElementById('imagePreview').src || "",
-            status: "im Lager", qty: 1, ts: Date.now()
-        });
-
-        // Etikett vorbereiten und drucken
         document.getElementById('p-name').innerText = n;
-        document.getElementById('p-loc').innerText = `${loc} | ${r} / ${f}`;
-        document.getElementById('p-qr').src = qrUrl;
+        document.getElementById('p-loc').innerText = `${itemData.location} | ${itemData.regal}/${itemData.fach}`;
+        document.getElementById('p-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${newRef.key}`;
 
         setTimeout(() => { 
             window.print(); 
             document.getElementById('itemName').value = "";
-            document.getElementById('imagePreview').style.display = "none";
             switchTab(null, 'tab-lager');
         }, 800);
     }
 
-    function previewImage(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => { 
-                document.getElementById('imagePreview').src = e.target.result;
-                document.getElementById('imagePreview').style.display = 'block';
-                document.getElementById('camText').style.display = 'none';
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+    function renderLogs() {
+        document.getElementById('logList').innerHTML = state.logs.slice(0, 50).map(l => `
+            <div class="log-entry">
+                <strong>${l.user}</strong>: ${l.text}
+                <span class="log-ts">${l.date}</span>
+            </div>
+        `).join('');
     }
 
     function switchTab(e, id) {
@@ -227,8 +231,6 @@
         if(e) e.currentTarget.classList.add('active');
         else document.querySelectorAll('.tab-btn')[0].classList.add('active');
     }
-
-    function deleteItem(k) { if(confirm('Löschen?')) mainRef.child('items/'+k).remove(); }
 
     initApp();
 </script>
