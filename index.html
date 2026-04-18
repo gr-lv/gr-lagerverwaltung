@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V144</title>
+    <title>GR-Lagerverwaltung V145</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -19,26 +19,13 @@
             background-size: cover; z-index: 1;
         }
 
-        /* LOGIN - JETZT TRANSPARENT */
-        #loginScreen { 
-            position: fixed; inset: 0; z-index: 9000; 
-            display: flex; align-items: center; justify-content: center; 
-            background: rgba(0,0,0,0.2); /* Fast durchsichtig */
-            backdrop-filter: blur(3px); /* Leichter Unschärfe-Effekt für die Lesbarkeit */
-        }
-        .login-box { 
-            background: rgba(30, 41, 59, 0.9); 
-            padding: 30px; border-radius: 20px; 
-            border: 3px solid var(--accent); 
-            width: 280px; text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        #loginScreen { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); backdrop-filter: blur(3px); }
+        .login-box { background: rgba(30, 41, 59, 0.9); padding: 30px; border-radius: 20px; border: 3px solid var(--accent); width: 280px; text-align: center; }
 
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; }
         .header { background: rgba(0,0,0,0.9); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 10px 15px; padding-bottom: 100px; }
 
-        /* ARTIKEL KARTEN */
         .item-card { background: rgba(255,255,255,0.95); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; }
         .item-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; background: #eee; cursor: pointer; }
         .item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -47,18 +34,15 @@
         
         .qr-side { width: 42px; height: 42px; background: white; padding: 2px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; }
 
-        /* INPUTS & BUTTONS */
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
         .btn-status { border: none; padding: 10px; border-radius: 8px; color: white; font-weight: bold; min-width: 55px; font-size: 0.7rem; cursor: pointer; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
 
-        /* MODALS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 5000; align-items: center; justify-content: center; flex-direction: column; }
         .modal img { max-width: 90%; max-height: 70%; border: 2px solid var(--accent); border-radius: 10px; }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 4000; flex-direction: column; }
 
-        /* NAV */
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 75px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
@@ -88,10 +72,10 @@
 
 <div id="loginScreen">
     <div class="login-box">
-        <h2 style="color:var(--accent); margin-top:0; letter-spacing: 2px;">GR-LAGER</h2>
-        <input type="text" id="loginName" class="form-input" placeholder="Benutzername">
+        <h2 style="color:var(--accent); margin-top:0;">GR-LAGER</h2>
+        <input type="text" id="loginName" class="form-input" placeholder="Name">
         <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
-        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold; cursor: pointer;">STARTEN</button>
+        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">STARTEN</button>
     </div>
 </div>
 
@@ -105,13 +89,16 @@
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem;">📷</button>
         <h2 style="margin:0; font-size:1.1rem; letter-spacing:1px;">GR-LAGER</h2>
-        <div id="displayUserName" style="font-size:0.7rem; color:var(--accent); font-weight:bold; border: 1px solid var(--accent); padding: 4px; border-radius: 5px;">GUEST</div>
+        <div id="displayUserName" style="font-size:0.7rem; color:var(--accent); font-weight:bold;">GUEST</div>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; padding:12px; border-radius:10px; border:none; margin-bottom:15px;">
-            <div id="itemList"></div>
+            <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" class="form-input" style="background:white; color:black; margin-bottom:8px;">
+            <select id="filterCatSelect" onchange="render()" class="form-input" style="background:var(--accent); color:white; font-weight:bold; border:none;">
+                <option value="">ALLE KATEGORIEN</option>
+            </select>
+            <div id="itemList" style="margin-top:10px;"></div>
         </div>
 
         <div id="tab-neu" class="content">
@@ -123,8 +110,8 @@
                     <select id="itemRegalSelect" class="form-input"></select>
                     <select id="itemFachSelect" class="form-input"></select>
                 </div>
-                <div style="border:2px dashed #ccc; padding:15px; text-align:center; border-radius:10px; margin-bottom:10px; cursor: pointer;" onclick="document.getElementById('itemImg').click()">
-                    <span id="camText" style="color: #666; font-weight: bold;">📷 FOTO AUFNEHMEN</span>
+                <div style="border:2px dashed #ccc; padding:15px; text-align:center; border-radius:10px; margin-bottom:10px;" onclick="document.getElementById('itemImg').click()">
+                    <span id="camText">📷 FOTO AUFNEHMEN</span>
                     <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none;">
                 </div>
                 <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
@@ -132,10 +119,10 @@
             </div>
 
             <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:12px;">
-                <h4 style="margin:0 0 10px 0; color:var(--accent);">Einträge bearbeiten</h4>
+                <h4 style="margin:0 0 10px 0;">Listen verwalten</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
-                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px; font-weight:bold;">+</button>
+                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
                 </div>
                 <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white;">
                     <option value="locations">Lagerorte</option>
@@ -174,35 +161,50 @@
     let state = { user: "", items: [], config: {}, scanner: null };
 
     function checkLogin() {
-        const u = document.getElementById('loginName').value;
-        const p = document.getElementById('loginPass').value;
-        if(u && p === "1234") {
-            state.user = u.toUpperCase();
+        if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
+            state.user = document.getElementById('loginName').value.toUpperCase();
             document.getElementById('displayUserName').innerText = state.user;
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('ui-wrapper').style.display = 'flex';
             initApp();
-        } else { alert("Login nicht korrekt!"); }
+        }
     }
 
     function initApp() {
         mainRef.on('value', snap => {
             state.config = snap.val() || {};
             state.items = Object.keys(state.config.items || {}).map(k => ({...state.config.items[k], key: k}));
-            const fill = (id, list) => {
+            
+            const fill = (id, list, addAll = false) => {
                 const el = document.getElementById(id);
-                if(el) el.innerHTML = (list || []).map(v => `<option value="${v}">${v}</option>`).join('');
+                if(el) {
+                    let html = addAll ? '<option value="">ALLE KATEGORIEN</option>' : '';
+                    html += (list || []).map(v => `<option value="${v}">${v}</option>`).join('');
+                    el.innerHTML = html;
+                }
             };
-            fill('itemLagerSelect', state.config.locations); fill('itemCatSelect', state.config.cats);
-            fill('itemRegalSelect', state.config.regale); fill('itemFachSelect', state.config.faecher);
+            
+            fill('itemLagerSelect', state.config.locations); 
+            fill('itemCatSelect', state.config.cats);
+            fill('filterCatSelect', state.config.cats, true); // Hier wird das Such-Dropdown befüllt
+            fill('itemRegalSelect', state.config.regale); 
+            fill('itemFachSelect', state.config.faecher);
+            
             render(); renderLogs(); updateManageList();
         });
     }
 
     function render() {
-        const s = document.getElementById('searchInput').value.toLowerCase();
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
+        const filterCat = document.getElementById('filterCatSelect').value;
+        
         document.getElementById('itemList').innerHTML = state.items
-            .filter(i => i.name.toLowerCase().includes(s))
+            .filter(i => {
+                const matchesSearch = i.name.toLowerCase().includes(searchText);
+                const matchesCat = filterCat === "" || i.cat === filterCat;
+                return matchesSearch && matchesCat;
+            })
+            .sort((a,b) => b.ts - a.ts)
             .map(i => {
                 const qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}`;
                 const thumb = i.img || 'https://via.placeholder.com/60?text=FOTO';
@@ -284,7 +286,7 @@
         const list = state.config[type] || [];
         document.getElementById('listDisplay').innerHTML = list.map((v, i) => `
             <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">
-                ${v} <button onclick="removeFromList('${type}', ${i})" style="color:var(--danger); background:none; border:none; font-weight:bold; cursor: pointer;">LÖSCHEN</button>
+                ${v} <button onclick="removeFromList('${type}', ${i})" style="color:var(--danger); background:none; border:none; font-weight:bold;">LÖSCHEN</button>
             </div>
         `).join('');
     }
@@ -306,7 +308,7 @@
         mainRef.child(type).set(list);
     }
 
-    function deleteItem(k, n) { if(confirm(n + " endgültig löschen?")) mainRef.child('items/'+k).remove(); }
+    function deleteItem(k, n) { if(confirm(n + " löschen?")) mainRef.child('items/'+k).remove(); }
     
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts);
