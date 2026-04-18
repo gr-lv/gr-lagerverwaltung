@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V130</title>
+    <title>GR-Lagerverwaltung V131</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -21,7 +21,6 @@
 
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; }
 
-        /* HEADER */
         .header { background: rgba(0,0,0,0.9); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .user-area { display: flex; align-items: center; gap: 8px; color: var(--accent); font-weight: bold; font-size: 0.85rem; }
         .header h1 { margin: 0; font-size: 1rem; font-weight: 900; text-transform: uppercase; color: white; }
@@ -30,15 +29,15 @@
 
         /* CARDS */
         .item-card { background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; position: relative; }
-        .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; }
+        .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #eee; }
         .qr-side { display: flex; flex-direction: column; align-items: center; min-width: 45px; cursor: pointer; }
         .qr-img { width: 40px; height: 40px; background: white; padding: 2px; border: 1px solid #ddd; }
         .item-info { flex: 1; }
 
         /* MODAL / ZOOM */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center; flex-direction: column; }
-        .modal img { max-width: 90%; max-height: 70%; border-radius: 10px; border: 2px solid var(--accent); }
-        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: white; cursor: pointer; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
+        .modal img { max-width: 90%; max-height: 60%; border-radius: 10px; border: 3px solid var(--accent); background: white; }
+        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 2.5rem; color: white; cursor: pointer; font-weight: bold; }
 
         /* FORMS */
         .form-card { background: white; border-radius: 12px; padding: 15px; color: #000; margin-bottom: 20px; }
@@ -63,10 +62,10 @@
 <div class="global-bg"></div>
 
 <div id="zoomModal" class="modal" onclick="this.style.display='none'">
-    <span class="modal-close">&times;</span>
-    <img id="modalImg" src="">
-    <h2 id="modalTitle" style="margin-top:20px; color:white;"></h2>
-    <p id="modalDesc" style="color:var(--accent);"></p>
+    <span class="modal-close" onclick="document.getElementById('zoomModal').style.display='none'">&times;</span>
+    <img id="modalImg" src="" onerror="this.src='https://via.placeholder.com/300?text=Fehler+beim+Laden'">
+    <h2 id="modalTitle" style="margin-top:20px; color:white; text-align:center;"></h2>
+    <p id="modalDesc" style="color:var(--accent); text-align:center; font-weight:bold;"></p>
 </div>
 
 <div id="scanner-container">
@@ -176,12 +175,13 @@
         }
     }
 
-    // ZOOM FUNKTIONEN
     function zoom(src, title, desc = "") {
-        document.getElementById('modalImg').src = src;
+        const modal = document.getElementById('zoomModal');
+        const img = document.getElementById('modalImg');
+        img.src = src;
         document.getElementById('modalTitle').innerText = title;
         document.getElementById('modalDesc').innerText = desc;
-        document.getElementById('zoomModal').style.display = 'flex';
+        modal.style.display = 'flex';
     }
 
     function initApp() {
@@ -206,14 +206,15 @@
             .filter(i => (f === "ALL" || i.cat === f) && i.name.toLowerCase().includes(s))
             .map(i => {
                 const isOut = i.status !== "im Lager";
-                const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${i.key}`;
-                const thumb = i.img || 'https://via.placeholder.com/60';
+                // Benutze eine stabilere API für QR-Codes
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${i.key}`;
+                const thumb = i.img || 'https://via.placeholder.com/60?text=Bild';
                 return `
                 <div class="item-card">
-                    <img src="${thumb}" class="item-thumb" onclick="zoom('${thumb}', '${i.name}', 'Lagerort: ${i.location}')">
-                    <div class="qr-side" onclick="zoom('${qrUrl}', 'QR CODE: ${i.name}', 'ID: ${i.key}')">
+                    <img src="${thumb}" class="item-thumb" onclick="zoom('${thumb}', '${i.name}', 'Lager: ${i.location}')">
+                    <div class="qr-side" onclick="zoom('${qrUrl}', 'QR: ${i.name}', 'ID: ${i.key}')">
                         <img src="${qrUrl}" class="qr-img">
-                        <span style="font-size:0.5rem;font-weight:bold;">ZOOM</span>
+                        <span style="font-size:0.5rem;font-weight:bold;">VERGR.</span>
                     </div>
                     <div class="item-info">
                         <div style="font-weight:900;">${i.name}</div>
