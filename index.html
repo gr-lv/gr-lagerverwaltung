@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V129</title>
+    <title>GR-Lagerverwaltung V130</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -30,10 +30,15 @@
 
         /* CARDS */
         .item-card { background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; position: relative; }
-        .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; }
-        .qr-side { display: flex; flex-direction: column; align-items: center; min-width: 45px; }
+        .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; }
+        .qr-side { display: flex; flex-direction: column; align-items: center; min-width: 45px; cursor: pointer; }
         .qr-img { width: 40px; height: 40px; background: white; padding: 2px; border: 1px solid #ddd; }
         .item-info { flex: 1; }
+
+        /* MODAL / ZOOM */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center; flex-direction: column; }
+        .modal img { max-width: 90%; max-height: 70%; border-radius: 10px; border: 2px solid var(--accent); }
+        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: white; cursor: pointer; }
 
         /* FORMS */
         .form-card { background: white; border-radius: 12px; padding: 15px; color: #000; margin-bottom: 20px; }
@@ -56,6 +61,13 @@
 <body>
 
 <div class="global-bg"></div>
+
+<div id="zoomModal" class="modal" onclick="this.style.display='none'">
+    <span class="modal-close">&times;</span>
+    <img id="modalImg" src="">
+    <h2 id="modalTitle" style="margin-top:20px; color:white;"></h2>
+    <p id="modalDesc" style="color:var(--accent);"></p>
+</div>
 
 <div id="scanner-container">
     <div id="qr-reader" style="width: 100%;"></div>
@@ -97,7 +109,7 @@
                 <div class="form-row"><span class="form-label">Kat</span><select id="itemCatSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Regal</span><select id="itemRegalSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Fach</span><select id="itemFachSelect" class="form-input"></select></div>
-                <div style="border:2px dashed var(--accent); padding:10px; text-align:center; margin:10px 0; border-radius:8px;" onclick="document.getElementById('itemImg').click()">
+                <div style="border:2px dashed var(--accent); padding:10px; text-align:center; margin:10px 0; border-radius:8px; cursor:pointer;" onclick="document.getElementById('itemImg').click()">
                     <span id="camText">📷 FOTO HINZUFÜGEN</span>
                     <img id="imagePreview" style="width:100%; height:80px; object-fit:contain; display:none;">
                 </div>
@@ -164,6 +176,14 @@
         }
     }
 
+    // ZOOM FUNKTIONEN
+    function zoom(src, title, desc = "") {
+        document.getElementById('modalImg').src = src;
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalDesc').innerText = desc;
+        document.getElementById('zoomModal').style.display = 'flex';
+    }
+
     function initApp() {
         mainRef.on('value', snap => {
             const data = snap.val() || {};
@@ -186,11 +206,15 @@
             .filter(i => (f === "ALL" || i.cat === f) && i.name.toLowerCase().includes(s))
             .map(i => {
                 const isOut = i.status !== "im Lager";
-                const qr = `https://chart.googleapis.com/chart?chs=100x100&cht=qr&chl=${i.key}`;
+                const qrUrl = `https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${i.key}`;
+                const thumb = i.img || 'https://via.placeholder.com/60';
                 return `
                 <div class="item-card">
-                    <img src="${i.img || 'https://via.placeholder.com/60'}" class="item-thumb">
-                    <div class="qr-side"><img src="${qr}" class="qr-img"><span style="font-size:0.5rem;font-weight:bold;">QR</span></div>
+                    <img src="${thumb}" class="item-thumb" onclick="zoom('${thumb}', '${i.name}', 'Lagerort: ${i.location}')">
+                    <div class="qr-side" onclick="zoom('${qrUrl}', 'QR CODE: ${i.name}', 'ID: ${i.key}')">
+                        <img src="${qrUrl}" class="qr-img">
+                        <span style="font-size:0.5rem;font-weight:bold;">ZOOM</span>
+                    </div>
                     <div class="item-info">
                         <div style="font-weight:900;">${i.name}</div>
                         <div style="font-size:0.65rem; color:#555;">🏠 ${i.location} | 📍 ${i.regal}/${i.fach}</div>
