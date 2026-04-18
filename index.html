@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V136</title>
+    <title>GR-Lagerverwaltung V137</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -20,38 +20,38 @@
         }
 
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; }
-        
-        /* LOGIN SCREEN */
         #loginScreen { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; background: #000; }
-        .login-box { background: rgba(30,41,59,0.95); padding: 30px; border-radius: 20px; border: 2px solid var(--accent); width: 280px; text-align: center; z-index: 2001; }
+        .login-box { background: rgba(30,41,59,0.95); padding: 30px; border-radius: 20px; border: 2px solid var(--accent); width: 280px; text-align: center; }
 
         .header { background: rgba(0,0,0,0.9); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
-        .user-area { display: flex; align-items: center; gap: 8px; color: var(--accent); font-weight: bold; font-size: 0.85rem; }
-        .header h1 { margin: 0; font-size: 1rem; font-weight: 900; text-transform: uppercase; color: white; }
         .content-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 100px; }
 
+        /* SCANNER OVERLAY */
+        #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
+
         /* ITEM CARDS */
-        .item-card { background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; position: relative; }
-        .qr-img { width: 45px; height: 45px; background: white; padding: 2px; border: 1px solid #ddd; }
+        .item-card { background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; }
+        .item-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; background: #eee; }
+        .qr-side { display: flex; flex-direction: column; align-items: center; }
+        .qr-img { width: 40px; height: 40px; background: white; padding: 2px; border: 1px solid #ddd; }
         .item-info { flex: 1; min-width: 0; }
         
-        .btn-status { border: none; padding: 10px 12px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; min-width: 70px; font-size: 0.75rem; }
+        .btn-status { border: none; padding: 10px 8px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; min-width: 60px; font-size: 0.7rem; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
 
-        /* LOG ENTRIES */
-        .log-entry { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid var(--accent); font-size: 0.8rem; }
-        .log-ts { opacity: 0.5; font-size: 0.65rem; display: block; margin-top: 4px; }
+        /* LOG */
+        .log-entry { background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 0.75rem; border-left: 3px solid var(--accent); }
 
         /* PRINT */
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: fixed; left: 0; top: 0; width: 100%; display: block !important; padding: 10mm; background: white; color: black; text-align: center; }
+            #print-area { position: fixed; left: 0; top: 0; width: 100%; display: block !important; padding: 10mm; background: white; text-align: center; color: black; }
         }
         #print-area { display: none; }
 
-        /* UI ELEMENTS */
+        /* FORMS */
         .form-card { background: white; border-radius: 12px; padding: 15px; color: #000; margin-bottom: 20px; }
         .form-row { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; }
         .form-label { width: 70px; font-size: 0.7rem; font-weight: bold; color: #666; }
@@ -68,36 +68,39 @@
 
 <div class="global-bg no-print"></div>
 
+<div id="scanner-container">
+    <div id="qr-reader" style="width: 100%;"></div>
+    <button onclick="stopScanner()" style="margin-top:20px; padding:15px; background:var(--danger); color:white; border:none; border-radius:10px; width:80%;">ABBRECHEN</button>
+</div>
+
 <div id="loginScreen" class="no-print">
     <div class="login-box">
-        <h2 style="color:var(--accent); font-weight:900; margin-bottom:20px;">GR-LOGIN</h2>
-        <input type="text" id="loginName" class="form-input" style="width:100%; margin-bottom:10px; background:#0f172a; color:white; border-color:var(--accent);" placeholder="Name">
-        <input type="password" id="loginPass" class="form-input" style="width:100%; margin-bottom:15px; background:#0f172a; color:white; border-color:var(--accent);" placeholder="Passwort">
-        <button onclick="checkLogin()" style="width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;">LOGIN</button>
+        <h2 style="color:var(--accent); font-weight:900;">GR-LOGIN</h2>
+        <input type="text" id="loginName" class="form-input" style="width:100%; margin-bottom:10px; background:#0f172a; color:white;" placeholder="Name">
+        <input type="password" id="loginPass" class="form-input" style="width:100%; margin-bottom:15px; background:#0f172a; color:white;" placeholder="Passwort">
+        <button onclick="checkLogin()" style="width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;">START</button>
     </div>
 </div>
 
 <div id="print-area">
-    <h2 id="p-name" style="margin: 0;"></h2>
-    <div id="p-loc" style="font-size: 14pt; margin: 10px 0; border-bottom: 1px solid black;"></div>
-    <img id="p-qr" src="" style="width: 140px;">
+    <h2 id="p-name"></h2>
+    <div id="p-loc" style="font-size: 16pt;"></div>
+    <img id="p-qr" src="" style="width: 150px; margin-top: 15px;">
 </div>
 
 <div id="ui-wrapper" class="no-print">
     <div class="header">
         <div class="user-area">
-            <button onclick="alert('Scanner...')">📷</button>
+            <button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem;">📷</button>
             <span id="displayUserName">GUEST</span>
         </div>
         <h1>GR-LAGER</h1>
-        <button onclick="location.reload()" style="background:none; border:none; color:var(--accent);">🚪</button>
+        <button onclick="location.reload()" style="background:none; border:none; font-size:1.2rem; color:var(--accent);">🚪</button>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <div style="background:white; padding:10px; border-radius:12px; margin-bottom:15px;">
-                <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; box-sizing:border-box;">
-            </div>
+            <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; padding:12px; border-radius:8px; border:none; margin-bottom:15px;">
             <div id="itemList"></div>
         </div>
 
@@ -107,14 +110,18 @@
                 <div class="form-row"><span class="form-label">Lager</span><select id="itemLagerSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Regal</span><select id="itemRegalSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Fach</span><select id="itemFachSelect" class="form-input"></select></div>
-                <button onclick="saveAndPrint()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;">SPEICHERN & DRUCKEN</button>
+                
+                <div style="border:2px dashed var(--accent); padding:15px; text-align:center; margin:10px 0; border-radius:8px; cursor:pointer;" onclick="document.getElementById('itemImg').click()">
+                    <span id="camText">📷 ARTIKEL-FOTO MACHEN</span>
+                    <img id="imagePreview" style="width:100%; height:120px; object-fit:contain; display:none;">
+                </div>
+                <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
+                
+                <button onclick="saveAndPrint()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">SPEICHERN & DRUCKEN</button>
             </div>
         </div>
 
-        <div id="tab-log" class="content">
-            <h3 style="color:var(--accent); margin-top:0;">📜 LOGBUCH</h3>
-            <div id="logList"></div>
-        </div>
+        <div id="tab-log" class="content"><div id="logList"></div></div>
     </div>
 
     <nav>
@@ -139,18 +146,16 @@
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], logs: [] };
+    let html5QrCode;
 
     function checkLogin() {
         const n = document.getElementById('loginName').value;
-        const p = document.getElementById('loginPass').value;
-        if(n && p === "1234") {
+        if(n && document.getElementById('loginPass').value === "1234") {
             state.user = n.toUpperCase();
             document.getElementById('displayUserName').innerText = state.user;
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('ui-wrapper').style.display = 'flex';
             initApp();
-        } else {
-            alert("Name fehlt oder Passwort falsch!");
         }
     }
 
@@ -165,17 +170,7 @@
                 if(el) el.innerHTML = (list || ["-"]).map(v => `<option value="${v}">${v}</option>`).join('');
             };
             fill('itemLagerSelect', data.locations); fill('itemRegalSelect', data.regale); fill('itemFachSelect', data.faecher);
-            render();
-            renderLogs();
-        });
-    }
-
-    function writeLog(text) {
-        mainRef.child('logs').push({
-            user: state.user,
-            text: text,
-            ts: Date.now(),
-            date: new Date().toLocaleString('de-DE')
+            render(); renderLogs();
         });
     }
 
@@ -184,72 +179,91 @@
         document.getElementById('itemList').innerHTML = state.items
             .filter(i => i.name.toLowerCase().includes(s))
             .map(i => {
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${i.key}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}`;
+                const thumb = i.img || 'https://via.placeholder.com/60?text=BILD';
                 const isOut = i.status !== "im Lager";
                 return `
                 <div class="item-card">
-                    <div class="qr-side"><img src="${qrUrl}" class="qr-img"></div>
+                    <img src="${thumb}" class="item-thumb" onclick="window.alert('Großansicht folgt...')">
                     <div class="item-info">
                         <div style="font-weight:900;">${i.name}</div>
-                        <div style="font-size:0.65rem; color:#555;">📍 ${i.location || '??'} | ${i.regal || '-'}/${i.fach || '-'}</div>
-                        <select onchange="changeQty('${i.key}', '${i.name}', ${i.qty}, this)" style="margin-top:4px;">
-                            ${Array.from({length:20},(_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
-                        </select>
+                        <div style="font-size:0.65rem; color:#666;">📍 ${i.location} | ${i.regal}/${i.fach}</div>
                     </div>
+                    <div class="qr-side"><img src="${qrUrl}" class="qr-img"></div>
                     <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${isOut ? 'btn-out' : 'btn-in'}">
                         ${isOut ? 'AUS' : 'EIN'}
                     </button>
+                    <button onclick="deleteItem('${i.key}', '${i.name}')" style="background:none; border:none; font-size:1.1rem; opacity:0.3;">🗑️</button>
                 </div>`;
             }).join('');
     }
 
     function toggleStatus(key, name, oldStatus) {
-        const newStatus = (oldStatus === "im Lager") ? "ausgeliehen" : "im Lager";
-        mainRef.child('items/'+key).update({ status: newStatus });
-        writeLog(`${name}: Status [${oldStatus}] ➔ [${newStatus}]`);
+        const newS = (oldStatus === "im Lager") ? "ausgeliehen" : "im Lager";
+        mainRef.child('items/'+key).update({ status: newS });
+        mainRef.child('logs').push({ user: state.user, text: `${name}: ${newS}`, ts: Date.now(), date: new Date().toLocaleString() });
     }
 
-    function changeQty(key, name, oldQty, el) {
-        const newQty = parseInt(el.value);
-        if(oldQty === newQty) return;
-        mainRef.child('items/'+key).update({ qty: newQty });
-        writeLog(`${name}: Menge [${oldQty}] ➔ [${newQty}]`);
+    function deleteItem(k, n) {
+        if(confirm(n + " wirklich löschen?")) {
+            mainRef.child('items/'+k).remove();
+            mainRef.child('logs').push({ user: state.user, text: `GELÖSCHT: ${n}`, ts: Date.now(), date: new Date().toLocaleString() });
+        }
     }
 
     function saveAndPrint() {
         const n = document.getElementById('itemName').value;
         if(!n) return;
-        const itemData = {
-            name: n,
-            location: document.getElementById('itemLagerSelect').value,
+        const newRef = mainRef.child('items').push();
+        const item = {
+            name: n, location: document.getElementById('itemLagerSelect').value,
             regal: document.getElementById('itemRegalSelect').value,
             fach: document.getElementById('itemFachSelect').value,
+            img: document.getElementById('imagePreview').src || "",
             status: "im Lager", qty: 1, ts: Date.now()
         };
-
-        const newRef = mainRef.child('items').push();
-        newRef.set(itemData);
+        newRef.set(item);
         
-        writeLog(`NEU: ${n} angelegt (${itemData.location})`);
-
         document.getElementById('p-name').innerText = n;
-        document.getElementById('p-loc').innerText = `${itemData.location} | ${itemData.regal}/${itemData.fach}`;
-        document.getElementById('p-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${newRef.key}`;
+        document.getElementById('p-loc').innerText = `${item.location} | ${item.regal}/${item.fach}`;
+        document.getElementById('p-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${newRef.key}`;
 
         setTimeout(() => { 
             window.print(); 
             document.getElementById('itemName').value = "";
+            document.getElementById('imagePreview').style.display = "none";
+            document.getElementById('camText').style.display = "block";
             switchTab(null, 'tab-lager');
         }, 800);
     }
 
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('camText').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function startScanner() {
+        document.getElementById('scanner-container').style.display = 'flex';
+        html5QrCode = new Html5Qrcode("qr-reader");
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+            const i = state.items.find(x => x.key === txt);
+            if(i) { toggleStatus(i.key, i.name, i.status); stopScanner(); }
+        });
+    }
+
+    function stopScanner() {
+        if(html5QrCode) html5QrCode.stop().then(() => document.getElementById('scanner-container').style.display='none');
+    }
+
     function renderLogs() {
-        document.getElementById('logList').innerHTML = state.logs.slice(0, 50).map(l => `
-            <div class="log-entry">
-                <strong>${l.user}</strong>: ${l.text}
-                <span class="log-ts">${l.date}</span>
-            </div>
-        `).join('');
+        document.getElementById('logList').innerHTML = state.logs.slice(0, 30).map(l => `<div class="log-entry"><b>${l.user}</b>: ${l.text}<br><small>${l.date}</small></div>`).join('');
     }
 
     function switchTab(e, id) {
