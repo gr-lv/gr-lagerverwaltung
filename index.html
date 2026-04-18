@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V132</title>
+    <title>GR-Lagerverwaltung V133</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -29,8 +29,9 @@
         .item-card { background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; position: relative; }
         .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background: #eee; }
         .qr-side { display: flex; flex-direction: column; align-items: center; min-width: 45px; cursor: pointer; }
-        .qr-img { width: 40px; height: 40px; background: white; padding: 2px; border: 1px solid #ddd; }
-        .item-info { flex: 1; }
+        .qr-img { width: 45px; height: 45px; background: white; padding: 2px; border: 1px solid #ddd; }
+        .item-info { flex: 1; min-width: 0; }
+        .item-info div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* MODALS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
@@ -41,18 +42,20 @@
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; color: black !important; background: white !important; padding: 10px; }
+            #print-area { position: fixed; left: 0; top: 0; width: 100%; height: auto; display: block !important; padding: 10mm; background: white; color: black; text-align: center; }
             .no-print { display: none !important; }
         }
-
-        #print-area { display: none; background: white; color: black; padding: 20px; text-align: center; border: 1px solid #000; border-radius: 5px; }
+        #print-area { display: none; }
 
         /* FORM STYLES */
         .form-card { background: white; border-radius: 12px; padding: 15px; color: #000; margin-bottom: 20px; }
         .form-row { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; }
         .form-label { width: 80px; font-size: 0.7rem; font-weight: bold; color: #666; text-transform: uppercase; }
-        .form-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; }
+        .form-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; box-sizing: border-box; }
         
+        .admin-section { background: rgba(0,0,0,0.85); border: 1px solid #334155; border-radius: 12px; padding: 15px; margin-top: 20px; }
+        .btn-add { background: var(--accent); color: white; border: none; padding: 0 12px; border-radius: 6px; height: 38px; font-weight: bold; }
+
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 75px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
@@ -65,10 +68,9 @@
 <div class="global-bg no-print"></div>
 
 <div id="print-area">
-    <h2 id="p-name" style="margin: 0; font-size: 24pt;"></h2>
-    <div id="p-loc" style="font-size: 16pt; margin: 5px 0; border-bottom: 2px solid black; padding-bottom: 5px;"></div>
+    <h2 id="p-name" style="margin: 0; font-size: 24pt; font-family: sans-serif;"></h2>
+    <div id="p-loc" style="font-size: 16pt; margin: 10px 0; border-bottom: 2px solid black; padding-bottom: 5px;"></div>
     <img id="p-qr" src="" style="width: 150px; height: 150px; margin-top: 10px;">
-    <p style="font-size: 8pt; margin-top: 5px;">GR-LAGER SYSTEM</p>
 </div>
 
 <div id="zoomModal" class="modal" onclick="this.style.display='none'">
@@ -77,10 +79,10 @@
     <h2 id="modalTitle" style="margin-top:20px; color:white;"></h2>
 </div>
 
-<div id="ui-wrapper">
-    <div class="header no-print">
+<div id="ui-wrapper" class="no-print">
+    <div class="header">
         <div class="user-area">
-            <button onclick="alert('Scanner aktiv...')" style="background:none; border:none; font-size:1.6rem;">📷</button>
+            <button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem; padding:0;">📷</button>
             <span id="displayUserName">DAVID</span>
         </div>
         <h1>GR-LAGER</h1>
@@ -89,7 +91,7 @@
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <div style="background:white; padding:10px; border-radius:12px; margin-bottom:15px;" class="no-print">
+            <div style="background:white; padding:10px; border-radius:12px; margin-bottom:15px;">
                 <select id="catFilter" onchange="render()" style="width:100%; padding:8px; border:1px solid var(--accent); border-radius:6px; font-weight:bold;"></select>
                 <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; margin-top:8px; padding:8px; border:1px solid #ddd; border-radius:6px; box-sizing:border-box;">
             </div>
@@ -103,19 +105,34 @@
                 <div class="form-row"><span class="form-label">Kat</span><select id="itemCatSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Regal</span><select id="itemRegalSelect" class="form-input"></select></div>
                 <div class="form-row"><span class="form-label">Fach</span><select id="itemFachSelect" class="form-input"></select></div>
-                <button onclick="saveItem()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;">ARTIKEL SPEICHERN</button>
+                <div style="border:2px dashed var(--accent); padding:10px; text-align:center; margin:10px 0; border-radius:8px;" onclick="document.getElementById('itemImg').click()">
+                    <span id="camText">📷 BILD HINZUFÜGEN</span>
+                    <img id="imagePreview" style="width:100%; height:80px; object-fit:contain; display:none;">
+                </div>
+                <input type="file" id="itemImg" accept="image/*" style="display:none;" onchange="previewImage(this)">
+                <button onclick="saveItem()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold; width:100%;">ARTIKEL SPEICHERN</button>
+            </div>
+
+            <div class="admin-section">
+                <h4 style="margin:0 0 12px 0; color:var(--accent); font-size:0.8rem;">⚙️ LISTEN BEARBEITEN</h4>
+                <div class="form-row"><input type="text" id="addLager" class="form-input" placeholder="Lager..."><button class="btn-add" onclick="addToList('locations', 'addLager')">+</button></div>
+                <div class="form-row"><input type="text" id="addCat" class="form-input" placeholder="Kategorie..."><button class="btn-add" onclick="addToList('cats', 'addCat')">+</button></div>
+                <div class="form-row"><input type="text" id="addRegal" class="form-input" placeholder="Regal..."><button class="btn-add" onclick="addToList('regale', 'addRegal')">+</button></div>
+                <div class="form-row"><input type="text" id="addFach" class="form-input" placeholder="Fach..."><button class="btn-add" onclick="addToList('faecher', 'addFach')">+</button></div>
             </div>
         </div>
+
+        <div id="tab-log" class="content"><div id="logList"></div></div>
     </div>
 
-    <nav class="no-print">
+    <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">📦 LAGER</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">➕ NEU</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOG</button>
     </nav>
 </div>
 
 <script>
-    // Firebase Konfiguration (wie gehabt)
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -129,7 +146,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { items: [] };
+    let state = { user: "DAVID", items: [] };
 
     function initApp() {
         mainRef.on('value', snap => {
@@ -140,49 +157,46 @@
                 const el = document.getElementById(id);
                 if(el) el.innerHTML = (list || ["-"]).map(v => `<option value="${v}">${v}</option>`).join('');
             };
-            fill('itemLagerSelect', data.locations); fill('itemCatSelect', data.cats); fill('itemRegalSelect', data.regale); fill('itemFachSelect', data.faecher);
-            fill('catFilter', data.cats);
+            fill('itemLagerSelect', data.locations); fill('itemCatSelect', data.cats); 
+            fill('itemRegalSelect', data.regale); fill('itemFachSelect', data.faecher);
+            document.getElementById('catFilter').innerHTML = `<option value="ALL">ALLE</option>` + (data.cats || []).map(v => `<option value="${v}">${v}</option>`).join('');
             render();
         });
     }
 
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
+        const f = document.getElementById('catFilter').value;
         document.getElementById('itemList').innerHTML = state.items
-            .filter(i => i.name.toLowerCase().includes(s))
+            .filter(i => (f === "ALL" || i.cat === f) && i.name.toLowerCase().includes(s))
             .map(i => {
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${i.key}`;
+                const thumb = i.img || 'https://via.placeholder.com/60?text=BILD';
                 return `
                 <div class="item-card">
-                    <div class="qr-side" onclick="zoom('${qrUrl}', '${i.name}')">
+                    <img src="${thumb}" class="item-thumb" onclick="zoom('${thumb}', '${i.name}')">
+                    <div class="qr-side" onclick="zoom('${qrUrl}', 'QR: ${i.name}')">
                         <img src="${qrUrl}" class="qr-img">
+                        <span style="font-size:0.5rem;font-weight:bold;">ZOOM</span>
                     </div>
                     <div class="item-info">
                         <div style="font-weight:900;">${i.name}</div>
-                        <div style="font-size:0.7rem; color:#666;">📍 ${i.location} | ${i.regal} / ${i.fach}</div>
+                        <div style="font-size:0.65rem; color:#555;">📍 ${i.location || '??'} | ${i.regal || '-'}/${i.fach || '-'}</div>
+                        <select onchange="changeQty('${i.key}', this)" style="margin-top:4px; border:1px solid var(--accent);">
+                            ${Array.from({length:50},(_,n)=>`<option value="${n+1}" ${i.qty==n+1?'selected':''}>${n+1}</option>`).join('')}
+                        </select>
                     </div>
-                    <button onclick="printLabel('${i.name}', '${i.location}', '${i.regal}', '${i.fach}', '${qrUrl}')" 
-                            style="background: #3b82f6; color:white; border:none; padding:10px; border-radius:8px; margin-right:5px;">🖨️</button>
-                    <button onclick="deleteItem('${i.key}')" style="background:none; border:none; opacity:0.3;">🗑️</button>
+                    <button onclick="printLabel('${i.name}', '${i.location}', '${i.regal}', '${i.fach}', '${qrUrl}')" style="background:#3b82f6; color:white; border:none; padding:10px; border-radius:8px;">🖨️</button>
+                    <button onclick="deleteItem('${i.key}')" style="background:none; border:none; opacity:0.2;">🗑️</button>
                 </div>`;
             }).join('');
     }
 
     function printLabel(name, loc, regal, fach, qr) {
         document.getElementById('p-name').innerText = name;
-        document.getElementById('p-loc').innerText = `${loc} - ${regal} / ${fach}`;
+        document.getElementById('p-loc').innerText = `${loc} | ${regal} / ${fach}`;
         document.getElementById('p-qr').src = qr;
-        
-        // Kurz warten bis Bild geladen ist, dann Druckdialog
-        setTimeout(() => {
-            window.print();
-        }, 500);
-    }
-
-    function zoom(src, title) {
-        document.getElementById('modalImg').src = src;
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('zoomModal').style.display = 'flex';
+        setTimeout(() => { window.print(); }, 500);
     }
 
     function saveItem() {
@@ -193,22 +207,51 @@
             cat: document.getElementById('itemCatSelect').value,
             regal: document.getElementById('itemRegalSelect').value,
             fach: document.getElementById('itemFachSelect').value,
+            img: document.getElementById('imagePreview').src || "",
             status: "im Lager", qty: 1, ts: Date.now()
         });
         document.getElementById('itemName').value = "";
+        document.getElementById('imagePreview').style.display = "none";
         switchTab(null, 'tab-lager');
     }
 
-    function deleteItem(k) { if(confirm('Löschen?')) mainRef.child('items/'+k).remove(); }
+    function addToList(path, inputId) {
+        const val = document.getElementById(inputId).value;
+        if(!val) return;
+        mainRef.child(path).once('value', s => {
+            let l = s.val() || []; l.push(val); mainRef.child(path).set(l);
+            document.getElementById(inputId).value = "";
+        });
+    }
+
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('camText').style.display = 'none';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function zoom(src, title) {
+        document.getElementById('modalImg').src = src;
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('zoomModal').style.display = 'flex';
+    }
 
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(e) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-        }
+        if(e) e.currentTarget.classList.add('active');
+        else document.querySelectorAll('.tab-btn')[0].classList.add('active');
     }
+
+    function deleteItem(k) { if(confirm('Löschen?')) mainRef.child('items/'+k).remove(); }
+    function changeQty(k, el) { mainRef.child('items/'+k).update({qty: parseInt(el.value)}); }
 
     initApp();
 </script>
