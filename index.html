@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V138</title>
+    <title>GR-Lagerverwaltung V139</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -26,26 +26,32 @@
         .header { background: rgba(0,0,0,0.9); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 120px; }
 
+        /* SCANNER */
+        #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 4000; flex-direction: column; align-items: center; justify-content: center; }
+
         /* ITEM CARDS */
         .item-card { background: var(--glass); border-radius: 12px; margin-bottom: 10px; padding: 12px; color: #000; display: flex; align-items: center; gap: 10px; }
-        .item-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; background: #eee; }
+        .item-thumb { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; background: #eee; cursor: pointer; }
+        .qr-side { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 45px; }
+        .qr-img { width: 45px; height: 45px; background: white; padding: 2px; border: 1px solid #ddd; }
         .item-info { flex: 1; min-width: 0; }
         
         .btn-status { border: none; padding: 10px; border-radius: 8px; color: white; font-weight: bold; min-width: 60px; font-size: 0.7rem; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
 
-        /* ADMIN SECTION */
-        .admin-card { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-top: 20px; border: 1px solid #334155; }
-        .manage-list { list-style: none; padding: 0; margin: 10px 0; max-height: 150px; overflow-y: auto; }
-        .manage-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 5px; margin-bottom: 4px; font-size: 0.8rem; }
-        .btn-del-small { background: var(--danger); color: white; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; }
+        /* ZOOM MODAL */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; flex-direction: column; }
+        .modal img { max-width: 90%; max-height: 70%; border: 3px solid var(--accent); border-radius: 10px; }
 
         /* FORMS */
         .form-card { background: white; border-radius: 12px; padding: 15px; color: #000; }
-        .form-row { display: flex; align-items: center; margin-bottom: 10px; gap: 8px; }
-        .form-input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; }
+        .form-input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 8px; }
         
+        /* ADMIN */
+        .admin-card { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-top: 20px; border: 1px solid #334155; }
+        .manage-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 5px; margin-bottom: 4px; font-size: 0.8rem; }
+
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 75px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
@@ -55,52 +61,61 @@
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: fixed; inset: 0; background: white; text-align: center; padding: 20px; }
+            #print-area { position: fixed; inset: 0; background: white; text-align: center; padding: 20px; color: black; }
         }
-        #print-area { display: none; }
     </style>
 </head>
 <body>
 
 <div class="global-bg no-print"></div>
 
+<div id="scanner-container">
+    <div id="qr-reader" style="width: 100%;"></div>
+    <button onclick="stopScanner()" style="margin-top:20px; padding:15px; background:var(--danger); color:white; border:none; border-radius:10px; width:80%;">STOPPEN</button>
+</div>
+
+<div id="zoomModal" class="modal" onclick="this.style.display='none'">
+    <img id="modalImg" src="">
+    <h3 id="modalTitle" style="color:white; margin-top:15px;"></h3>
+</div>
+
 <div id="loginScreen" class="no-print">
     <div class="login-box">
         <h2 style="color:var(--accent);">GR-LOGIN</h2>
-        <input type="text" id="loginName" class="form-input" style="width:100%; margin-bottom:10px;" placeholder="Name">
-        <input type="password" id="loginPass" class="form-input" style="width:100%; margin-bottom:15px;" placeholder="Passwort">
+        <input type="text" id="loginName" class="form-input" placeholder="Name">
+        <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
         <button onclick="checkLogin()" style="width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;">START</button>
     </div>
 </div>
 
 <div id="print-area">
     <h2 id="p-name"></h2>
-    <div id="p-loc"></div>
-    <img id="p-qr" src="" style="width: 150px;">
+    <div id="p-loc" style="font-size: 16pt;"></div>
+    <img id="p-qr" src="" style="width: 150px; margin-top:15px;">
 </div>
 
 <div id="ui-wrapper" class="no-print">
     <div class="header">
-        <div class="user-area"><button onclick="alert('Scanner...')">📷</button><span id="displayUserName">GUEST</span></div>
+        <div class="user-area"><button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem;">📷</button><span id="displayUserName">GUEST</span></div>
         <h1>GR-LAGER</h1>
-        <button onclick="location.reload()" style="background:none; border:none; color:var(--accent);">🚪</button>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--accent); font-size:1.2rem;">🚪</button>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content active">
-            <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; padding:12px; border-radius:8px; margin-bottom:15px; border:none;">
+            <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" style="width:100%; padding:12px; border-radius:8px; border:none; margin-bottom:15px;">
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content">
             <div class="form-card">
-                <div class="form-row"><input type="text" id="itemName" class="form-input" placeholder="Artikel Name"></div>
-                <div class="form-row"><select id="itemLagerSelect" class="form-input"></select></div>
-                <div class="form-row"><select id="itemCatSelect" class="form-input"></select></div>
-                <div class="form-row"><select id="itemRegalSelect" class="form-input"></select></div>
-                <div class="form-row"><select id="itemFachSelect" class="form-input"></select></div>
-                <div style="border:2px dashed var(--accent); padding:10px; text-align:center; margin-bottom:10px; border-radius:8px;" onclick="document.getElementById('itemImg').click()">
-                    <span id="camText">📷 FOTO MACHEN</span>
+                <input type="text" id="itemName" class="form-input" placeholder="Artikel Name">
+                <select id="itemLagerSelect" class="form-input"></select>
+                <select id="itemCatSelect" class="form-input"></select>
+                <select id="itemRegalSelect" class="form-input"></select>
+                <select id="itemFachSelect" class="form-input"></select>
+                <div style="border:2px dashed var(--accent); padding:10px; text-align:center; margin-bottom:10px; border-radius:8px; color:#666;" onclick="document.getElementById('itemImg').click()">
+                    <span id="camText">📷 ARTIKEL-FOTO MACHEN</span>
                     <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none;">
                 </div>
                 <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
@@ -108,17 +123,18 @@
             </div>
 
             <div class="admin-card">
-                <h3 style="margin:0; font-size:0.9rem; color:var(--accent);">⚙️ LISTEN VERWALTEN</h3>
-                <div style="margin-top:10px;">
-                    <div class="form-row"><input type="text" id="addInput" class="form-input" placeholder="Neuer Eintrag..."><button onclick="quickAdd()" class="btn-in" style="padding:10px;">+</button></div>
-                    <select id="manageType" class="form-input" onchange="updateManageList()" style="width:100%; margin-bottom:10px;">
-                        <option value="locations">Lagerorte</option>
-                        <option value="cats">Kategorien</option>
-                        <option value="regale">Regale</option>
-                        <option value="faecher">Fächer</option>
-                    </select>
-                    <ul id="listDisplay" class="manage-list"></ul>
+                <h3 style="margin:0 0 10px 0; font-size:0.9rem; color:var(--accent);">⚙️ LISTEN VERWALTEN</h3>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
+                    <button onclick="quickAdd()" class="btn-in" style="padding:0 15px;">+</button>
                 </div>
+                <select id="manageType" class="form-input" onchange="updateManageList()" style="margin-top:8px;">
+                    <option value="locations">Lagerorte</option>
+                    <option value="cats">Kategorien</option>
+                    <option value="regale">Regale</option>
+                    <option value="faecher">Fächer</option>
+                </select>
+                <ul id="listDisplay" style="list-style:none; padding:0; margin:10px 0; max-height:120px; overflow-y:auto;"></ul>
             </div>
         </div>
 
@@ -146,7 +162,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: "", items: [], config: {} };
+    let state = { user: "", items: [], config: {}, scanner: null };
 
     function checkLogin() {
         const n = document.getElementById('loginName').value;
@@ -175,48 +191,48 @@
         });
     }
 
-    function updateManageList() {
-        const type = document.getElementById('manageType').value;
-        const list = state.config[type] || [];
-        document.getElementById('listDisplay').innerHTML = list.map((v, i) => `
-            <li class="manage-item">${v} <button class="btn-del-small" onclick="removeFromList('${type}', ${i})">X</button></li>
-        `).join('');
-    }
-
-    function quickAdd() {
-        const type = document.getElementById('manageType').value;
-        const val = document.getElementById('addInput').value;
-        if(!val) return;
-        let list = state.config[type] || [];
-        list.push(val);
-        mainRef.child(type).set(list);
-        document.getElementById('addInput').value = "";
-    }
-
-    function removeFromList(type, index) {
-        if(!confirm("Eintrag löschen?")) return;
-        let list = state.config[type];
-        list.splice(index, 1);
-        mainRef.child(type).set(list);
-    }
-
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
         document.getElementById('itemList').innerHTML = state.items
             .filter(i => i.name.toLowerCase().includes(s))
-            .map(i => `
+            .map(i => {
+                const qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}`;
+                const img = i.img || 'https://via.placeholder.com/60?text=BILD';
+                return `
                 <div class="item-card">
-                    <img src="${i.img || 'https://via.placeholder.com/60'}" class="item-thumb">
+                    <img src="${img}" class="item-thumb" onclick="zoom('${img}', '${i.name}')">
                     <div class="item-info">
                         <strong>${i.name}</strong><br>
-                        <small>${i.location} | ${i.regal}/${i.fach}</small>
+                        <small>📍 ${i.location} | ${i.regal}/${i.fach}</small>
+                    </div>
+                    <div class="qr-side" onclick="zoom('${qr}', 'QR: ${i.name}')">
+                        <img src="${qr}" class="qr-img">
                     </div>
                     <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${i.status === 'im Lager' ? 'btn-in' : 'btn-out'}">
                         ${i.status === 'im Lager' ? 'EIN' : 'AUS'}
                     </button>
-                    <button onclick="deleteItem('${i.key}', '${i.name}')" style="background:none;border:none;">🗑️</button>
-                </div>
-            `).join('');
+                    <button onclick="deleteItem('${i.key}', '${i.name}')" style="background:none;border:none;opacity:0.2;">🗑️</button>
+                </div>`;
+            }).join('');
+    }
+
+    function zoom(src, title) {
+        document.getElementById('modalImg').src = src;
+        document.getElementById('modalTitle').innerText = title;
+        document.getElementById('zoomModal').style.display = 'flex';
+    }
+
+    function startScanner() {
+        document.getElementById('scanner-container').style.display = 'flex';
+        state.scanner = new Html5Qrcode("qr-reader");
+        state.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+            const item = state.items.find(x => x.key === txt);
+            if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
+        }).catch(() => alert("Kamera-Fehler!"));
+    }
+
+    function stopScanner() {
+        if(state.scanner) state.scanner.stop().then(() => document.getElementById('scanner-container').style.display='none');
     }
 
     function toggleStatus(key, name, old) {
@@ -256,12 +272,40 @@
         }
     }
 
+    /* ADMIN FUNKTIONEN */
+    function updateManageList() {
+        const type = document.getElementById('manageType').value;
+        const list = state.config[type] || [];
+        document.getElementById('listDisplay').innerHTML = list.map((v, i) => `
+            <li class="manage-item">${v} <button onclick="removeFromList('${type}', ${i})" style="background:var(--danger); color:white; border:none; border-radius:4px; padding:2px 8px;">X</button></li>
+        `).join('');
+    }
+
+    function quickAdd() {
+        const type = document.getElementById('manageType').value;
+        const val = document.getElementById('addInput').value;
+        if(!val) return;
+        let list = state.config[type] || [];
+        list.push(val);
+        mainRef.child(type).set(list);
+        document.getElementById('addInput').value = "";
+    }
+
+    function removeFromList(type, index) {
+        if(!confirm("Löschen?")) return;
+        let list = state.config[type];
+        list.splice(index, 1);
+        mainRef.child(type).set(list);
+    }
+
     function deleteItem(k, n) { if(confirm(n + " löschen?")) mainRef.child('items/'+k).remove(); }
     
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts);
         document.getElementById('logList').innerHTML = logs.slice(0, 30).map(l => `
-            <div class="log-entry"><b>${l.user}</b>: ${l.text}<br><small>${l.date}</small></div>
+            <div style="background:rgba(255,255,255,0.1); padding:8px; border-radius:8px; margin-bottom:5px; font-size:0.75rem;">
+                <b>${l.user}</b>: ${l.text}<br><small>${l.date}</small>
+            </div>
         `).join('');
     }
 
