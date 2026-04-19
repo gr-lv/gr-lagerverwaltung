@@ -3,30 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V153 - COMPLETE</title>
+    <title>GR-Lagerverwaltung V157 - Full Version</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
+        :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; --warning: #f59e0b; }
         body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
-        .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
+        .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
         
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; }
         .header { background: rgba(0,0,0,0.95); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
 
-        /* KARTEN RE-DESIGN */
-        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: center; gap: 8px; border-left: 6px solid var(--accent); position: relative; }
+        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: center; gap: 8px; border-left: 6px solid var(--accent); }
         .item-card.status-out { border-left-color: var(--danger); }
         
         .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
-        .item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-        .item-name { font-weight: 900; font-size: 0.85rem; line-height: 1.1; margin-bottom: 2px; }
-        .qty-badge { background: #334155; color: white; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem; }
-        .item-meta { font-size: 0.6rem; color: #475569; }
+        .item-info { flex: 1; min-width: 0; }
+        .item-name { font-weight: 900; font-size: 0.85rem; line-height: 1.1; }
+        .qty-badge { background: #334155; color: white; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem; }
+        .item-meta { font-size: 0.6rem; color: #475569; margin-top: 2px; }
         
         .qr-side { width: 45px; height: 45px; flex-shrink: 0; background: white; padding: 2px; border: 1px solid #ddd; border-radius: 4px; }
         .qr-side img { width: 100%; height: 100%; }
@@ -41,7 +40,8 @@
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
         
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
+        .log-entry { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 6px; font-size: 0.7rem; border-left: 4px solid var(--accent); }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 4000; flex-direction: column; }
     </style>
 </head>
@@ -51,7 +51,7 @@
 
 <div id="scanner-container">
     <div id="qr-reader" style="width: 100%;"></div>
-    <button onclick="stopScanner()" style="margin: 20px auto; padding: 15px; background: var(--danger); color: white; border: none; border-radius: 10px; width: 80%;">STOP</button>
+    <button onclick="stopScanner()" style="margin: 20px auto; padding: 15px; background: var(--danger); color: white; border: none; border-radius: 10px; width: 80%;">ABBRECHEN</button>
 </div>
 
 <div id="zoomModal" class="modal" onclick="this.style.display='none'">
@@ -60,52 +60,50 @@
 </div>
 
 <div id="editModal" class="modal">
-    <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:320px;">
+    <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:320px; max-height: 90vh; overflow-y: auto;">
         <h3 style="margin:0 0 10px 0;">Bearbeiten</h3>
-        <label style="font-size:0.7rem; font-weight:bold;">NAME:</label>
-        <input type="text" id="editName" class="form-input">
-        <label style="font-size:0.7rem; font-weight:bold;">STÜCKZAHL:</label>
-        <select id="editQty" class="form-input"></select>
-        <label style="font-size:0.7rem; font-weight:bold;">NEUES BILD:</label>
+        <input type="text" id="editName" class="form-input" placeholder="Name">
+        <input type="number" id="editQty" class="form-input" placeholder="Menge">
+        <select id="editLager" class="form-input"></select>
+        <div style="display:flex; gap:5px;">
+            <select id="editRegal" class="form-input"></select>
+            <select id="editFach" class="form-input"></select>
+        </div>
         <input type="file" id="editImgInput" accept="image/*" capture="environment" class="form-input" onchange="previewEditImage(this)">
         <img id="editPreview" style="width:100%; height:80px; object-fit:contain; display:none; margin-bottom:10px;">
         <div style="display:flex; gap:10px;">
             <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px; font-weight:bold;">SPEICHERN</button>
-            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">ABBRUCH</button>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button>
         </div>
     </div>
 </div>
 
 <div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.95);">
     <div style="background:#1e293b; padding:25px; border-radius:20px; border:3px solid var(--accent); text-align:center; width:260px;">
-        <h2 style="color:var(--accent); margin-bottom:20px;">GR-LAGER</h2>
+        <h2 style="color:var(--accent);">GR-LAGER</h2>
         <input type="text" id="loginName" class="form-input" placeholder="Name">
         <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
-        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">START</button>
+        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px;">START</button>
     </div>
 </div>
 
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem;">📷</button>
-        <h2 style="margin:0; font-size:1rem;">GR-LAGER</h2>
-        <div id="displayUserName" style="font-size:0.7rem; color:var(--accent); font-weight:bold;">-</div>
+        <h2 style="margin:0; font-size:1rem;">GR-LAGER V157</h2>
+        <div id="displayUserName" style="font-size:0.7rem; font-weight:bold; color:var(--accent);"></div>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content">
             <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" class="form-input">
-            <select id="filterCatSelect" onchange="render()" class="form-input" style="background:var(--accent); color:white; border:none;"></select>
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content" style="display:none;">
             <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:15px;">
-                <input type="text" id="itemName" class="form-input" placeholder="Artikel Name">
-                <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-                    <span style="font-weight:bold; font-size:0.7rem;">MENGE:</span>
-                    <select id="itemQty" class="form-input" style="margin:0; flex:1;"></select>
-                </div>
+                <input type="text" id="itemName" class="form-input" placeholder="Neuer Artikel">
+                <input type="number" id="itemQty" class="form-input" placeholder="Menge" value="1">
                 <select id="itemLagerSelect" class="form-input"></select>
                 <select id="itemCatSelect" class="form-input"></select>
                 <div style="display:flex; gap:5px;">
@@ -115,16 +113,16 @@
                 <button onclick="document.getElementById('itemImg').click()" class="form-input">📷 FOTO</button>
                 <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
                 <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none; margin-bottom:10px;">
-                <button onclick="saveAndPrint()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">SPEICHERN & DRUCKEN</button>
+                <button onclick="saveAndPrint()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px;">SPEICHERN & DRUCKEN</button>
             </div>
 
             <div style="background:rgba(255,255,255,0.1); padding:12px; border-radius:12px;">
-                <h4 style="margin:0 0 10px 0; font-size:0.8rem;">LISTEN VERWALTEN</h4>
+                <h4 style="margin:0 0 10px 0;">LISTEN VERWALTEN</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
                     <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
                 </div>
-                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white; font-size:0.8rem;">
+                <select id="manageType" class="form-input" onchange="updateManageList()">
                     <option value="locations">Lagerorte</option>
                     <option value="cats">Kategorien</option>
                     <option value="regale">Regale</option>
@@ -134,13 +132,15 @@
             </div>
         </div>
 
-        <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
+        <div id="tab-log" class="content" style="display:none;">
+            <div id="logList"></div>
+        </div>
     </div>
 
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">📦 LAGER</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">➕ NEU/ADMIN</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOG</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">➕ ADMIN</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOGS</button>
     </nav>
 </div>
 
@@ -154,15 +154,10 @@
         messagingSenderId: "561219570576",
         appId: "1:561219570576:web:65824b199a12933fd88115"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: "", items: [], config: {}, scanner: null, currentEditKey: null };
-
-    [document.getElementById('itemQty'), document.getElementById('editQty')].forEach(sel => {
-        for(let i=1; i<=50; i++) { let o = document.createElement('option'); o.value=i; o.text=i; sel.add(o); }
-    });
+    let state = { user: "", items: [], config: {}, currentEditKey: null, scanner: null };
 
     function checkLogin() {
         if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
@@ -178,82 +173,117 @@
         mainRef.on('value', snap => {
             state.config = snap.val() || {};
             state.items = Object.keys(state.config.items || {}).map(k => ({...state.config.items[k], key: k}));
-            const fill = (id, list, all=false) => {
-                const el = document.getElementById(id); if(!el) return;
-                el.innerHTML = (all ? '<option value="">ALLE KATEGORIEN</option>':'') + (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
-            };
-            fill('itemLagerSelect', state.config.locations); fill('itemCatSelect', state.config.cats);
-            fill('filterCatSelect', state.config.cats, true);
-            fill('itemRegalSelect', state.config.regale); fill('itemFachSelect', state.config.faecher);
+            
+            const fill = (ids, list) => ids.forEach(id => {
+                const el = document.getElementById(id); if(el) el.innerHTML = (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
+            });
+            
+            fill(['itemLagerSelect', 'editLager'], state.config.locations);
+            fill(['itemCatSelect'], state.config.cats);
+            fill(['itemRegalSelect', 'editRegal'], state.config.regale);
+            fill(['itemFachSelect', 'editFach'], state.config.faecher);
+            
             render(); renderLogs(); updateManageList();
+        });
+    }
+
+    function logAction(msg) {
+        mainRef.child('logs').push({
+            user: state.user, text: msg, ts: Date.now(),
+            date: new Date().toLocaleString('de-DE', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'})
         });
     }
 
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
-        const cat = document.getElementById('filterCatSelect').value;
         document.getElementById('itemList').innerHTML = state.items
-            .filter(i => i.name.toLowerCase().includes(s) && (cat==="" || i.cat===cat))
+            .filter(i => i.name.toLowerCase().includes(s))
             .sort((a,b) => b.ts - a.ts)
             .map(i => {
                 const isOut = i.status !== 'im Lager';
                 const qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}`;
-                const thumb = i.img || 'https://via.placeholder.com/60?text=FOTO';
                 return `
                 <div class="item-card ${isOut ? 'status-out' : ''}">
-                    <img src="${thumb}" class="item-thumb" onclick="zoom('${thumb}', '${i.name}')">
+                    <img src="${i.img || 'https://via.placeholder.com/60'}" class="item-thumb" onclick="zoom('${i.img}', '${i.name}')">
                     <div class="item-info">
                         <div class="item-name">${i.name} <span class="qty-badge">${i.qty||1}x</span></div>
-                        <div class="item-meta">${i.location} | ${i.regal||''}/${i.fach||''}</div>
-                        ${isOut ? `<div style="color:red; font-size:0.55rem; font-weight:bold;">AUS: ${i.lastUser||'?'}</div>` : ''}
+                        <div class="item-meta">${i.location || ''} | R:${i.regal||'-'} F:${i.fach||'-'}</div>
                     </div>
                     <div class="qr-side" onclick="zoom('${qr}', 'QR')"><img src="${qr}"></div>
                     <div class="action-area">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
-                        <div style="display:flex; gap:10px;">
-                            <span onclick="openEdit('${i.key}','${i.name}', '${i.qty||1}')" style="cursor:pointer; font-size:1.1rem;">✏️</span>
-                            <span onclick="deleteItem('${i.key}','${i.name}')" style="cursor:pointer; font-size:1.1rem; opacity:0.2;">🗑️</span>
+                        <div style="display:flex; gap:8px;">
+                            <span onclick="openEdit('${i.key}')" style="cursor:pointer; font-size:1.1rem;">✏️</span>
+                            <span onclick="deleteItem('${i.key}','${i.name}')" style="cursor:pointer; font-size:1.1rem; opacity:0.1;">🗑️</span>
                         </div>
                     </div>
                 </div>`;
             }).join('');
     }
 
-    function openEdit(key, name, qty) {
+    function openEdit(key) {
         state.currentEditKey = key;
-        document.getElementById('editName').value = name;
-        document.getElementById('editQty').value = qty;
+        const i = state.items.find(x => x.key === key);
+        document.getElementById('editName').value = i.name;
+        document.getElementById('editQty').value = i.qty;
+        document.getElementById('editLager').value = i.location || "";
+        document.getElementById('editRegal').value = i.regal || "";
+        document.getElementById('editFach').value = i.fach || "";
         document.getElementById('editPreview').style.display = 'none';
         document.getElementById('editModal').style.display = 'flex';
     }
 
     function saveEdit() {
-        const up = { name: document.getElementById('editName').value, qty: document.getElementById('editQty').value };
-        if(document.getElementById('editPreview').style.display === 'block') up.img = document.getElementById('editPreview').src;
+        const old = state.items.find(i => i.key === state.currentEditKey);
+        const up = {
+            name: document.getElementById('editName').value,
+            qty: document.getElementById('editQty').value,
+            location: document.getElementById('editLager').value,
+            regal: document.getElementById('editRegal').value,
+            fach: document.getElementById('editFach').value
+        };
+        
+        let changes = [];
+        if(old.name !== up.name) changes.push(`Name: ${old.name}->${up.name}`);
+        if(old.qty != up.qty) changes.push(`Menge: ${old.qty}->${up.qty}`);
+        if(old.regal != up.regal) changes.push(`Regal: ${old.regal}->${up.regal}`);
+
+        if(document.getElementById('editPreview').style.display === 'block') {
+            up.img = document.getElementById('editPreview').src;
+            changes.push("Bild geändert");
+        }
+
         mainRef.child('items/'+state.currentEditKey).update(up).then(() => {
+            if(changes.length > 0) logAction(`Update ${old.name}: ${changes.join(', ')}`);
             document.getElementById('editModal').style.display = 'none';
         });
     }
 
-    function toggleStatus(key, name, old) {
-        const newS = old === "im Lager" ? "ausgeliehen" : "im Lager";
-        mainRef.child('items/'+key).update({ status: newS, lastUser: state.user });
-        mainRef.child('logs').push({ user: state.user, text: `${name}: ${newS.toUpperCase()}`, ts: Date.now(), date: new Date().toLocaleString() });
-    }
-
     function saveAndPrint() {
-        const n = document.getElementById('itemName').value; if(!n) return;
+        const name = document.getElementById('itemName').value; if(!name) return;
         const newRef = mainRef.child('items').push();
         const item = {
-            name: n, qty: document.getElementById('itemQty').value,
+            name: name, qty: document.getElementById('itemQty').value,
             location: document.getElementById('itemLagerSelect').value,
             cat: document.getElementById('itemCatSelect').value,
             regal: document.getElementById('itemRegalSelect').value,
             fach: document.getElementById('itemFachSelect').value,
             img: document.getElementById('imagePreview').src || "",
-            status: "im Lager", ts: Date.now(), lastUser: state.user
+            status: "im Lager", ts: Date.now()
         };
-        newRef.set(item).then(() => { window.print(); switchTab(null, 'tab-lager'); });
+        newRef.set(item).then(() => { logAction(`NEU: ${name} (${item.qty}x)`); window.print(); switchTab(null, 'tab-lager'); });
+    }
+
+    function toggleStatus(key, name, oldS) {
+        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
+        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
+        logAction(`${name}: ${newS.toUpperCase()}`);
+    }
+
+    function renderLogs() {
+        const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts);
+        document.getElementById('logList').innerHTML = logs.map(l => `
+            <div class="log-entry"><b>${l.user}</b> | ${l.date}<br>${l.text}</div>`).join('');
     }
 
     function quickAdd() {
@@ -268,15 +298,15 @@
         const l = state.config[t] || [];
         document.getElementById('listDisplay').innerHTML = l.map((v,i) => `
             <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">
-                ${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger); cursor:pointer;">LÖSCHEN</span>
+                ${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger);">LÖSCHEN</span>
             </div>`).join('');
     }
 
-    function removeFromList(t,i) { if(confirm("Eintrag löschen?")) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); } }
-    function deleteItem(k,n) { if(confirm(n + " endgültig löschen?")) mainRef.child('items/'+k).remove(); }
-    function zoom(s,t) { document.getElementById('modalImg').src=s; document.getElementById('modalTitle').innerText=t; document.getElementById('zoomModal').style.display='flex'; }
+    function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
+    function deleteItem(k,n) { if(confirm(n + " löschen?")) { mainRef.child('items/'+k).remove(); logAction(`GELÖSCHT: ${n}`); } }
     function previewImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('imagePreview').src=e.target.result; document.getElementById('imagePreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
     function previewEditImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('editPreview').src=e.target.result; document.getElementById('editPreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
+    function zoom(s,t) { document.getElementById('modalImg').src=s; document.getElementById('modalTitle').innerText=t; document.getElementById('zoomModal').style.display='flex'; }
     
     function startScanner() {
         document.getElementById('scanner-container').style.display='flex';
@@ -287,14 +317,6 @@
         });
     }
     function stopScanner() { if(state.scanner) state.scanner.stop().then(()=>document.getElementById('scanner-container').style.display='none'); }
-
-    function renderLogs() {
-        const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts);
-        document.getElementById('logList').innerHTML = logs.slice(0,30).map(l => `
-            <div style="background:rgba(255,255,255,0.1); padding:8px; border-radius:8px; margin-bottom:5px; font-size:0.65rem; border-left:3px solid var(--accent);">
-                <b>${l.user}</b>: ${l.text}<br><small style="opacity:0.5">${l.date}</small>
-            </div>`).join('');
-    }
 
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
