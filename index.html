@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V160 - Full Admin & Mobile</title>
+    <title>GR-Lagerverwaltung V161 - Filter & Trash</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -37,6 +37,8 @@
         .btn-out { background: var(--danger); }
 
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; background: white; color: black; }
+        .filter-select { background: #1e293b; color: white; border: 1px solid var(--accent); margin-bottom: 15px; }
+
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
@@ -52,16 +54,14 @@
 <div id="editModal" class="modal">
     <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:350px; max-height: 90vh; overflow-y: auto;">
         <h3 style="margin:0 0 10px 0;">Bearbeiten</h3>
-        <input type="text" id="editName" class="form-input" placeholder="Name">
-        <input type="number" id="editQty" class="form-input" placeholder="Menge">
+        <input type="text" id="editName" class="form-input">
+        <input type="number" id="editQty" class="form-input">
         <select id="editLager" class="form-input"></select>
         <select id="editCat" class="form-input"></select>
         <div style="display:flex; gap:5px;">
             <select id="editRegal" class="form-input" style="flex:1;"></select>
             <select id="editFach" class="form-input" style="flex:1;"></select>
         </div>
-        <input type="file" id="editImgInput" accept="image/*" capture="environment" class="form-input" onchange="previewEditImage(this)">
-        <img id="editPreview" style="width:100%; height:80px; object-fit:contain; display:none; margin-bottom:10px;">
         <div style="display:flex; gap:10px;">
             <button onclick="saveEdit()" style="flex:1; padding:15px; background:var(--success); color:white; border:none; border-radius:10px; font-weight:bold;">OK</button>
             <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:15px; background:var(--danger); color:white; border:none; border-radius:10px;">X</button>
@@ -71,29 +71,31 @@
 
 <div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.98);">
     <div style="background:#1e293b; padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; width:280px;">
-        <h2 style="color:var(--accent); margin-bottom:20px;">GR-LAGER</h2>
+        <h2 style="color:var(--accent);">GR-LAGER</h2>
         <input type="text" id="loginName" class="form-input" placeholder="Name">
-        <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
-        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">LOGIN</button>
+        <input type="password" id="loginPass" class="form-input" placeholder="1234">
+        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px;">LOGIN</button>
     </div>
 </div>
 
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V160</h2>
+        <h2 style="margin:0; font-size:0.9rem;">LAGER V161</h2>
         <div id="displayUserName" style="font-size:0.75rem; font-weight:bold; color:var(--accent);"></div>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content">
-            <input type="text" id="searchInput" placeholder="Artikel suchen..." onkeyup="render()" class="form-input">
+            <input type="text" id="searchInput" placeholder="Suche..." onkeyup="render()" class="form-input">
+            <select id="filterCategory" class="form-input filter-select" onchange="render()">
+                <option value="">Alle Kategorien</option>
+            </select>
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content" style="display:none;">
-            <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
-                <h4 style="margin:0 0 10px 0;">NEUER ARTIKEL</h4>
+            <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:15px;">
                 <input type="text" id="itemName" class="form-input" placeholder="Name">
                 <input type="number" id="itemQty" class="form-input" placeholder="Anzahl" value="1">
                 <select id="itemLagerSelect" class="form-input"></select>
@@ -102,15 +104,12 @@
                     <select id="itemRegalSelect" class="form-input"></select>
                     <select id="itemFachSelect" class="form-input"></select>
                 </div>
-                <button onclick="document.getElementById('itemImg').click()" class="form-input">📷 FOTO</button>
-                <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
-                <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none; margin-bottom:10px;">
-                <button onclick="saveNewItem()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">SPEICHERN</button>
+                <button onclick="saveNewItem()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px;">SPEICHERN</button>
             </div>
-
+            
             <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px;">
-                <h4 style="margin:0 0 10px 0;">LISTEN VERWALTEN</h4>
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <h4 style="margin:0;">ADMIN LISTEN</h4>
+                <div style="display:flex; gap:5px; margin:10px 0;">
                     <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
                     <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
                 </div>
@@ -131,7 +130,7 @@
 
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">📦 LAGER</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">➕ ADMIN</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">⚙️ ADMIN</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOGS</button>
     </nav>
 </div>
@@ -166,14 +165,14 @@
             state.config = snap.val() || {};
             state.items = Object.keys(state.config.items || {}).map(k => ({...state.config.items[k], key: k}));
             
-            // Alle Dropdowns füllen
             const fill = (ids, list) => ids.forEach(id => {
-                const el = document.getElementById(id); 
-                if(el) el.innerHTML = (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
+                const el = document.getElementById(id);
+                if(el) el.innerHTML = (id === 'filterCategory' ? '<option value="">Alle Kategorien</option>' : '') + 
+                    (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
             });
             
             fill(['itemLagerSelect', 'editLager'], state.config.locations);
-            fill(['itemCatSelect', 'editCat'], state.config.cats);
+            fill(['itemCatSelect', 'editCat', 'filterCategory'], state.config.cats);
             fill(['itemRegalSelect', 'editRegal'], state.config.regale);
             fill(['itemFachSelect', 'editFach'], state.config.faecher);
             
@@ -190,8 +189,10 @@
 
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
+        const f = document.getElementById('filterCategory').value;
+        
         document.getElementById('itemList').innerHTML = state.items
-            .filter(i => i.name.toLowerCase().includes(s))
+            .filter(i => i.name.toLowerCase().includes(s) && (f === "" || i.cat === f))
             .sort((a,b) => b.ts - a.ts)
             .map(i => {
                 const isOut = i.status !== 'im Lager';
@@ -208,10 +209,26 @@
                     <div class="qr-side"><img src="${qr}" style="width:100%;"></div>
                     <div class="action-area">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
-                        <span onclick="openEdit('${i.key}')" style="cursor:pointer; font-size:1.2rem;">✏️</span>
+                        <div style="display:flex; gap:12px; margin-top:5px;">
+                            <span onclick="openEdit('${i.key}')" style="cursor:pointer; font-size:1.2rem;">✏️</span>
+                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="cursor:pointer; font-size:1.2rem;">🗑️</span>
+                        </div>
                     </div>
                 </div>`;
             }).join('');
+    }
+
+    function toggleStatus(key, name, oldS) {
+        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
+        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
+        logAction(`${name}: ${newS.toUpperCase()}`);
+    }
+
+    function deleteItem(key, name) {
+        if(confirm(`"${name}" wirklich unwiderruflich löschen?`)) {
+            mainRef.child('items/'+key).remove();
+            logAction(`GELÖSCHT: ${name}`);
+        }
     }
 
     function openEdit(key) {
@@ -227,7 +244,6 @@
     }
 
     function saveEdit() {
-        const old = state.items.find(i => i.key === state.currentEditKey);
         const up = {
             name: document.getElementById('editName').value,
             qty: document.getElementById('editQty').value,
@@ -237,15 +253,9 @@
             fach: document.getElementById('editFach').value
         };
         mainRef.child('items/'+state.currentEditKey).update(up).then(() => {
-            logAction(`Update ${old.name}: Daten angepasst`);
+            logAction(`BEARBEITET: ${up.name}`);
             document.getElementById('editModal').style.display = 'none';
         });
-    }
-
-    function toggleStatus(key, name, oldS) {
-        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
-        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
-        logAction(`${name}: ${newS.toUpperCase()}`);
     }
 
     function saveNewItem() {
@@ -256,8 +266,7 @@
             cat: document.getElementById('itemCatSelect').value,
             regal: document.getElementById('itemRegalSelect').value,
             fach: document.getElementById('itemFachSelect').value,
-            img: document.getElementById('imagePreview').src || "",
-            status: "im Lager", ts: Date.now(), lastUser: state.user
+            img: "", status: "im Lager", ts: Date.now(), lastUser: state.user
         };
         mainRef.child('items').push(item).then(() => {
             logAction(`NEU: ${n}`);
@@ -276,8 +285,8 @@
         const t = document.getElementById('manageType').value;
         const l = state.config[t] || [];
         document.getElementById('listDisplay').innerHTML = l.map((v,i) => `
-            <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #444; background:rgba(255,255,255,0.05); margin-bottom:2px;">
-                ${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger); font-weight:bold;">LÖSCHEN</span>
+            <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #444;">
+                ${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger);">X</span>
             </div>`).join('');
     }
 
@@ -287,7 +296,6 @@
         document.getElementById('logList').innerHTML = logs.map(l => `<div class="log-entry"><b>${l.user}</b> | ${l.date}<br>${l.text}</div>`).join('');
     }
 
-    function previewImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('imagePreview').src=e.target.result; document.getElementById('imagePreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
