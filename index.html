@@ -3,121 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V159 - Mobile Fix</title>
+    <title>GR-Lagerverwaltung V160 - Full Admin & Mobile</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; --warning: #f59e0b; }
+        :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
         body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
-        .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
+        .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
         
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; }
         .header { background: rgba(0,0,0,0.95); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
 
-        /* VERBESSERTE ITEM CARD FÜR MOBILE */
-        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: flex-start; gap: 10px; border-left: 6px solid var(--accent); position: relative; }
-        .item-card.status-out { border-left-color: var(--danger); background: #fff5f5; }
+        /* ITEM CARD */
+        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: flex-start; gap: 10px; border-left: 6px solid var(--accent); }
+        .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
         
         .item-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
-        .item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-        .item-name { font-weight: 900; font-size: 0.9rem; line-height: 1.1; color: #1e293b; }
-        .qty-badge { background: #334155; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 5px; }
-        .item-meta { font-size: 0.65rem; color: #64748b; font-weight: 500; }
-        
-        /* DER MOBILE BESITZER-FIX */
-        .borrower-tag { display: inline-block; background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-top: 5px; width: fit-content; }
+        .item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+        .item-name { font-weight: 900; font-size: 0.9rem; color: #1e293b; }
+        .qty-badge { background: #334155; color: white; padding: 1px 5px; border-radius: 4px; font-size: 0.7rem; }
+        .item-meta { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
+        .borrower-tag { display: inline-block; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-top: 5px; width: fit-content; }
         
         .qr-side { width: 45px; height: 45px; flex-shrink: 0; background: white; padding: 2px; border: 1px solid #ddd; border-radius: 4px; align-self: center; }
-        .qr-side img { width: 100%; height: 100%; }
 
-        .action-area { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; padding-left: 8px; border-left: 1px solid #e2e8f0; }
-        .btn-status { border: none; padding: 10px 4px; border-radius: 6px; color: white; font-weight: 900; width: 50px; font-size: 0.6rem; cursor: pointer; text-transform: uppercase; }
+        .action-area { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; padding-left: 8px; border-left: 1px solid #ddd; }
+        .btn-status { border: none; padding: 10px 2px; border-radius: 6px; color: white; font-weight: bold; width: 48px; font-size: 0.6rem; cursor: pointer; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
 
-        .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
+        .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; background: white; color: black; }
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
         
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
         .log-entry { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 6px; font-size: 0.7rem; border-left: 4px solid var(--accent); }
-        #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 4000; flex-direction: column; }
     </style>
 </head>
 <body>
 
 <div class="global-bg"></div>
 
-<div id="scanner-container">
-    <div id="qr-reader" style="width: 100%;"></div>
-    <button onclick="stopScanner()" style="margin: 20px auto; padding: 15px; background: var(--danger); color: white; border: none; border-radius: 10px; width: 80%;">ABBRECHEN</button>
-</div>
-
-<div id="zoomModal" class="modal" onclick="this.style.display='none'">
-    <img id="modalImg" src="" style="max-width: 90%; max-height: 70%; border-radius: 10px;">
-    <p id="modalTitle" style="color:white; margin-top:15px; font-weight:bold;"></p>
-</div>
-
 <div id="editModal" class="modal">
-    <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:320px; max-height: 90vh; overflow-y: auto;">
+    <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:350px; max-height: 90vh; overflow-y: auto;">
         <h3 style="margin:0 0 10px 0;">Bearbeiten</h3>
-        <input type="text" id="editName" class="form-input">
-        <input type="number" id="editQty" class="form-input">
+        <input type="text" id="editName" class="form-input" placeholder="Name">
+        <input type="number" id="editQty" class="form-input" placeholder="Menge">
         <select id="editLager" class="form-input"></select>
+        <select id="editCat" class="form-input"></select>
         <div style="display:flex; gap:5px;">
-            <select id="editRegal" class="form-input"></select>
-            <select id="editFach" class="form-input"></select>
+            <select id="editRegal" class="form-input" style="flex:1;"></select>
+            <select id="editFach" class="form-input" style="flex:1;"></select>
         </div>
         <input type="file" id="editImgInput" accept="image/*" capture="environment" class="form-input" onchange="previewEditImage(this)">
         <img id="editPreview" style="width:100%; height:80px; object-fit:contain; display:none; margin-bottom:10px;">
         <div style="display:flex; gap:10px;">
-            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px; font-weight:bold;">SPEICHERN</button>
-            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button>
+            <button onclick="saveEdit()" style="flex:1; padding:15px; background:var(--success); color:white; border:none; border-radius:10px; font-weight:bold;">OK</button>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:15px; background:var(--danger); color:white; border:none; border-radius:10px;">X</button>
         </div>
     </div>
 </div>
 
-<div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.95);">
-    <div style="background:#1e293b; padding:25px; border-radius:20px; border:3px solid var(--accent); text-align:center; width:260px;">
-        <h2 style="color:var(--accent);">GR-LAGER</h2>
-        <input type="text" id="loginName" class="form-input" placeholder="Nutzer Name">
+<div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.98);">
+    <div style="background:#1e293b; padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; width:280px;">
+        <h2 style="color:var(--accent); margin-bottom:20px;">GR-LAGER</h2>
+        <input type="text" id="loginName" class="form-input" placeholder="Name">
         <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
-        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">START</button>
+        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">LOGIN</button>
     </div>
 </div>
 
 <div id="ui-wrapper">
     <div class="header">
-        <button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">LAGER V159</h2>
+        <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
+        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V160</h2>
         <div id="displayUserName" style="font-size:0.75rem; font-weight:bold; color:var(--accent);"></div>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content">
-            <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" class="form-input">
+            <input type="text" id="searchInput" placeholder="Artikel suchen..." onkeyup="render()" class="form-input">
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content" style="display:none;">
-            <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:15px;">
-                <input type="text" id="itemName" class="form-input" placeholder="Artikel Name">
-                <input type="number" id="itemQty" class="form-input" placeholder="Menge" value="1">
+            <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
+                <h4 style="margin:0 0 10px 0;">NEUER ARTIKEL</h4>
+                <input type="text" id="itemName" class="form-input" placeholder="Name">
+                <input type="number" id="itemQty" class="form-input" placeholder="Anzahl" value="1">
                 <select id="itemLagerSelect" class="form-input"></select>
                 <select id="itemCatSelect" class="form-input"></select>
                 <div style="display:flex; gap:5px;">
                     <select id="itemRegalSelect" class="form-input"></select>
                     <select id="itemFachSelect" class="form-input"></select>
                 </div>
-                <button onclick="document.getElementById('itemImg').click()" class="form-input">📷 FOTO AUFNEHMEN</button>
+                <button onclick="document.getElementById('itemImg').click()" class="form-input">📷 FOTO</button>
                 <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
                 <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none; margin-bottom:10px;">
                 <button onclick="saveNewItem()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">SPEICHERN</button>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px;">
+                <h4 style="margin:0 0 10px 0;">LISTEN VERWALTEN</h4>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
+                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
+                </div>
+                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white;">
+                    <option value="locations">Lagerorte</option>
+                    <option value="cats">Kategorien</option>
+                    <option value="regale">Regale</option>
+                    <option value="faecher">Fächer</option>
+                </select>
+                <div id="listDisplay" style="max-height:150px; overflow-y:auto; font-size:0.8rem;"></div>
             </div>
         </div>
 
@@ -128,7 +131,7 @@
 
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">📦 LAGER</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">➕ NEU</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">➕ ADMIN</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOGS</button>
     </nav>
 </div>
@@ -146,7 +149,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: "", items: [], config: {}, currentEditKey: null, scanner: null };
+    let state = { user: "", items: [], config: {}, currentEditKey: null };
 
     function checkLogin() {
         if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
@@ -162,14 +165,19 @@
         mainRef.on('value', snap => {
             state.config = snap.val() || {};
             state.items = Object.keys(state.config.items || {}).map(k => ({...state.config.items[k], key: k}));
+            
+            // Alle Dropdowns füllen
             const fill = (ids, list) => ids.forEach(id => {
-                const el = document.getElementById(id); if(el) el.innerHTML = (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
+                const el = document.getElementById(id); 
+                if(el) el.innerHTML = (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
             });
+            
             fill(['itemLagerSelect', 'editLager'], state.config.locations);
-            fill(['itemCatSelect'], state.config.cats);
+            fill(['itemCatSelect', 'editCat'], state.config.cats);
             fill(['itemRegalSelect', 'editRegal'], state.config.regale);
             fill(['itemFachSelect', 'editFach'], state.config.faecher);
-            render(); renderLogs();
+            
+            render(); renderLogs(); updateManageList();
         });
     }
 
@@ -190,13 +198,14 @@
                 const qr = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}`;
                 return `
                 <div class="item-card ${isOut ? 'status-out' : ''}">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="item-thumb" onclick="zoom('${i.img}', '${i.name}')">
+                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="item-thumb">
                     <div class="item-info">
                         <div class="item-name">${i.name} <span class="qty-badge">${i.qty||1}x</span></div>
                         <div class="item-meta">${i.location||''} | R:${i.regal||'-'} F:${i.fach||'-'}</div>
+                        <div class="item-meta" style="color:var(--accent)">Kat: ${i.cat||'-'}</div>
                         ${isOut ? `<div class="borrower-tag">BEI: ${i.lastUser || '?'}</div>` : ''}
                     </div>
-                    <div class="qr-side" onclick="zoom('${qr}', 'QR')"><img src="${qr}"></div>
+                    <div class="qr-side"><img src="${qr}" style="width:100%;"></div>
                     <div class="action-area">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
                         <span onclick="openEdit('${i.key}')" style="cursor:pointer; font-size:1.2rem;">✏️</span>
@@ -205,33 +214,13 @@
             }).join('');
     }
 
-    function toggleStatus(key, name, oldS) {
-        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
-        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
-        logAction(`${name}: ${newS.toUpperCase()}`);
-    }
-
-    function saveNewItem() {
-        const n = document.getElementById('itemName').value; if(!n) return;
-        const newRef = mainRef.child('items').push();
-        const item = {
-            name: n, qty: document.getElementById('itemQty').value,
-            location: document.getElementById('itemLagerSelect').value,
-            cat: document.getElementById('itemCatSelect').value,
-            regal: document.getElementById('itemRegalSelect').value,
-            fach: document.getElementById('itemFachSelect').value,
-            img: document.getElementById('imagePreview').src || "",
-            status: "im Lager", ts: Date.now(), lastUser: state.user
-        };
-        newRef.set(item).then(() => { logAction(`NEU: ${n} (${item.qty}x)`); switchTab(null, 'tab-lager'); });
-    }
-
     function openEdit(key) {
         state.currentEditKey = key;
         const i = state.items.find(x => x.key === key);
         document.getElementById('editName').value = i.name;
         document.getElementById('editQty').value = i.qty;
         document.getElementById('editLager').value = i.location || "";
+        document.getElementById('editCat').value = i.cat || "";
         document.getElementById('editRegal').value = i.regal || "";
         document.getElementById('editFach').value = i.fach || "";
         document.getElementById('editModal').style.display = 'flex';
@@ -243,44 +232,68 @@
             name: document.getElementById('editName').value,
             qty: document.getElementById('editQty').value,
             location: document.getElementById('editLager').value,
+            cat: document.getElementById('editCat').value,
             regal: document.getElementById('editRegal').value,
             fach: document.getElementById('editFach').value
         };
-        let c = [];
-        if(old.name !== up.name) c.push(`Name: ${old.name}->${up.name}`);
-        if(old.qty != up.qty) c.push(`Menge: ${old.qty}->${up.qty}`);
-        if(old.location != up.location) c.push(`Ort: ${old.location}->${up.location}`);
-
         mainRef.child('items/'+state.currentEditKey).update(up).then(() => {
-            if(c.length > 0) logAction(`Update ${old.name}: ${c.join(' | ')}`);
+            logAction(`Update ${old.name}: Daten angepasst`);
             document.getElementById('editModal').style.display = 'none';
         });
     }
 
+    function toggleStatus(key, name, oldS) {
+        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
+        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
+        logAction(`${name}: ${newS.toUpperCase()}`);
+    }
+
+    function saveNewItem() {
+        const n = document.getElementById('itemName').value; if(!n) return;
+        const item = {
+            name: n, qty: document.getElementById('itemQty').value,
+            location: document.getElementById('itemLagerSelect').value,
+            cat: document.getElementById('itemCatSelect').value,
+            regal: document.getElementById('itemRegalSelect').value,
+            fach: document.getElementById('itemFachSelect').value,
+            img: document.getElementById('imagePreview').src || "",
+            status: "im Lager", ts: Date.now(), lastUser: state.user
+        };
+        mainRef.child('items').push(item).then(() => {
+            logAction(`NEU: ${n}`);
+            switchTab(null, 'tab-lager');
+        });
+    }
+
+    function quickAdd() {
+        const t = document.getElementById('manageType').value;
+        const v = document.getElementById('addInput').value; if(!v) return;
+        let l = state.config[t] || []; l.push(v);
+        mainRef.child(t).set(l); document.getElementById('addInput').value = "";
+    }
+
+    function updateManageList() {
+        const t = document.getElementById('manageType').value;
+        const l = state.config[t] || [];
+        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `
+            <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #444; background:rgba(255,255,255,0.05); margin-bottom:2px;">
+                ${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger); font-weight:bold;">LÖSCHEN</span>
+            </div>`).join('');
+    }
+
+    function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts);
         document.getElementById('logList').innerHTML = logs.map(l => `<div class="log-entry"><b>${l.user}</b> | ${l.date}<br>${l.text}</div>`).join('');
     }
 
     function previewImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('imagePreview').src=e.target.result; document.getElementById('imagePreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
-    function previewEditImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('editPreview').src=e.target.result; document.getElementById('editPreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
-    function zoom(s,t) { if(s) { document.getElementById('modalImg').src=s; document.getElementById('modalTitle').innerText=t; document.getElementById('zoomModal').style.display='flex'; } }
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).style.display = 'block';
         if(e) e.currentTarget.classList.add('active');
     }
-
-    function startScanner() {
-        document.getElementById('scanner-container').style.display='flex';
-        state.scanner = new Html5Qrcode("qr-reader");
-        state.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-            const item = state.items.find(x => x.key === txt);
-            if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
-        });
-    }
-    function stopScanner() { if(state.scanner) state.scanner.stop().then(()=>document.getElementById('scanner-container').style.display='none'); }
 </script>
 </body>
 </html>
