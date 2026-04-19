@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V151 - Mobile Fix</title>
+    <title>GR-Lagerverwaltung V153 - COMPLETE</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -18,37 +18,31 @@
         .header { background: rgba(0,0,0,0.95); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
 
-        /* KARTEN RE-DESIGN FÜR MOBILE */
-        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: center; gap: 8px; border-left: 6px solid var(--accent); position: relative; overflow: hidden; }
+        /* KARTEN RE-DESIGN */
+        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: center; gap: 8px; border-left: 6px solid var(--accent); position: relative; }
         .item-card.status-out { border-left-color: var(--danger); }
         
         .item-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
-        
         .item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-        .item-name { font-weight: 900; font-size: 0.9rem; line-height: 1.1; margin-bottom: 3px; word-wrap: break-word; }
-        .qty-badge { background: #334155; color: white; padding: 1px 5px; border-radius: 4px; font-size: 0.65rem; vertical-align: middle; }
-        .item-meta { font-size: 0.65rem; color: #475569; line-height: 1.2; }
+        .item-name { font-weight: 900; font-size: 0.85rem; line-height: 1.1; margin-bottom: 2px; }
+        .qty-badge { background: #334155; color: white; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem; }
+        .item-meta { font-size: 0.6rem; color: #475569; }
         
-        .qr-side { width: 50px; height: 50px; flex-shrink: 0; background: white; padding: 2px; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .qr-side { width: 45px; height: 45px; flex-shrink: 0; background: white; padding: 2px; border: 1px solid #ddd; border-radius: 4px; }
         .qr-side img { width: 100%; height: 100%; }
 
         .action-area { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; padding-left: 5px; border-left: 1px solid #eee; }
-        
-        .btn-status { border: none; padding: 8px 4px; border-radius: 6px; color: white; font-weight: bold; width: 45px; font-size: 0.6rem; cursor: pointer; text-transform: uppercase; }
+        .btn-status { border: none; padding: 8px 2px; border-radius: 6px; color: white; font-weight: bold; width: 42px; font-size: 0.55rem; cursor: pointer; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
 
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
-        
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
         
-        /* MODALS */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 4000; flex-direction: column; }
-        
-        @media print { @page { size: 62mm auto; margin: 0; } body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { display: block !important; position: fixed; inset: 0; background: white; text-align: center; color: black; padding: 5mm; } }
     </style>
 </head>
 <body>
@@ -57,7 +51,7 @@
 
 <div id="scanner-container">
     <div id="qr-reader" style="width: 100%;"></div>
-    <button onclick="stopScanner()" style="margin: 20px auto; padding: 15px; background: var(--danger); color: white; border: none; border-radius: 10px; width: 80%;">ABBRECHEN</button>
+    <button onclick="stopScanner()" style="margin: 20px auto; padding: 15px; background: var(--danger); color: white; border: none; border-radius: 10px; width: 80%;">STOP</button>
 </div>
 
 <div id="zoomModal" class="modal" onclick="this.style.display='none'">
@@ -66,19 +60,23 @@
 </div>
 
 <div id="editModal" class="modal">
-    <div style="background:white; color:black; padding:20px; border-radius:15px; width:100%; max-width:320px;">
-        <h3 style="margin-top:0;">Bearbeiten</h3>
-        <input type="text" id="editName" class="form-input" placeholder="Name">
+    <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:320px;">
+        <h3 style="margin:0 0 10px 0;">Bearbeiten</h3>
+        <label style="font-size:0.7rem; font-weight:bold;">NAME:</label>
+        <input type="text" id="editName" class="form-input">
+        <label style="font-size:0.7rem; font-weight:bold;">STÜCKZAHL:</label>
+        <select id="editQty" class="form-input"></select>
+        <label style="font-size:0.7rem; font-weight:bold;">NEUES BILD:</label>
         <input type="file" id="editImgInput" accept="image/*" capture="environment" class="form-input" onchange="previewEditImage(this)">
-        <img id="editPreview" style="width:100%; height:100px; object-fit:contain; display:none; margin-bottom:10px;">
+        <img id="editPreview" style="width:100%; height:80px; object-fit:contain; display:none; margin-bottom:10px;">
         <div style="display:flex; gap:10px;">
-            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px; font-weight:bold;">OK</button>
-            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">AUS</button>
+            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px; font-weight:bold;">SPEICHERN</button>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">ABBRUCH</button>
         </div>
     </div>
 </div>
 
-<div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.9);">
+<div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.95);">
     <div style="background:#1e293b; padding:25px; border-radius:20px; border:3px solid var(--accent); text-align:center; width:260px;">
         <h2 style="color:var(--accent); margin-bottom:20px;">GR-LAGER</h2>
         <input type="text" id="loginName" class="form-input" placeholder="Name">
@@ -90,22 +88,22 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.6rem;">📷</button>
-        <h2 style="margin:0; font-size:1rem; letter-spacing:1px;">GR-LAGER</h2>
-        <div id="displayUserName" style="font-size:0.7rem; color:var(--accent); font-weight:bold; border:1px solid; padding:2px 5px; border-radius:4px;">-</div>
+        <h2 style="margin:0; font-size:1rem;">GR-LAGER</h2>
+        <div id="displayUserName" style="font-size:0.7rem; color:var(--accent); font-weight:bold;">-</div>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content">
             <input type="text" id="searchInput" placeholder="Suchen..." onkeyup="render()" class="form-input">
-            <select id="filterCatSelect" onchange="render()" class="form-input" style="background:var(--accent); color:white; border:none; font-size:0.8rem;"></select>
+            <select id="filterCatSelect" onchange="render()" class="form-input" style="background:var(--accent); color:white; border:none;"></select>
             <div id="itemList"></div>
         </div>
 
         <div id="tab-neu" class="content" style="display:none;">
-            <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
+            <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:15px;">
                 <input type="text" id="itemName" class="form-input" placeholder="Artikel Name">
                 <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-                    <span style="font-weight:bold; font-size:0.75rem;">MENGE:</span>
+                    <span style="font-weight:bold; font-size:0.7rem;">MENGE:</span>
                     <select id="itemQty" class="form-input" style="margin:0; flex:1;"></select>
                 </div>
                 <select id="itemLagerSelect" class="form-input"></select>
@@ -114,13 +112,14 @@
                     <select id="itemRegalSelect" class="form-input"></select>
                     <select id="itemFachSelect" class="form-input"></select>
                 </div>
-                <button onclick="document.getElementById('itemImg').click()" class="form-input" style="background:#f0f0f0;">📷 FOTO</button>
+                <button onclick="document.getElementById('itemImg').click()" class="form-input">📷 FOTO</button>
                 <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
                 <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none; margin-bottom:10px;">
                 <button onclick="saveAndPrint()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">SPEICHERN & DRUCKEN</button>
             </div>
-            
+
             <div style="background:rgba(255,255,255,0.1); padding:12px; border-radius:12px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.8rem;">LISTEN VERWALTEN</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
                     <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
@@ -145,12 +144,6 @@
     </nav>
 </div>
 
-<div id="print-area" style="display:none;">
-    <h1 id="p-name" style="font-size:20pt; margin:0;"></h1>
-    <h2 id="p-loc" style="font-size:14pt; margin:5px 0;"></h2>
-    <img id="p-qr" src="" style="width:45mm;">
-</div>
-
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -167,8 +160,9 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, scanner: null, currentEditKey: null };
 
-    const qs = document.getElementById('itemQty');
-    for(let i=1; i<=50; i++) { let o = document.createElement('option'); o.value=i; o.text=i; qs.add(o); }
+    [document.getElementById('itemQty'), document.getElementById('editQty')].forEach(sel => {
+        for(let i=1; i<=50; i++) { let o = document.createElement('option'); o.value=i; o.text=i; sel.add(o); }
+    });
 
     function checkLogin() {
         if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
@@ -210,21 +204,35 @@
                     <img src="${thumb}" class="item-thumb" onclick="zoom('${thumb}', '${i.name}')">
                     <div class="item-info">
                         <div class="item-name">${i.name} <span class="qty-badge">${i.qty||1}x</span></div>
-                        <div class="item-meta">${i.location} | ${i.regal}/${i.fach}</div>
-                        ${isOut ? `<div style="color:red; font-size:0.55rem; font-weight:bold; margin-top:2px;">AUS: ${i.lastUser||'?'}</div>` : ''}
+                        <div class="item-meta">${i.location} | ${i.regal||''}/${i.fach||''}</div>
+                        ${isOut ? `<div style="color:red; font-size:0.55rem; font-weight:bold;">AUS: ${i.lastUser||'?'}</div>` : ''}
                     </div>
-                    <div class="qr-side" onclick="zoom('${qr}', 'QR-CODE')">
-                        <img src="${qr}">
-                    </div>
+                    <div class="qr-side" onclick="zoom('${qr}', 'QR')"><img src="${qr}"></div>
                     <div class="action-area">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
-                        <div style="display:flex; gap:8px;">
-                            <span onclick="openEdit('${i.key}','${i.name}')" style="font-size:1.1rem; cursor:pointer;">✏️</span>
-                            <span onclick="deleteItem('${i.key}','${i.name}')" style="font-size:1.1rem; cursor:pointer; opacity:0.2;">🗑️</span>
+                        <div style="display:flex; gap:10px;">
+                            <span onclick="openEdit('${i.key}','${i.name}', '${i.qty||1}')" style="cursor:pointer; font-size:1.1rem;">✏️</span>
+                            <span onclick="deleteItem('${i.key}','${i.name}')" style="cursor:pointer; font-size:1.1rem; opacity:0.2;">🗑️</span>
                         </div>
                     </div>
                 </div>`;
             }).join('');
+    }
+
+    function openEdit(key, name, qty) {
+        state.currentEditKey = key;
+        document.getElementById('editName').value = name;
+        document.getElementById('editQty').value = qty;
+        document.getElementById('editPreview').style.display = 'none';
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function saveEdit() {
+        const up = { name: document.getElementById('editName').value, qty: document.getElementById('editQty').value };
+        if(document.getElementById('editPreview').style.display === 'block') up.img = document.getElementById('editPreview').src;
+        mainRef.child('items/'+state.currentEditKey).update(up).then(() => {
+            document.getElementById('editModal').style.display = 'none';
+        });
     }
 
     function toggleStatus(key, name, old) {
@@ -245,28 +253,7 @@
             img: document.getElementById('imagePreview').src || "",
             status: "im Lager", ts: Date.now(), lastUser: state.user
         };
-        newRef.set(item).then(() => {
-            document.getElementById('p-name').innerText = n + " (" + item.qty + "x)";
-            document.getElementById('p-loc').innerText = item.location + " " + item.regal + "/" + item.fach;
-            document.getElementById('p-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${newRef.key}`;
-            setTimeout(() => { window.print(); switchTab(null, 'tab-lager'); }, 800);
-        });
-    }
-
-    function openEdit(key, name) {
-        state.currentEditKey = key;
-        document.getElementById('editName').value = name;
-        document.getElementById('editPreview').style.display = 'none';
-        document.getElementById('editModal').style.display = 'flex';
-    }
-
-    function saveEdit() {
-        const up = { name: document.getElementById('editName').value };
-        const img = document.getElementById('editPreview').src;
-        if(document.getElementById('editPreview').style.display === 'block') up.img = img;
-        mainRef.child('items/'+state.currentEditKey).update(up).then(() => {
-            document.getElementById('editModal').style.display = 'none';
-        });
+        newRef.set(item).then(() => { window.print(); switchTab(null, 'tab-lager'); });
     }
 
     function quickAdd() {
@@ -280,13 +267,13 @@
         const t = document.getElementById('manageType').value;
         const l = state.config[t] || [];
         document.getElementById('listDisplay').innerHTML = l.map((v,i) => `
-            <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444; color:#fff;">
-                ${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger); cursor:pointer; font-weight:bold;">X</span>
+            <div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">
+                ${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger); cursor:pointer;">LÖSCHEN</span>
             </div>`).join('');
     }
 
-    function removeFromList(t,i) { if(confirm("Löschen?")) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); } }
-    function deleteItem(k,n) { if(confirm(n + " löschen?")) mainRef.child('items/'+k).remove(); }
+    function removeFromList(t,i) { if(confirm("Eintrag löschen?")) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); } }
+    function deleteItem(k,n) { if(confirm(n + " endgültig löschen?")) mainRef.child('items/'+k).remove(); }
     function zoom(s,t) { document.getElementById('modalImg').src=s; document.getElementById('modalTitle').innerText=t; document.getElementById('zoomModal').style.display='flex'; }
     function previewImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('imagePreview').src=e.target.result; document.getElementById('imagePreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
     function previewEditImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('editPreview').src=e.target.result; document.getElementById('editPreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
@@ -304,8 +291,8 @@
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts);
         document.getElementById('logList').innerHTML = logs.slice(0,30).map(l => `
-            <div style="background:rgba(255,255,255,0.15); padding:10px; border-radius:8px; margin-bottom:5px; font-size:0.7rem; border-left:3px solid var(--accent);">
-                <b style="color:var(--accent)">${l.user}</b>: ${l.text}<br><small style="opacity:0.6">${l.date}</small>
+            <div style="background:rgba(255,255,255,0.1); padding:8px; border-radius:8px; margin-bottom:5px; font-size:0.65rem; border-left:3px solid var(--accent);">
+                <b>${l.user}</b>: ${l.text}<br><small style="opacity:0.5">${l.date}</small>
             </div>`).join('');
     }
 
@@ -313,7 +300,7 @@
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).style.display = 'block';
-        if(e) e.currentTarget.classList.add('active'); else document.querySelectorAll('.tab-btn')[0].classList.add('active');
+        if(e) e.currentTarget.classList.add('active');
     }
 </script>
 </body>
