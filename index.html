@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lagerverwaltung V163.1 - Full Features</title>
+    <title>GR-Lagerverwaltung V163.4 - Print on Demand</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -18,26 +18,24 @@
         .header { background: rgba(0,0,0,0.95); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
 
-        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: flex-start; gap: 10px; border-left: 6px solid var(--accent); }
+        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; align-items: flex-start; gap: 10px; border-left: 6px solid var(--accent); position: relative; }
         .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
-        
         .item-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; cursor: pointer; }
         .item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         .item-name { font-weight: 900; font-size: 0.9rem; color: #1e293b; }
         .qty-badge { background: #334155; color: white; padding: 1px 5px; border-radius: 4px; font-size: 0.7rem; }
         .item-meta { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
-        .borrower-tag { display: inline-block; background: var(--danger); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-top: 5px; width: fit-content; }
-        
-        .qr-side { width: 45px; height: 45px; flex-shrink: 0; background: white; padding: 2px; border: 1px solid #ddd; border-radius: 4px; align-self: center; cursor: pointer; }
 
-        .action-area { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; padding-left: 8px; border-left: 1px solid #ddd; }
-        .btn-status { border: none; padding: 10px 2px; border-radius: 6px; color: white; font-weight: bold; width: 48px; font-size: 0.6rem; cursor: pointer; }
+        .qr-side { width: 50px; height: 50px; background: white; padding: 3px; border: 1px solid #ccc; border-radius: 6px; align-self: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .qr-side span { font-size: 0.4rem; color: #000; font-weight: bold; margin-top: 1px; }
+
+        .action-area { display: flex; flex-direction: column; align-items: center; gap: 8px; flex-shrink: 0; padding-left: 8px; border-left: 1px solid #ddd; }
+        .btn-status { border: none; padding: 8px 2px; border-radius: 6px; color: white; font-weight: bold; width: 48px; font-size: 0.6rem; cursor: pointer; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
 
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; background: white; color: black; }
-        .filter-select { background: #1e293b; color: white; border: 1px solid var(--accent); margin-bottom: 15px; }
-
+        
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
@@ -48,15 +46,16 @@
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 21mm; height: 21mm; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+            #print-area { position: absolute; left: 0; top: 0; width: 21mm; height: 21mm; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; overflow: hidden; }
         }
     </style>
 </head>
 <body>
 
 <div id="print-area" style="display:none;">
-    <div id="print-location" style="font-size: 6pt; font-weight: bold; margin-bottom: 1mm; color: black; text-align: center; width: 21mm;"></div>
-    <img id="print-qr" src="" style="width: 15mm; height: 15mm;">
+    <div id="print-location" style="font-size: 5pt; font-weight: bold; color: black; text-align: center; width: 100%; line-height: 1;"></div>
+    <img id="print-qr" src="" style="width: 14mm; height: 14mm; margin: 0.5mm 0;">
+    <div id="print-name" style="font-size: 4pt; color: black; text-align: center; width: 100%; white-space: nowrap; overflow: hidden;"></div>
 </div>
 
 <div class="global-bg"></div>
@@ -68,11 +67,11 @@
 
 <div id="zoomModal" class="modal" onclick="this.style.display='none'">
     <img id="modalImg" src="" style="max-width: 95%; max-height: 80%; border-radius: 10px; border: 2px solid white;">
-    <p id="modalTitle" style="color:white; margin-top:15px; font-weight:bold; font-size: 1.2rem;"></p>
+    <p id="modalTitle" style="color:white; margin-top:15px; font-weight:bold;"></p>
 </div>
 
 <div id="editModal" class="modal">
-    <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:350px; max-height: 90vh; overflow-y: auto;">
+    <div style="background:white; color:black; padding:15px; border-radius:15px; width:100%; max-width:350px; max-height: 85vh; overflow-y: auto;">
         <h3 style="margin:0 0 10px 0;">Bearbeiten</h3>
         <input type="text" id="editName" class="form-input">
         <input type="number" id="editQty" class="form-input">
@@ -82,7 +81,7 @@
             <select id="editRegal" class="form-input" style="flex:1;"></select>
             <select id="editFach" class="form-input" style="flex:1;"></select>
         </div>
-        <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px; margin-top:10px;">
             <button onclick="saveEdit()" style="flex:1; padding:15px; background:var(--success); color:white; border:none; border-radius:10px; font-weight:bold;">OK</button>
             <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:15px; background:var(--danger); color:white; border:none; border-radius:10px;">X</button>
         </div>
@@ -101,14 +100,14 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.1</h2>
-        <div id="displayUserName" style="font-size:0.75rem; font-weight:bold; color:var(--accent);"></div>
+        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.4</h2>
+        <div id="displayUserName" style="font-size:0.75rem; color:var(--accent); font-weight:bold;"></div>
     </div>
 
     <div class="content-area">
         <div id="tab-lager" class="content">
             <input type="text" id="searchInput" placeholder="Suche..." onkeyup="render()" class="form-input">
-            <select id="filterCategory" class="form-input filter-select" onchange="render()">
+            <select id="filterCategory" class="form-input" style="background:#1e293b; color:white;" onchange="render()">
                 <option value="">Alle Kategorien</option>
             </select>
             <div id="itemList"></div>
@@ -117,21 +116,22 @@
         <div id="tab-neu" class="content" style="display:none;">
             <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:15px;">
                 <input type="text" id="itemName" class="form-input" placeholder="Name">
-                <input type="number" id="itemQty" class="form-input" placeholder="Anzahl" value="1">
+                <input type="number" id="itemQty" class="form-input" value="1">
                 <select id="itemLagerSelect" class="form-input"></select>
                 <select id="itemCatSelect" class="form-input"></select>
                 <div style="display:flex; gap:5px;">
-                    <select id="itemRegalSelect" class="form-input"></select>
-                    <select id="itemFachSelect" class="form-input"></select>
+                    <select id="itemRegalSelect" class="form-input" style="flex:1;"></select>
+                    <select id="itemFachSelect" class="form-input" style="flex:1;"></select>
                 </div>
-                <button onclick="document.getElementById('itemImg').click()" class="form-input">📷 FOTO AUFNEHMEN</button>
-                <input type="file" id="itemImg" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
+                
+                <button type="button" onclick="document.getElementById('itemImgInput').click()" class="form-input" style="background:#f3f4f6; font-weight:bold;">📷 FOTO AUFNEHMEN</button>
+                <input type="file" id="itemImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
                 <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none; margin-bottom:10px;">
                 
-                <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold; margin-bottom: 5px;">💾 SPEICHERN & DRUCKEN</button>
-                <button onclick="saveNewItem(false)" style="width:100%; padding:10px; background:#ddd; color:black; border:none; border-radius:10px; font-size: 0.8rem;">Nur Speichern</button>
+                <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold;">💾 SPEICHERN & DRUCKEN</button>
+                <button onclick="saveNewItem(false)" style="width:100%; padding:10px; background:#ddd; color:black; border:none; border-radius:10px; margin-top:5px; font-size:0.8rem;">Nur Speichern</button>
             </div>
-            
+
             <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px;">
                 <h4 style="margin:0;">ADMIN LISTEN</h4>
                 <div style="display:flex; gap:5px; margin:10px 0;">
@@ -148,9 +148,7 @@
             </div>
         </div>
 
-        <div id="tab-log" class="content" style="display:none;">
-            <div id="logList"></div>
-        </div>
+        <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
     </div>
 
     <nav>
@@ -173,7 +171,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: "", items: [], config: {}, currentEditKey: null, scanner: null };
+    let state = { user: "", items: [], config: {}, scanner: null, currentEditKey: null };
 
     function checkLogin() {
         if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
@@ -201,13 +199,6 @@
         });
     }
 
-    function logAction(msg) {
-        mainRef.child('logs').push({
-            user: state.user, text: msg, ts: Date.now(),
-            date: new Date().toLocaleString('de-DE', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})
-        });
-    }
-
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
         const f = document.getElementById('filterCategory').value;
@@ -216,7 +207,7 @@
             .sort((a,b) => b.ts - a.ts)
             .map(i => {
                 const isOut = i.status !== 'im Lager';
-                const qr = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${i.key}`;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${i.key}`;
                 return `
                 <div class="item-card ${isOut ? 'status-out' : ''}">
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="item-thumb" onclick="zoom('${i.img}', '${i.name}')">
@@ -224,9 +215,11 @@
                         <div class="item-name">${i.name} <span class="qty-badge">${i.qty||1}x</span></div>
                         <div class="item-meta">${i.location||''} | R:${i.regal||'-'} F:${i.fach||'-'}</div>
                         <div class="item-meta" style="color:var(--accent)">Kat: ${i.cat||'-'}</div>
-                        ${isOut ? `<div class="borrower-tag">BEI: ${i.lastUser || '?'}</div>` : ''}
                     </div>
-                    <div class="qr-side" onclick="printLabel('${i.key}', '${i.location} R:${i.regal}')"><img src="${qr}" style="width:100%;"></div>
+                    <div class="qr-side" onclick="printLabel('${i.key}', '${i.location} R:${i.regal} F:${i.fach}', '${i.name}')">
+                        <img src="${qrUrl}" style="width:100%;">
+                        <span>PRINT</span>
+                    </div>
                     <div class="action-area">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
                         <div style="display:flex; gap:12px; margin-top:5px;">
@@ -238,10 +231,21 @@
             }).join('');
     }
 
-    function printLabel(key, meta) {
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${key}`;
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function printLabel(key, meta, name) {
         document.getElementById('print-location').innerText = meta;
-        document.getElementById('print-qr').src = qrUrl;
+        document.getElementById('print-name').innerText = name;
+        document.getElementById('print-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${key}`;
         setTimeout(() => { window.print(); }, 800);
     }
 
@@ -260,43 +264,13 @@
         };
 
         newRef.set(item).then(() => {
-            logAction(`NEU: ${n}`);
-            if(shouldPrint) printLabel(newRef.key, `${loc} R:${reg} F:${fac}`);
-            document.getElementById('imagePreview').style.display='none';
-            document.getElementById('itemName').value='';
+            if(shouldPrint) printLabel(newRef.key, `${loc} R:${reg} F:${fac}`, n);
+            document.getElementById('itemName').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
             switchTab(null, 'tab-lager');
         });
     }
 
-    function zoom(src, title) {
-        if(!src) return;
-        document.getElementById('modalImg').src = src;
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('zoomModal').style.display = 'flex';
-    }
-
-    function startScanner() {
-        document.getElementById('scanner-container').style.display = 'flex';
-        state.scanner = new Html5Qrcode("qr-reader");
-        state.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-            const item = state.items.find(x => x.key === txt);
-            if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
-        }).catch(err => { alert("Kamera-Fehler"); stopScanner(); });
-    }
-
-    function stopScanner() {
-        if(state.scanner) state.scanner.stop().then(() => { document.getElementById('scanner-container').style.display = 'none'; });
-        else document.getElementById('scanner-container').style.display = 'none';
-    }
-
-    function toggleStatus(key, name, oldS) {
-        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
-        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
-        logAction(`${name}: ${newS.toUpperCase()}`);
-    }
-
-    function deleteItem(key, name) { if(confirm(`${name} löschen?`)) { mainRef.child('items/'+key).remove(); logAction(`GELÖSCHT: ${name}`); } }
-    
     function openEdit(key) {
         state.currentEditKey = key;
         const i = state.items.find(x => x.key === key);
@@ -319,17 +293,53 @@
             fach: document.getElementById('editFach').value
         };
         mainRef.child('items/'+state.currentEditKey).update(up).then(() => {
-            logAction(`BEARBEITET: ${up.name}`);
             document.getElementById('editModal').style.display = 'none';
         });
     }
 
-    function previewImage(i) { const r = new FileReader(); r.onload=(e)=>{ document.getElementById('imagePreview').src=e.target.result; document.getElementById('imagePreview').style.display='block'; }; r.readAsDataURL(i.files[0]); }
-    function quickAdd() { const t = document.getElementById('manageType').value; const v = document.getElementById('addInput').value; if(!v) return; let l = state.config[t] || []; l.push(v); mainRef.child(t).set(l); document.getElementById('addInput').value = ""; }
-    function updateManageList() { const t = document.getElementById('manageType').value; const l = state.config[t] || []; document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:8px;">${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger); cursor:pointer;">X</span></div>`).join(''); }
+    function startScanner() {
+        document.getElementById('scanner-container').style.display = 'flex';
+        state.scanner = new Html5Qrcode("qr-reader");
+        state.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+            const item = state.items.find(x => x.key === txt);
+            if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
+        }).catch(() => { stopScanner(); });
+    }
+
+    function stopScanner() { if(state.scanner) state.scanner.stop().then(() => { document.getElementById('scanner-container').style.display = 'none'; }); }
+    function zoom(src, title) { document.getElementById('modalImg').src = src; document.getElementById('modalTitle').innerText = title; document.getElementById('zoomModal').style.display = 'flex'; }
+    function deleteItem(key, name) { if(confirm(`${name} löschen?`)) mainRef.child('items/'+key).remove(); }
+    
+    function toggleStatus(key, name, oldS) {
+        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
+        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
+    }
+
+    function quickAdd() {
+        const t = document.getElementById('manageType').value;
+        const v = document.getElementById('addInput').value; if(!v) return;
+        let l = state.config[t] || []; l.push(v);
+        mainRef.child(t).set(l); document.getElementById('addInput').value = "";
+    }
+
+    function updateManageList() {
+        const t = document.getElementById('manageType').value;
+        const l = state.config[t] || [];
+        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">${v} <span onclick="removeFromList('${t}',${i})" style="color:var(--danger); cursor:pointer;">X</span></div>`).join('');
+    }
+
     function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
-    function renderLogs() { const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts); document.getElementById('logList').innerHTML = logs.map(l => `<div class="log-entry"><b>${l.user}</b> | ${l.text}</div>`).join(''); }
-    function switchTab(e, id) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).style.display = 'block'; if(e) e.currentTarget.classList.add('active'); }
+    function renderLogs() {
+        const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts);
+        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:10px; border-bottom:1px solid #444; font-size:0.7rem;"><b>${l.user}</b>: ${l.text}</div>`).join('');
+    }
+
+    function switchTab(e, id) {
+        document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).style.display = 'block';
+        if(e) e.currentTarget.classList.add('active');
+    }
 </script>
 </body>
 </html>
