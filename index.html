@@ -145,10 +145,10 @@
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
     // --- DER FINAL IMAGE-ONLY DRUCK FIX V163.16 ---
-    async function printLabel(key, meta, name) {
-        // Fenster sofort auf, damit Safari nicht blockt
+  async function printLabel(key, meta, name) {
         const pWin = window.open('', '_blank');
         
+        // Hohe Auflösung für scharfen Druck
         const size = 600;
         const canvas = document.createElement('canvas');
         canvas.width = size; canvas.height = size;
@@ -158,31 +158,49 @@
         qrImg.crossOrigin = "anonymous";
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${key}`;
 
-        qrImg.onload = async function() {
+        qrImg.onload = function() {
             ctx.fillStyle = "white"; ctx.fillRect(0, 0, size, size);
             ctx.fillStyle = "black"; ctx.textAlign = "center";
             
-            // Texte zeichnen (mit Puffer vom Rand)
-            ctx.font = "bold 40px Arial";
+            // Texte positionieren
+            ctx.font = "bold 38px Arial";
             ctx.fillText(meta || '-', size/2, 60);
-            ctx.drawImage(qrImg, 80, 80, 440, 440);
+            
+            // QR-Code mit etwas Puffer
+            ctx.drawImage(qrImg, 70, 80, 460, 460);
+            
             ctx.font = "bold 32px Arial";
-            ctx.fillText(name || '-', size/2, 570);
+            ctx.fillText(name || '-', size/2, 575);
 
             const dataUrl = canvas.toDataURL("image/png");
             
-            // Der Trick: Wir bauen ein HTML-Dokument, das nur das Bild enthält und sonst NICHTS
             pWin.document.write(`
+                <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
-                        @page { size: 23mm 23mm; margin: 0 !important; }
-                        * { margin: 0; padding: 0; }
-                        body, html { width: 23mm; height: 23mm; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; }
-                        img { width: 19.5mm; height: 19.5mm; object-fit: contain; }
+                        /* Radikale Fixierung auf das Etikettenformat */
+                        @page { 
+                            size: 23mm 23mm; 
+                            margin: 0 !important; 
+                        }
+                        html, body { 
+                            margin: 0 !important; 
+                            padding: 0 !important; 
+                            width: 23mm !important; 
+                            height: 23mm !important; 
+                            overflow: hidden;
+                        }
+                        img { 
+                            display: block;
+                            width: 23mm !important; 
+                            height: 23mm !important;
+                            image-rendering: -webkit-optimize-contrast;
+                        }
                     </style>
                 </head>
-                <body onload="setTimeout(() => { window.print(); window.close(); }, 500);">
+                <body onload="setTimeout(() => { window.print(); window.close(); }, 400);">
                     <img src="${dataUrl}">
                 </body>
                 </html>
