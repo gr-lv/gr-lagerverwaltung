@@ -147,36 +147,59 @@
 
     // --- DER NEUE DRUCK-FIX (BROTHER 23x23mm) ---
     function printLabel(key, meta, name) {
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${key}`;
-        const printWin = window.open('', '_blank');
-        
-        printWin.document.write(`
-            <html>
-            <head>
-                <style>
-                    @page { size: 23mm 23mm; margin: 0 !important; }
-                    html, body { 
-                        margin: 0 !important; padding: 0 !important; 
-                        width: 23mm !important; height: 23mm !important;
-                        display: flex; flex-direction: column; 
-                        align-items: center; justify-content: center;
-                        background: #fff; font-family: -apple-system, sans-serif;
-                    }
-                    img { width: 16mm !important; height: 16mm !important; display: block; }
-                    .txt { text-align: center; width: 100%; overflow: hidden; font-weight: bold; line-height: 1.1; }
-                    .loc { font-size: 6pt; margin-bottom: 0.5mm; }
-                    .name { font-size: 5pt; margin-top: 0.5mm; white-space: nowrap; }
-                </style>
-            </head>
-            <body>
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${key}`;
+    const printWin = window.open('', '_blank');
+    
+    printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                @page { size: 23mm 23mm; margin: 0 !important; }
+                * { box-sizing: border-box; -webkit-print-color-adjust: exact; }
+                html, body { 
+                    margin: 0 !important; 
+                    padding: 0 !important; 
+                    width: 23mm !important; 
+                    height: 23mm !important;
+                    overflow: hidden;
+                    background: #fff;
+                }
+                /* Der absolute Zentrier-Block */
+                .label-container {
+                    width: 23mm !important;
+                    height: 23mm !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    position: absolute;
+                    top: 0; left: 0;
+                }
+                img { width: 15mm !important; height: 15mm !important; display: block; }
+                .txt { 
+                    font-family: -apple-system, Helvetica, Arial, sans-serif;
+                    text-align: center; 
+                    width: 100%; 
+                    font-weight: bold; 
+                    color: #000 !important;
+                }
+                .loc { font-size: 6pt; line-height: 1.2; margin-bottom: 0.5mm; }
+                .name { font-size: 5pt; line-height: 1.2; margin-top: 0.5mm; white-space: nowrap; }
+            </style>
+        </head>
+        <body>
+            <div class="label-container">
                 <div class="txt loc">${meta || ''}</div>
-                <img src="${qrUrl}" onload="setTimeout(() => { window.print(); window.close(); }, 400);">
+                <img src="${qrUrl}" onload="setTimeout(() => { window.print(); window.close(); }, 500);">
                 <div class="txt name">${name || ''}</div>
-            </body>
-            </html>
-        `);
-        printWin.document.close();
-    }
+            </div>
+        </body>
+        </html>
+    `);
+    printWin.document.close();
+}
 
     function checkLogin() {
         if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
