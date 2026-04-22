@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lager V163.23 - Final Layout</title>
+    <title>GR-Lager V163.24 - Vollversion</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,35 +11,62 @@
 
     <style>
         :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
-        body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
-        .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.9)), url('https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop') no-repeat center center; background-size: cover; z-index: 1; }
-        #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; }
-        .header { background: rgba(0,0,0,0.95); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
-        .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
         
-        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); align-items: center; }
+        /* HINTERGRUND FÜR ALLES */
+        .global-bg { 
+            position: fixed; 
+            inset: 0; 
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), 
+                        url('haus_background.jpg') no-repeat center center; 
+            background-size: cover; 
+            z-index: 1; 
+        }
+
+        body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
+        
+        #ui-wrapper { 
+            position: relative; 
+            z-index: 10; 
+            height: 100vh; 
+            display: none; 
+            flex-direction: column; 
+            background: transparent; 
+        }
+
+        .header { background: rgba(0,0,0,0.9); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
+        
+        .content-area { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 10px; 
+            padding-bottom: 100px; 
+            background: rgba(0,0,0,0.3); 
+            -webkit-overflow-scrolling: touch; 
+        }
+        
+        .item-card { background: rgba(255,255,255,0.95); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); align-items: center; }
         .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
         .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
         .item-info { flex: 1; min-width: 0; }
         .item-name { font-weight: 900; font-size: 0.85rem; color: #1e293b; }
-        .item-meta { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
+        .item-meta { font-size: 0.6rem; color: #64748b; margin-top: 2px; }
         
         .qr-side { width: 55px; height: 55px; background: white; padding: 3px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .qr-side span { font-size: 0.45rem; color: #000; font-weight: bold; margin-top: 2px; }
         
-        .action-btns { display: flex; flex-direction: column; gap: 12px; align-items: center; border-left: 1px solid #ddd; padding-left: 12px; min-width: 50px; }
+        .action-btns { display: flex; flex-direction: column; gap: 10px; align-items: center; border-left: 1px solid #ddd; padding-left: 12px; min-width: 50px; }
         .btn-status { border: none; padding: 8px 2px; border-radius: 6px; color: white; font-weight: bold; width: 48px; font-size: 0.7rem; cursor: pointer; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
         
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
+        
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
         
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 6000; flex-direction: column; }
-
         #photo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         #generated-label { width: 280px; height: 280px; border: 4px solid white; border-radius: 15px; margin-bottom: 20px; background: white; object-fit: contain; }
     </style>
@@ -48,38 +75,11 @@
 
 <div class="global-bg"></div>
 
-<div id="scanner-container">
-    <div id="qr-reader" style="width: 100%;"></div>
-    <button onclick="stopScanner()" style="margin:20px; padding:15px; background:var(--danger); color:white; border-radius:10px; border:none; font-weight:bold;">ABBRECHEN</button>
-</div>
-
-<div id="editModal" class="modal">
-    <div style="background:white; color:black; padding:20px; border-radius:15px; width:100%; max-width:320px;">
-        <h3>Bearbeiten</h3>
-        <input type="text" id="editName" class="form-input">
-        <input type="number" id="editQty" class="form-input">
-        <div style="display:flex; gap:10px;">
-            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">OK</button>
-            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button>
-        </div>
-    </div>
-</div>
-
-<div id="photo-overlay">
-    <button onclick="closePhotoOverlay()" style="position:fixed; top:20px; right:20px; background:var(--danger); border:none; color:white; padding:12px 20px; border-radius:10px; font-weight:bold; z-index:10001;">X SCHLIESSEN</button>
-    <img id="generated-label" src="">
-    <div style="background:rgba(255,255,255,0.1); padding:20px; border-radius:15px; text-align:center; color:white; font-size:0.9rem; max-width:300px;">
-        <b>Tipp für iPhone:</b><br><br>
-        Bild gedrückt halten → <b>"In Fotos speichern"</b>.<br>
-        Dann in der Fotos-App drucken.
-    </div>
-</div>
-
-<div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.98);">
-    <div style="background:#1e293b; padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center;">
-        <h2 style="color:var(--accent);">GR-LAGER</h2>
-        <input type="text" id="loginName" class="form-input" placeholder="Dein Name">
-        <input type="password" id="loginPass" class="form-input" placeholder="Passwort (1234)">
+<div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:transparent;">
+    <div style="background:rgba(30, 41, 59, 0.9); padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; backdrop-filter: blur(5px); width: 80%; max-width: 300px;">
+        <h2 style="color:var(--accent); margin-bottom:20px;">GR-LAGER</h2>
+        <input type="text" id="loginName" class="form-input" placeholder="Name">
+        <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
         <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">START</button>
     </div>
 </div>
@@ -87,7 +87,7 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.23</h2>
+        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.24</h2>
         <div id="displayUserName" style="font-size:0.75rem; color:var(--accent);"></div>
     </div>
 
@@ -114,7 +114,7 @@
                 <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold;">💾 ERSTELLEN & SPEICHERN</button>
             </div>
             
-            <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px;">
+            <div style="background:rgba(255,255,255,0.15); padding:15px; border-radius:15px; backdrop-filter: blur(5px);">
                 <h4>ADMIN-LISTE</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
@@ -129,6 +129,7 @@
                 <div id="listDisplay" style="max-height:150px; overflow-y:auto; font-size:0.8rem;"></div>
             </div>
         </div>
+
         <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
     </div>
 
@@ -137,6 +138,31 @@
         <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">⚙️ ADMIN</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOGS</button>
     </nav>
+</div>
+
+<div id="scanner-container">
+    <div id="qr-reader" style="width: 100%;"></div>
+    <button onclick="stopScanner()" style="margin:20px; padding:15px; background:var(--danger); color:white; border-radius:10px; border:none; font-weight:bold;">ABBRECHEN</button>
+</div>
+
+<div id="editModal" class="modal">
+    <div style="background:white; color:black; padding:20px; border-radius:15px; width:100%; max-width:320px;">
+        <h3>Bearbeiten</h3>
+        <input type="text" id="editName" class="form-input">
+        <input type="number" id="editQty" class="form-input">
+        <div style="display:flex; gap:10px;">
+            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">OK</button>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button>
+        </div>
+    </div>
+</div>
+
+<div id="photo-overlay">
+    <button onclick="closePhotoOverlay()" style="position:fixed; top:20px; right:20px; background:var(--danger); border:none; color:white; padding:12px 20px; border-radius:10px; font-weight:bold; z-index:10001;">X</button>
+    <img id="generated-label" src="">
+    <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; text-align:center; color:white; font-size:0.85rem;">
+        Gedrückt halten → <b>In Fotos speichern</b>
+    </div>
 </div>
 
 <script>
@@ -154,7 +180,7 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
-    // --- PHOTO PRINT ---
+    // --- PHOTO PRINT LOGIK (Fett & Groß) ---
     function printLabel(key, meta, name) {
         const size = 1000; 
         const canvas = document.createElement('canvas');
@@ -185,7 +211,7 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('ui-wrapper').style.display = 'flex';
             initApp();
-        }
+        } else { alert("Login falsch!"); }
     }
 
     function initApp() {
@@ -220,7 +246,7 @@
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="item-thumb">
                     <div class="item-info">
                         <div class="item-name">${i.name} <span>${i.qty||1}x</span></div>
-                        <div class="item-meta" style="font-size:0.6rem;">${meta}</div>
+                        <div class="item-meta">${meta}</div>
                     </div>
                     <div class="qr-side" onclick="printLabel('${i.key}', '${meta}', '${i.name}')">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}" style="width:100%;">
@@ -228,7 +254,7 @@
                     </div>
                     <div class="action-btns">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
-                        <div style="display:flex; flex-direction:column; gap:10px; font-size:1.2rem;">
+                        <div style="display:flex; flex-direction:column; gap:8px; font-size:1.2rem;">
                             <span onclick="openEdit('${i.key}')">✏️</span>
                             <span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger);">🗑️</span>
                         </div>
@@ -237,7 +263,7 @@
             }).join('');
     }
 
-    // --- ADMIN FUNKTIONEN ---
+    // --- ADMIN ---
     function quickAdd() {
         const t = document.getElementById('manageType').value;
         const v = document.getElementById('addInput').value; if(!v) return;
@@ -247,7 +273,7 @@
     function updateManageList() {
         const t = document.getElementById('manageType').value;
         const l = state.config[t] || [];
-        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">${v} <span onclick="removeFromList('${t}',${i})">❌</span></div>`).join('');
+        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444; color:white;">${v} <span onclick="removeFromList('${t}',${i})">❌</span></div>`).join('');
     }
     function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
 
@@ -255,7 +281,7 @@
         const n = document.getElementById('itemName').value; if(!n) return;
         const newRef = mainRef.child('items').push();
         const d = { name: n, qty: document.getElementById('itemQty').value, location: document.getElementById('itemLagerSelect').value, cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value, img: document.getElementById('imagePreview').src || "", status: "im Lager", ts: Date.now(), lastUser: state.user };
-        newRef.set(d).then(() => { if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); document.getElementById('itemName').value = ''; switchTab(null, 'tab-lager'); });
+        newRef.set(d).then(() => { if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); document.getElementById('itemName').value = ''; document.getElementById('imagePreview').style.display='none'; switchTab(null, 'tab-lager'); });
     }
     function toggleStatus(key, name, oldS) {
         const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
@@ -276,7 +302,7 @@
     function deleteItem(k, n) { if(confirm(`${n} löschen?`)) mainRef.child('items/'+k).remove(); }
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,30);
-        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:10px; border-bottom:1px solid #444; font-size:0.7rem;"><b>${l.user}</b>: ${l.text}</div>`).join('');
+        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:10px; border-bottom:1px solid #444; font-size:0.75rem; color:#ccc;"><b>${l.user}</b>: ${l.text} <small>(${new Date(l.ts).toLocaleTimeString()})</small></div>`).join('');
     }
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
