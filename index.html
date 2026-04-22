@@ -2,8 +2,8 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lager V163.24 - Vollversion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GR-Lager V163.25</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -12,7 +12,6 @@
     <style>
         :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
         
-        /* HINTERGRUND FÜR ALLES */
         .global-bg { 
             position: fixed; 
             inset: 0; 
@@ -33,13 +32,21 @@
             background: transparent; 
         }
 
-        .header { background: rgba(0,0,0,0.9); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
+        /* FIX FÜR ÜBERSCHRIFT: Nutzt Safe Area für iPhone Notches */
+        .header { 
+            background: rgba(0,0,0,0.9); 
+            padding: calc(10px + env(safe-area-inset-top)) 15px 10px 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--accent); 
+        }
         
         .content-area { 
             flex: 1; 
             overflow-y: auto; 
             padding: 10px; 
-            padding-bottom: 100px; 
+            padding-bottom: calc(100px + env(safe-area-inset-bottom)); 
             background: rgba(0,0,0,0.3); 
             -webkit-overflow-scrolling: touch; 
         }
@@ -61,7 +68,7 @@
         
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
         
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
+        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: calc(70px + env(safe-area-inset-bottom)); border-top: 2px solid var(--accent); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
         
@@ -76,7 +83,7 @@
 <div class="global-bg"></div>
 
 <div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:transparent;">
-    <div style="background:rgba(30, 41, 59, 0.9); padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; backdrop-filter: blur(5px); width: 80%; max-width: 300px;">
+    <div style="background:rgba(30, 41, 59, 0.95); padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; backdrop-filter: blur(10px); width: 85%; max-width: 320px;">
         <h2 style="color:var(--accent); margin-bottom:20px;">GR-LAGER</h2>
         <input type="text" id="loginName" class="form-input" placeholder="Name">
         <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
@@ -87,8 +94,8 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.24</h2>
-        <div id="displayUserName" style="font-size:0.75rem; color:var(--accent);"></div>
+        <h2 style="margin:0; font-size:0.9rem; letter-spacing: 1px;">GR-LAGER V163.25</h2>
+        <div id="displayUserName" style="font-size:0.75rem; color:var(--accent); font-weight: bold;"></div>
     </div>
 
     <div class="content-area">
@@ -99,7 +106,8 @@
         </div>
 
         <div id="tab-neu" class="content" style="display:none;">
-            <div style="background:white; padding:15px; border-radius:15px; color:#000; margin-bottom:15px;">
+            <div style="background:rgba(255,255,255,0.95); padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
+                <h4 style="margin-top:0;">Neuer Artikel</h4>
                 <input type="text" id="itemName" class="form-input" placeholder="Artikel Name">
                 <input type="number" id="itemQty" class="form-input" value="1">
                 <select id="itemLagerSelect" class="form-input"></select>
@@ -110,15 +118,15 @@
                 </div>
                 <button type="button" onclick="document.getElementById('itemImgInput').click()" class="form-input" style="background:#f3f4f6;">📷 FOTO</button>
                 <input type="file" id="itemImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
-                <img id="imagePreview" style="width:100%; height:80px; object-fit:contain; display:none; margin-bottom:10px;">
-                <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold;">💾 ERSTELLEN & SPEICHERN</button>
+                <img id="imagePreview" style="width:100%; height:120px; object-fit:contain; display:none; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
+                <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold;">💾 ERSTELLEN & DRUCKEN</button>
             </div>
             
-            <div style="background:rgba(255,255,255,0.15); padding:15px; border-radius:15px; backdrop-filter: blur(5px);">
-                <h4>ADMIN-LISTE</h4>
+            <div style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; backdrop-filter: blur(5px); border:1px solid rgba(255,255,255,0.1);">
+                <h4 style="margin-top:0; color:var(--accent);">Admin Listenpflege</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
-                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
+                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px; font-weight:bold;">+</button>
                 </div>
                 <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white;">
                     <option value="locations">Lagerorte</option>
@@ -126,7 +134,7 @@
                     <option value="regale">Regale</option>
                     <option value="faecher">Fächer</option>
                 </select>
-                <div id="listDisplay" style="max-height:150px; overflow-y:auto; font-size:0.8rem;"></div>
+                <div id="listDisplay" style="max-height:200px; overflow-y:auto; font-size:0.85rem;"></div>
             </div>
         </div>
 
@@ -158,10 +166,12 @@
 </div>
 
 <div id="photo-overlay">
-    <button onclick="closePhotoOverlay()" style="position:fixed; top:20px; right:20px; background:var(--danger); border:none; color:white; padding:12px 20px; border-radius:10px; font-weight:bold; z-index:10001;">X</button>
+    <button onclick="closePhotoOverlay()" style="position:fixed; top:calc(20px + env(safe-area-inset-top)); right:20px; background:var(--danger); border:none; color:white; padding:12px 20px; border-radius:10px; font-weight:bold; z-index:10001;">X SCHLIESSEN</button>
     <img id="generated-label" src="">
-    <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; text-align:center; color:white; font-size:0.85rem;">
-        Gedrückt halten → <b>In Fotos speichern</b>
+    <div style="background:rgba(255,255,255,0.1); padding:20px; border-radius:15px; text-align:center; color:white; font-size:0.9rem; max-width:300px;">
+        <b>Speichern für Druck:</b><br><br>
+        Bild gedrückt halten → <b>In Fotos speichern</b>.<br>
+        Dann in der Fotos-App drucken.
     </div>
 </div>
 
@@ -180,7 +190,6 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
-    // --- PHOTO PRINT LOGIK (Fett & Groß) ---
     function printLabel(key, meta, name) {
         const size = 1000; 
         const canvas = document.createElement('canvas');
@@ -201,7 +210,6 @@
     }
     function closePhotoOverlay() { document.getElementById('photo-overlay').style.display = 'none'; }
 
-    // --- CORE LOGIK ---
     function checkLogin() {
         const user = document.getElementById('loginName').value;
         const pass = document.getElementById('loginPass').value;
@@ -254,16 +262,15 @@
                     </div>
                     <div class="action-btns">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
-                        <div style="display:flex; flex-direction:column; gap:8px; font-size:1.2rem;">
-                            <span onclick="openEdit('${i.key}')">✏️</span>
-                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger);">🗑️</span>
+                        <div style="display:flex; flex-direction:column; gap:12px; font-size:1.3rem; margin-top:5px;">
+                            <span onclick="openEdit('${i.key}')" style="cursor:pointer;">✏️</span>
+                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger); cursor:pointer;">🗑️</span>
                         </div>
                     </div>
                 </div>`;
             }).join('');
     }
 
-    // --- ADMIN ---
     function quickAdd() {
         const t = document.getElementById('manageType').value;
         const v = document.getElementById('addInput').value; if(!v) return;
@@ -273,7 +280,7 @@
     function updateManageList() {
         const t = document.getElementById('manageType').value;
         const l = state.config[t] || [];
-        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444; color:white;">${v} <span onclick="removeFromList('${t}',${i})">❌</span></div>`).join('');
+        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:white;">${v} <span onclick="removeFromList('${t}',${i})" style="cursor:pointer;">❌</span></div>`).join('');
     }
     function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
 
@@ -281,13 +288,20 @@
         const n = document.getElementById('itemName').value; if(!n) return;
         const newRef = mainRef.child('items').push();
         const d = { name: n, qty: document.getElementById('itemQty').value, location: document.getElementById('itemLagerSelect').value, cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value, img: document.getElementById('imagePreview').src || "", status: "im Lager", ts: Date.now(), lastUser: state.user };
-        newRef.set(d).then(() => { if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); document.getElementById('itemName').value = ''; document.getElementById('imagePreview').style.display='none'; switchTab(null, 'tab-lager'); });
+        newRef.set(d).then(() => { 
+            if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); 
+            document.getElementById('itemName').value = ''; 
+            document.getElementById('imagePreview').style.display='none'; 
+            switchTab(null, 'tab-lager'); 
+        });
     }
+
     function toggleStatus(key, name, oldS) {
         const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
         mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
         mainRef.child('logs').push({ user: state.user, text: `${name} -> ${newS}`, ts: Date.now() });
     }
+
     function openEdit(key) {
         state.currentEditKey = key;
         const i = state.items.find(x => x.key === key);
@@ -295,20 +309,25 @@
         document.getElementById('editQty').value = i.qty;
         document.getElementById('editModal').style.display = 'flex';
     }
+
     function saveEdit() {
         mainRef.child('items/'+state.currentEditKey).update({ name: document.getElementById('editName').value, qty: document.getElementById('editQty').value });
         document.getElementById('editModal').style.display = 'none';
     }
-    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) mainRef.child('items/'+k).remove(); }
+
+    function deleteItem(k, n) { if(confirm(`${n} wirklich löschen?`)) mainRef.child('items/'+k).remove(); }
+
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,30);
-        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:10px; border-bottom:1px solid #444; font-size:0.75rem; color:#ccc;"><b>${l.user}</b>: ${l.text} <small>(${new Date(l.ts).toLocaleTimeString()})</small></div>`).join('');
+        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#ccc; background:rgba(0,0,0,0.2);"><b>${l.user}</b>: ${l.text} <small style="float:right;">${new Date(l.ts).toLocaleTimeString()}</small></div>`).join('');
     }
+
     function switchTab(e, id) {
         document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
         document.getElementById(id).style.display = 'block';
         if(e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); }
     }
+
     function previewImage(i) {
         if (i.files && i.files[0]) {
             const r = new FileReader();
@@ -316,6 +335,7 @@
             r.readAsDataURL(i.files[0]);
         }
     }
+
     let scanner = null;
     function startScanner() {
         document.getElementById('scanner-container').style.display = 'flex';
