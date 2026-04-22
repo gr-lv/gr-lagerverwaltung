@@ -146,61 +146,49 @@
 
     // --- DER FINAL IMAGE-ONLY DRUCK FIX V163.16 ---
   async function printLabel(key, meta, name) {
-        const pWin = window.open('', '_blank');
-        
-        // Hohe Auflösung für scharfen Druck
+        // 1. Canvas erstellen (wie gehabt)
         const size = 600;
         const canvas = document.createElement('canvas');
         canvas.width = size; canvas.height = size;
         const ctx = canvas.getContext('2d');
+
+        // Hintergrund weiß
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, size, size);
 
         const qrImg = new Image();
         qrImg.crossOrigin = "anonymous";
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${key}`;
 
         qrImg.onload = function() {
-            ctx.fillStyle = "white"; ctx.fillRect(0, 0, size, size);
-            ctx.fillStyle = "black"; ctx.textAlign = "center";
+            ctx.fillStyle = "black";
+            ctx.textAlign = "center";
             
-            // Texte positionieren
+            // Texte & QR
             ctx.font = "bold 38px Arial";
-            ctx.fillText(meta || '-', size/2, 60);
-            
-            // QR-Code mit etwas Puffer
-            ctx.drawImage(qrImg, 70, 80, 460, 460);
-            
+            ctx.fillText(meta || '-', size/2, 65);
+            ctx.drawImage(qrImg, 80, 90, 440, 440);
             ctx.font = "bold 32px Arial";
-            ctx.fillText(name || '-', size/2, 575);
+            ctx.fillText(name || '-', size/2, 570);
 
+            // 2. Das Bild als Daten-URL extrahieren
             const dataUrl = canvas.toDataURL("image/png");
+
+            // 3. Ein neues Fenster öffnen und NUR das Bild einfügen
+            const pWin = window.open('', '_blank');
             
+            // Wir schreiben ein minimales HTML, das das Bild "nackt" anzeigt
             pWin.document.write(`
-                <!DOCTYPE html>
                 <html>
                 <head>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Print</title>
                     <style>
-                        /* Radikale Fixierung auf das Etikettenformat */
-                        @page { 
-                            size: 23mm 23mm; 
-                            margin: 0 !important; 
-                        }
-                        html, body { 
-                            margin: 0 !important; 
-                            padding: 0 !important; 
-                            width: 23mm !important; 
-                            height: 23mm !important; 
-                            overflow: hidden;
-                        }
-                        img { 
-                            display: block;
-                            width: 23mm !important; 
-                            height: 23mm !important;
-                            image-rendering: -webkit-optimize-contrast;
-                        }
+                        @page { size: auto; margin: 0; }
+                        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: white; }
+                        img { max-width: 100%; max-height: 100%; object-fit: contain; }
                     </style>
                 </head>
-                <body onload="setTimeout(() => { window.print(); window.close(); }, 400);">
+                <body onload="window.print(); setTimeout(() => window.close(), 1000);">
                     <img src="${dataUrl}">
                 </body>
                 </html>
