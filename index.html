@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GR-Lager V163.15 - FULL COMPLETE</title>
+    <title>GR-Lager V163.14 - No-Header-Fix</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -13,57 +13,26 @@
         :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
         body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
         .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
-        
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; }
         .header { background: rgba(0,0,0,0.95); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: 100px; -webkit-overflow-scrolling: touch; }
-
-        /* ITEM CARDS */
-        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); position: relative; }
-        .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
+        .item-card { background: rgba(255,255,255,0.98); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); }
         .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
         .item-info { flex: 1; min-width: 0; }
         .item-name { font-weight: 900; font-size: 0.85rem; color: #1e293b; }
         .item-meta { font-size: 0.65rem; color: #64748b; margin-top: 2px; }
-
         .qr-side { width: 50px; height: 50px; background: white; padding: 3px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
-        .qr-side span { font-size: 0.4rem; color: #000; font-weight: bold; margin-top: 1px; }
-
-        .action-btns { display: flex; flex-direction: column; gap: 8px; align-items: center; border-left: 1px solid #ddd; padding-left: 8px; }
-        .btn-status { border: none; padding: 6px 2px; border-radius: 4px; color: white; font-weight: bold; width: 45px; font-size: 0.6rem; }
-        .btn-in { background: var(--success); }
-        .btn-out { background: var(--danger); }
-
+        .qr-side span { font-size: 0.4rem; color: #000; font-weight: bold; }
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
-        
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #030712; display: flex; height: 70px; border-top: 2px solid var(--accent); z-index: 100; }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
-
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 6000; flex-direction: column; }
     </style>
 </head>
 <body>
 
 <div class="global-bg"></div>
-
-<div id="scanner-container">
-    <div id="qr-reader" style="width: 100%;"></div>
-    <button onclick="stopScanner()" style="margin:20px; padding:15px; background:var(--danger); color:white; border-radius:10px; border:none; font-weight:bold;">ABBRECHEN</button>
-</div>
-
-<div id="editModal" class="modal">
-    <div style="background:white; color:black; padding:20px; border-radius:15px; width:100%; max-width:320px;">
-        <h3>Bearbeiten</h3>
-        <input type="text" id="editName" class="form-input">
-        <input type="number" id="editQty" class="form-input">
-        <div style="display:flex; gap:10px;">
-            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">OK</button>
-            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button>
-        </div>
-    </div>
-</div>
 
 <div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.98);">
     <div style="background:#1e293b; padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center;">
@@ -77,7 +46,7 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.15</h2>
+        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.14</h2>
         <div id="displayUserName" style="font-size:0.75rem; color:var(--accent);"></div>
     </div>
 
@@ -103,23 +72,7 @@
                 <img id="imagePreview" style="width:100%; height:80px; object-fit:contain; display:none; margin-bottom:10px;">
                 <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold;">💾 SPEICHERN & DRUCKEN</button>
             </div>
-
-            <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:15px;">
-                <h4 style="margin:0;">ADMIN</h4>
-                <div style="display:flex; gap:5px; margin:10px 0;">
-                    <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
-                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
-                </div>
-                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white;">
-                    <option value="locations">Lagerorte</option>
-                    <option value="cats">Kategorien</option>
-                    <option value="regale">Regale</option>
-                    <option value="faecher">Fächer</option>
-                </select>
-                <div id="listDisplay" style="max-height:100px; overflow-y:auto; font-size:0.8rem;"></div>
-            </div>
         </div>
-
         <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
     </div>
 
@@ -143,13 +96,11 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
-    let state = { user: "", items: [], config: {}, currentEditKey: null };
+    let state = { user: "", items: [], config: {} };
 
-    // --- DER "KEIN ABSCHNEIDEN" DRUCK V163.15 ---
+    // --- DER "KEIN DATUM" FIX ---
     function printLabel(key, meta, name) {
         const pWin = window.open('', '_blank');
-        pWin.document.write('<html><body style="margin:0;display:flex;align-items:center;justify-content:center;">...</body></html>');
-
         const size = 500;
         const canvas = document.createElement('canvas');
         canvas.width = size; canvas.height = size;
@@ -161,24 +112,40 @@
 
         qrImg.onload = function() {
             ctx.fillStyle = "white"; ctx.fillRect(0, 0, size, size);
-            const pad = 65; 
-            const dSize = size - (pad * 2);
             ctx.fillStyle = "black"; ctx.textAlign = "center";
-            ctx.font = "bold 34px Arial";
-            ctx.fillText(meta || '-', size/2, pad + 15);
-            ctx.drawImage(qrImg, pad + 35, pad + 55, dSize - 70, dSize - 70);
+            ctx.font = "bold 32px Arial";
+            ctx.fillText(meta || '', size/2, 50);
+            ctx.drawImage(qrImg, 50, 70, 400, 400);
             ctx.font = "bold 28px Arial";
-            ctx.fillText(name || '-', size/2, size - pad + 10);
+            ctx.fillText(name || '', size/2, 485);
 
             const dataUrl = canvas.toDataURL("image/png");
-            pWin.document.body.innerHTML = `
-                <style>
-                    @page { size: 23mm 23mm; margin: 0 !important; }
-                    body, html { margin: 0; padding: 0; width: 23mm; height: 23mm; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; }
-                    img { width: 19.5mm; height: 19.5mm; object-fit: contain; }
-                </style>
-                <img src="${dataUrl}" onload="window.print(); setTimeout(()=>window.close(), 600);">
-            `;
+            pWin.document.write(`
+                <html>
+                <head>
+                    <style>
+                        /* DIESER TEIL ENTFERNT DATUM UND UHRZEIT */
+                        @page { 
+                            size: 23mm 23mm; 
+                            margin: 0 !important; 
+                        }
+                        @media print {
+                            body { margin: 0; }
+                            header, footer, .page-number, .date { display: none !important; }
+                        }
+                        html, body { 
+                            margin: 0 !important; padding: 0 !important; 
+                            width: 23mm; height: 23mm; overflow: hidden;
+                        }
+                        img { width: 23mm; height: 23mm; display: block; margin: 0; }
+                    </style>
+                </head>
+                <body onload="window.print(); setTimeout(()=>window.close(), 500);">
+                    <img src="${dataUrl}">
+                </body>
+                </html>
+            `);
+            pWin.document.close();
         };
     }
 
@@ -196,15 +163,16 @@
         mainRef.on('value', snap => {
             state.config = snap.val() || {};
             state.items = Object.keys(state.config.items || {}).map(k => ({...state.config.items[k], key: k}));
-            const fill = (ids, list) => ids.forEach(id => {
+            render();
+            const fill = (id, list) => {
                 const el = document.getElementById(id);
                 if(el) el.innerHTML = (id.includes('filter') ? '<option value="">Alle</option>' : '') + (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
-            });
-            fill(['itemLagerSelect'], state.config.locations);
-            fill(['itemCatSelect', 'filterCategory'], state.config.cats);
-            fill(['itemRegalSelect'], state.config.regale);
-            fill(['itemFachSelect'], state.config.faecher);
-            render(); renderLogs(); updateManageList();
+            };
+            fill('itemLagerSelect', state.config.locations);
+            fill('itemCatSelect', state.config.cats);
+            fill('filterCategory', state.config.cats);
+            fill('itemRegalSelect', state.config.regale);
+            fill('itemFachSelect', state.config.faecher);
         });
     }
 
@@ -215,81 +183,24 @@
             .filter(i => i.name.toLowerCase().includes(s) && (f === "" || i.cat === f))
             .sort((a,b) => b.ts - a.ts)
             .map(i => {
-                const isOut = i.status !== 'im Lager';
-                const meta = `${i.location||''} R:${i.regal||'-'} F:${i.fach||'-'}`;
+                const m = `${i.location||''} R:${i.regal||'-'}`;
                 return `
-                <div class="item-card ${isOut ? 'status-out' : ''}">
+                <div class="item-card">
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="item-thumb">
-                    <div class="item-info">
-                        <div class="item-name">${i.name} <span>${i.qty||1}x</span></div>
-                        <div class="item-meta">${meta}</div>
-                        <div style="margin-top:5px; font-size:1.2rem;">
-                            <span onclick="openEdit('${i.key}')">✏️</span>
-                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="margin-left:15px;">🗑️</span>
-                        </div>
-                    </div>
-                    <div class="qr-side" onclick="printLabel('${i.key}', '${meta}', '${i.name}')">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}" style="width:100%;">
+                    <div class="item-info"><div class="item-name">${i.name}</div><div class="item-meta">${m}</div></div>
+                    <div class="qr-side" onclick="printLabel('${i.key}', '${m}', '${i.name}')">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${i.key}" style="width:100%;">
                         <span>PRINT</span>
-                    </div>
-                    <div class="action-btns">
-                        <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
                     </div>
                 </div>`;
             }).join('');
     }
 
-    function saveNewItem(p) {
+    function saveNewItem(print) {
         const n = document.getElementById('itemName').value; if(!n) return;
         const newRef = mainRef.child('items').push();
-        const d = {
-            name: n, qty: document.getElementById('itemQty').value,
-            location: document.getElementById('itemLagerSelect').value,
-            cat: document.getElementById('itemCatSelect').value,
-            regal: document.getElementById('itemRegalSelect').value,
-            fach: document.getElementById('itemFachSelect').value,
-            img: document.getElementById('imagePreview').src || "",
-            status: "im Lager", ts: Date.now(), lastUser: state.user
-        };
-        newRef.set(d).then(() => { if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); document.getElementById('itemName').value = ''; switchTab(null, 'tab-lager'); });
-    }
-
-    function toggleStatus(key, name, oldS) {
-        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
-        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
-        mainRef.child('logs').push({ user: state.user, text: `${name} -> ${newS}`, ts: Date.now() });
-    }
-
-    function openEdit(key) {
-        state.currentEditKey = key;
-        const i = state.items.find(x => x.key === key);
-        document.getElementById('editName').value = i.name;
-        document.getElementById('editQty').value = i.qty;
-        document.getElementById('editModal').style.display = 'flex';
-    }
-    function saveEdit() {
-        mainRef.child('items/'+state.currentEditKey).update({ name: document.getElementById('editName').value, qty: document.getElementById('editQty').value });
-        document.getElementById('editModal').style.display = 'none';
-    }
-
-    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) mainRef.child('items/'+k).remove(); }
-    
-    function quickAdd() {
-        const t = document.getElementById('manageType').value;
-        const v = document.getElementById('addInput').value; if(!v) return;
-        let l = state.config[t] || []; l.push(v);
-        mainRef.child(t).set(l); document.getElementById('addInput').value = "";
-    }
-    function updateManageList() {
-        const t = document.getElementById('manageType').value;
-        const l = state.config[t] || [];
-        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #444;">${v} <span onclick="removeFromList('${t}',${i})">❌</span></div>`).join('');
-    }
-    function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
-
-    function renderLogs() {
-        const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,30);
-        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:10px; border-bottom:1px solid #444; font-size:0.7rem;"><b>${l.user}</b>: ${l.text}</div>`).join('');
+        const d = { name: n, qty: document.getElementById('itemQty').value, location: document.getElementById('itemLagerSelect').value, cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value, img: document.getElementById('imagePreview').src || "", status: "im Lager", ts: Date.now(), lastUser: state.user };
+        newRef.set(d).then(() => { if(print) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); switchTab(null, 'tab-lager'); });
     }
 
     function switchTab(e, id) {
@@ -297,7 +208,7 @@
         document.getElementById(id).style.display = 'block';
         if(e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); }
     }
-
+    
     function previewImage(i) {
         if (i.files && i.files[0]) {
             const r = new FileReader();
@@ -305,17 +216,6 @@
             r.readAsDataURL(i.files[0]);
         }
     }
-
-    let scanner = null;
-    function startScanner() {
-        document.getElementById('scanner-container').style.display = 'flex';
-        scanner = new Html5Qrcode("qr-reader");
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-            const item = state.items.find(x => x.key === txt);
-            if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
-        }).catch(err => { stopScanner(); });
-    }
-    function stopScanner() { if(scanner) scanner.stop().then(() => { document.getElementById('scanner-container').style.display = 'none'; }); }
 </script>
 </body>
 </html>
