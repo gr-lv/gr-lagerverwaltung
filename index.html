@@ -229,6 +229,7 @@
         });
     }
 
+    // --- RENDER FUNKTION V163.22 (Neue Button-Anordnung) ---
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
         const f = document.getElementById('filterCategory').value;
@@ -244,22 +245,25 @@
                     <div class="item-info">
                         <div class="item-name">${i.name} <span>${i.qty||1}x</span></div>
                         <div class="item-meta">${meta}</div>
-                        <div style="margin-top:5px; font-size:1.2rem;">
-                            <span onclick="openEdit('${i.key}')">✏️</span>
-                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="margin-left:15px;">🗑️</span>
                         </div>
-                    </div>
                     <div class="qr-side" onclick="printLabel('${i.key}', '${meta}', '${i.name}')">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}" style="width:100%;">
                         <span>PRINT</span>
                     </div>
-                    <div class="action-btns">
+                    
+                    <div class="action-btns" style="display: flex; flex-direction: column; align-items: center; gap: 10px; border-left: 1px solid #ddd; padding-left: 10px;">
+                        
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 15px; font-size: 1.3rem; margin-top: 5px;">
+                            <span onclick="openEdit('${i.key}')" style="cursor: pointer;">✏️</span>
+                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="cursor: pointer; color: var(--danger);">🗑️</span>
+                        </div>
+                        
                     </div>
                 </div>`;
             }).join('');
     }
-
     function saveNewItem(p) {
         const n = document.getElementById('itemName').value; if(!n) return;
         const newRef = mainRef.child('items').push();
