@@ -100,11 +100,20 @@
 
     // --- DER "KEIN DATUM" FIX ---
     function printLabel(key, meta, name) {
-        const pWin = window.open('', '_blank');
-        const size = 500;
-        const canvas = document.createElement('canvas');
-        canvas.width = size; canvas.height = size;
-        const ctx = canvas.getContext('2d');
+        // In der printLabel Funktion, ersetze das pWin.document.write durch:
+
+const dataUrl = canvas.toDataURL("image/png");
+const imgBlob = await (await fetch(dataUrl)).blob();
+const blobUrl = URL.createObjectURL(imgBlob);
+
+// Wir leiten das Fenster direkt auf das Bild um
+pWin.location.href = blobUrl;
+
+// Nach einer kurzen Verzögerung drucken
+setTimeout(() => {
+    pWin.print();
+    setTimeout(() => pWin.close(), 500);
+}, 1000);
 
         const qrImg = new Image();
         qrImg.crossOrigin = "anonymous";
