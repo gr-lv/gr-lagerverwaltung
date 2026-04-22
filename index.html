@@ -142,46 +142,57 @@
 
     // --- DER NEUE DRUCK-FIX V163.11 (ULTRA ZOOM) ---
     function printLabel(key, meta, name) {
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${key}`;
-        const printWin = window.open('', '_blank');
+    const size = 300; // Pixel-Basis
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // 1. Hintergrund weiß
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, size, size);
+
+    // 2. QR-Code laden
+    const qrImg = new Image();
+    qrImg.crossOrigin = "anonymous";
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${key}`;
+
+    qrImg.onload = function() {
+        // Text-Einstellungen
+        ctx.fillStyle = "black";
+        ctx.textAlign = "center";
+        ctx.font = "900 24px Arial";
         
-        printWin.document.write(`
+        // Oben: Meta (Lagerort)
+        ctx.fillText(meta || '', size/2, 35);
+        
+        // Mitte: QR-Code (etwas kleiner, damit Platz für Text ist)
+        ctx.drawImage(qrImg, 40, 50, 220, 220);
+        
+        // Unten: Name
+        ctx.font = "bold 20px Arial";
+        ctx.fillText(name || '', size/2, 290);
+
+        // Jetzt das fertige Bild in ein neues, extrem kleines Fenster werfen
+        const dataUrl = canvas.toDataURL("image/png");
+        const pWin = window.open('', '_blank');
+        pWin.document.write(`
             <html>
             <head>
                 <style>
-                    @page { size: 23mm 23mm; margin: 0 !important; }
-                    html, body { 
-                        margin: 0 !important; padding: 0 !important; 
-                        width: 23mm !important; height: 23mm !important;
-                        display: flex; align-items: center; justify-content: center;
-                        background: #fff; overflow: hidden;
-                    }
-                    .zoom-wrapper {
-                        display: flex; flex-direction: column; align-items: center; justify-content: center;
-                        width: 23mm; height: 23mm;
-                        transform: scale(1.15); /* Vergrößert alles um 15% gegen den weißen Rand */
-                        transform-origin: center;
-                    }
-                    img { width: 18mm !important; height: 18mm !important; display: block; }
-                    .txt { 
-                        font-family: sans-serif; font-weight: 900; text-align: center; width: 100%;
-                        color: #000; line-height: 1;
-                    }
-                    .loc { font-size: 7pt; margin-bottom: 0.5mm; }
-                    .name { font-size: 6pt; margin-top: 0.5mm; white-space: nowrap; }
+                    @page { size: 23mm 23mm; margin: 0; }
+                    body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+                    img { width: 100%; height: 100%; object-fit: contain; }
                 </style>
             </head>
-            <body>
-                <div class="zoom-wrapper">
-                    <div class="txt loc">${meta || ''}</div>
-                    <img src="${qrUrl}" onload="setTimeout(() => { window.print(); window.close(); }, 500);">
-                    <div class="txt name">${name || ''}</div>
-                </div>
+            <body onload="window.print(); window.close();">
+                <img src="${dataUrl}">
             </body>
             </html>
         `);
-        printWin.document.close();
-    }
+        pWin.document.close();
+    };
+}
 
     function checkLogin() {
         if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
