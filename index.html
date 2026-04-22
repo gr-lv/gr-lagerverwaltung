@@ -176,8 +176,8 @@
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
     // --- NEUE PHOTO GENERIERUNGS LOGIK V163.20 ---
+    // --- OPTIMIERTE PHOTO GENERIERUNG V163.21 ---
     function printLabel(key, meta, name) {
-        // Hohe Auflösung für ein scharfes Foto
         const size = 1000; 
         const canvas = document.createElement('canvas');
         canvas.width = size; canvas.height = size;
@@ -185,7 +185,6 @@
 
         const qrImg = new Image();
         qrImg.crossOrigin = "anonymous";
-        // Wir fordern einen großen QR-Code an
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${key}`;
 
         qrImg.onload = function() {
@@ -193,17 +192,20 @@
             ctx.fillStyle = "white"; ctx.fillRect(0, 0, size, size);
             ctx.fillStyle = "black"; ctx.textAlign = "center";
             
-            // Texte positionieren (großzügiger Rand)
-            ctx.font = "bold 60px Arial";
-            ctx.fillText(meta || '-', size/2, 100);
+            // --- TEXT OBEN (Lagerort/Meta) ---
+            // Schriftgröße von 60 auf 90 erhöht
+            ctx.font = "900 90px Arial"; 
+            ctx.fillText(meta || '-', size/2, 110);
             
-            // QR-Code in der Mitte
-            ctx.drawImage(qrImg, 150, 150, 700, 700);
+            // --- QR-CODE ---
+            // Etwas kleiner geschoben (650 statt 700), um Platz für die große Schrift zu lassen
+            ctx.drawImage(qrImg, 175, 160, 650, 650);
             
-            ctx.font = "bold 50px Arial";
-            ctx.fillText(name || '-', size/2, 950);
+            // --- TEXT UNTEN (Artikelname) ---
+            // Schriftgröße von 50 auf 85 erhöht
+            ctx.font = "900 85px Arial";
+            ctx.fillText(name || '-', size/2, 940);
 
-            // Als Bild-URL exportieren
             const dataUrl = canvas.toDataURL("image/png");
             
             // Foto-Overlay anzeigen
@@ -211,20 +213,6 @@
             document.getElementById('photo-overlay').style.display = 'flex';
         };
     }
-
-    function closePhotoOverlay() { document.getElementById('photo-overlay').style.display = 'none'; }
-
-    // --- RESTLICHE CORE LOGIK (unverändert) ---
-    function checkLogin() {
-        if(document.getElementById('loginName').value && document.getElementById('loginPass').value === "1234") {
-            state.user = document.getElementById('loginName').value.toUpperCase();
-            document.getElementById('displayUserName').innerText = state.user;
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('ui-wrapper').style.display = 'flex';
-            initApp();
-        }
-    }
-
     function initApp() {
         mainRef.on('value', snap => {
             state.config = snap.val() || {};
