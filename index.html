@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V163.50</title>
+    <title>GR-Lager V163.52</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -25,27 +25,31 @@
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; background: transparent; }
         .header { background: rgba(0,0,0,0.9); padding: calc(45px + env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
         .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); background: rgba(0,0,0,0.3); }
+        
         .item-card { background: rgba(255,255,255,0.95); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); align-items: center; }
         .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
         .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
         .item-info { flex: 1; min-width: 0; }
         .item-name { font-weight: 900; font-size: 0.85rem; color: #1e293b; }
         .item-meta { font-size: 0.6rem; color: #64748b; }
+        
         .qr-side { width: 55px; height: 55px; background: white; padding: 3px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .qr-side span { font-size: 0.4rem; color: #000; font-weight: bold; }
+        
         .action-btns { display: flex; flex-direction: column; gap: 8px; align-items: center; border-left: 1px solid #ddd; padding-left: 10px; }
         .btn-status { border: none; padding: 8px 2px; border-radius: 6px; color: white; font-weight: bold; width: 50px; font-size: 0.7rem; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
+        
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: calc(70px + env(safe-area-inset-bottom)); border-top: 2px solid var(--accent); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
+        
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 6000; flex-direction: column; }
         #photo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         #generated-label { width: 100%; max-width: 500px; border: 2px solid white; background: white; }
-        #print-section { display: none; }
     </style>
 </head>
 <body>
@@ -65,7 +69,7 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.50</h2>
+        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.52</h2>
         <div id="displayUserName" style="font-size:0.75rem; color:var(--accent);"></div>
     </div>
 
@@ -78,7 +82,7 @@
 
         <div id="tab-neu" class="content" style="display:none;">
             <div style="background:#fff; padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
-                <h4 style="margin-top:0;">Neuer Artikel</h4>
+                <h4 style="margin:0;">Neuer Artikel</h4>
                 <input type="text" id="itemName" class="form-input" placeholder="Name">
                 <input type="number" id="itemQty" class="form-input" value="1">
                 <select id="itemLagerSelect" class="form-input"></select>
@@ -91,7 +95,7 @@
             </div>
             
             <div style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
-                <h4 style="margin-top:0; color:var(--accent);">Listenpflege</h4>
+                <h4 style="color:var(--accent);">Listenpflege</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
                     <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
@@ -102,9 +106,10 @@
                     <option value="regale">Regale</option>
                     <option value="faecher">Fächer</option>
                 </select>
-                <div id="listDisplay" style="max-height:200px; overflow-y:auto; font-size:0.85rem;"></div>
+                <div id="listDisplay" style="max-height:200px; overflow-y:auto;"></div>
             </div>
         </div>
+        
         <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
     </div>
 
@@ -147,7 +152,6 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
-    // DRUCK LOGIK MIT ERHÖHTEM RANDABSTAND
     function printLabel(key, meta, name) {
         const w = 1004, h = 342; 
         const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
@@ -156,23 +160,13 @@
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${key}`;
         qrImg.onload = function() {
             ctx.fillStyle = "white"; ctx.fillRect(0, 0, w, h);
-            
-            // QR-CODE weiter nach rechts (X: 60 statt 20)
-            ctx.drawImage(qrImg, 60, 20, 300, 300);
-            
+            ctx.drawImage(qrImg, 100, 40, 260, 260);
             ctx.fillStyle = "black"; ctx.textAlign = "left";
-            
-            // Meta-Info (X: 400 statt 340)
-            ctx.font = "900 42px Arial"; ctx.fillText(meta || '-', 400, 75); 
-            
-            // Linie (X-Start: 400, Breite reduziert auf 550 für rechten Rand)
-            ctx.fillRect(400, 95, 550, 6);
-            
-            // Artikelname (X: 400, Max-Width: 550 für rechten Rand)
-            let fontSize = 95; ctx.font = `900 ${fontSize}px Arial`;
-            while(ctx.measureText(name).width > 550 && fontSize > 30) { fontSize -= 5; ctx.font = `900 ${fontSize}px Arial`; }
-            ctx.fillText(name, 400, 220); 
-            
+            ctx.font = "900 38px Arial"; ctx.fillText(meta || '-', 450, 85); 
+            ctx.fillRect(450, 105, 450, 6);
+            let fontSize = 85; ctx.font = `900 ${fontSize}px Arial`;
+            while(ctx.measureText(name).width > 450 && fontSize > 30) { fontSize -= 5; ctx.font = `900 ${fontSize}px Arial`; }
+            ctx.fillText(name, 450, 230); 
             const dataUrl = canvas.toDataURL("image/png");
             document.getElementById('generated-label').src = dataUrl;
             document.getElementById('print-image').src = dataUrl;
@@ -249,6 +243,7 @@
     function toggleStatus(k, n, s) {
         const ns = s === "im Lager" ? "ausgeliehen" : "im Lager";
         mainRef.child('items/'+k).update({status: ns, lastUser: state.user});
+        mainRef.child('logs').push({ user: state.user, text: `${n} -> ${ns}`, ts: Date.now() });
     }
 
     function openEdit(key) {
@@ -257,12 +252,14 @@
         document.getElementById('editModal').style.display = 'flex';
     }
     function saveEdit() {
+        const item = state.items.find(x => x.key === state.currentEditKey);
         const newN = document.getElementById('editName').value; const newQ = document.getElementById('editQty').value;
         mainRef.child('items/'+state.currentEditKey).update({ name: newN, qty: newQ, lastUser: state.user }).then(() => {
+            mainRef.child('logs').push({ user: state.user, text: `Edit: ${item.name} -> ${newN}`, ts: Date.now() });
             document.getElementById('editModal').style.display = 'none';
         });
     }
-    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) { mainRef.child('items/'+k).remove(); } }
+    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) { mainRef.child('items/'+k).remove(); mainRef.child('logs').push({ user: state.user, text: `GELÖSCHT: ${n}`, ts: Date.now() }); } }
 
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,50);
