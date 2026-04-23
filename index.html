@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V163.48</title>
+    <title>GR-Lager V163.49</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -12,10 +12,10 @@
     <style>
         :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
         
-        /* DRUCK-STEUERUNG FÜR 85x29 QUERFORMAT */
+        /* DRUCK-EINSTELLUNGEN 85x29mm */
         @media print {
             @page { size: 85mm 29mm; margin: 0 !important; }
-            body { background: white !important; margin: 0 !important; }
+            body { background: white !important; margin: 0 !important; padding: 0 !important; }
             #ui-wrapper, .global-bg, nav, .header, #photo-overlay, .modal, #scanner-container { display: none !important; }
             #print-section { display: block !important; width: 85mm !important; height: 29mm !important; position: absolute; top: 0; left: 0; }
             #print-image { width: 85mm !important; height: 29mm !important; display: block !important; }
@@ -73,7 +73,7 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.48</h2>
+        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.49</h2>
         <div id="displayUserName" style="font-size:0.75rem; color:var(--accent);"></div>
     </div>
 
@@ -156,7 +156,6 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
-    // DRUCK LOGIK (85x29mm Fix)
     function printLabel(key, meta, name) {
         const w = 1004, h = 342; 
         const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
@@ -248,7 +247,6 @@
     function toggleStatus(k, n, s) {
         const ns = s === "im Lager" ? "ausgeliehen" : "im Lager";
         mainRef.child('items/'+k).update({status: ns, lastUser: state.user});
-        mainRef.child('logs').push({ user: state.user, text: `${n} -> ${ns}`, ts: Date.now() });
     }
 
     function openEdit(key) {
@@ -260,11 +258,10 @@
         const item = state.items.find(x => x.key === state.currentEditKey);
         const newN = document.getElementById('editName').value; const newQ = document.getElementById('editQty').value;
         mainRef.child('items/'+state.currentEditKey).update({ name: newN, qty: newQ, lastUser: state.user }).then(() => {
-            mainRef.child('logs').push({ user: state.user, text: `Edit: ${item.name} -> ${newN}`, ts: Date.now() });
             document.getElementById('editModal').style.display = 'none';
         });
     }
-    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) { mainRef.child('items/'+k).remove(); mainRef.child('logs').push({ user: state.user, text: `GELÖSCHT: ${n}`, ts: Date.now() }); } }
+    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) { mainRef.child('items/'+k).remove(); } }
 
     function renderLogs() {
         const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,50);
