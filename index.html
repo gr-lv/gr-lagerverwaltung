@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V163.28 - 29mm Quer</title>
+    <title>GR-Lager V163.29</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -11,32 +11,71 @@
 
     <style>
         :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
-        .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
+        
+        .global-bg { 
+            position: fixed; 
+            inset: 0; 
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), 
+                        url('haus_background.jpg') no-repeat center center; 
+            background-size: cover; 
+            z-index: 1; 
+        }
+
         body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
-        #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; background: transparent; }
-        .header { background: rgba(0,0,0,0.9); padding: calc(10px + env(safe-area-inset-top)) 15px 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
-        .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); background: rgba(0,0,0,0.3); -webkit-overflow-scrolling: touch; }
+        
+        #ui-wrapper { 
+            position: relative; 
+            z-index: 10; 
+            height: 100vh; 
+            display: none; 
+            flex-direction: column; 
+            background: transparent; 
+        }
+
+        /* Safe Area Header Fix */
+        .header { 
+            background: rgba(0,0,0,0.9); 
+            padding: calc(10px + env(safe-area-inset-top)) 15px 10px 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid var(--accent); 
+        }
+        
+        .content-area { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 10px; 
+            padding-bottom: calc(100px + env(safe-area-inset-bottom)); 
+            background: rgba(0,0,0,0.3); 
+            -webkit-overflow-scrolling: touch; 
+        }
+        
         .item-card { background: rgba(255,255,255,0.95); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); align-items: center; }
         .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
         .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; background: #eee; flex-shrink: 0; }
         .item-info { flex: 1; min-width: 0; }
         .item-name { font-weight: 900; font-size: 0.85rem; color: #1e293b; }
         .item-meta { font-size: 0.6rem; color: #64748b; margin-top: 2px; }
+        
         .qr-side { width: 55px; height: 55px; background: white; padding: 3px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .qr-side span { font-size: 0.45rem; color: #000; font-weight: bold; margin-top: 2px; }
+        
         .action-btns { display: flex; flex-direction: column; gap: 10px; align-items: center; border-left: 1px solid #ddd; padding-left: 12px; min-width: 55px; }
         .btn-status { border: none; padding: 8px 2px; border-radius: 6px; color: white; font-weight: bold; width: 50px; font-size: 0.7rem; cursor: pointer; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
+        
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
+        
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: calc(70px + env(safe-area-inset-bottom)); border-top: 2px solid var(--accent); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
+        
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 6000; flex-direction: column; }
         #photo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        /* Breite für das Querformat-Etikett-Vorschau */
-        #generated-label { width: 90%; max-width: 500px; border: 2px solid white; border-radius: 10px; margin-bottom: 20px; background: white; }
+        #generated-label { width: 95%; max-width: 600px; border: 3px solid white; border-radius: 10px; margin-bottom: 20px; background: white; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -55,15 +94,17 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem; letter-spacing: 1px;">GR-LAGER V163.28</h2>
+        <h2 style="margin:0; font-size:0.9rem; letter-spacing: 1px;">GR-LAGER V163.29</h2>
         <div id="displayUserName" style="font-size:0.75rem; color:var(--accent); font-weight: bold;"></div>
     </div>
+
     <div class="content-area">
         <div id="tab-lager" class="content">
             <input type="text" id="searchInput" placeholder="Suche..." onkeyup="render()" class="form-input">
             <select id="filterCategory" class="form-input" style="background:#1e293b; color:white;" onchange="render()"></select>
             <div id="itemList"></div>
         </div>
+
         <div id="tab-neu" class="content" style="display:none;">
             <div style="background:rgba(255,255,255,0.95); padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
                 <h4 style="margin-top:0;">Neuer Artikel</h4>
@@ -71,21 +112,35 @@
                 <input type="number" id="itemQty" class="form-input" value="1">
                 <select id="itemLagerSelect" class="form-input"></select>
                 <select id="itemCatSelect" class="form-input"></select>
-                <div style="display:flex; gap:5px;"><select id="itemRegalSelect" class="form-input" style="flex:1;"></select><select id="itemFachSelect" class="form-input" style="flex:1;"></select></div>
+                <div style="display:flex; gap:5px;">
+                    <select id="itemRegalSelect" class="form-input" style="flex:1;"></select>
+                    <select id="itemFachSelect" class="form-input" style="flex:1;"></select>
+                </div>
                 <button type="button" onclick="document.getElementById('itemImgInput').click()" class="form-input" style="background:#f3f4f6;">📷 FOTO</button>
                 <input type="file" id="itemImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
                 <img id="imagePreview" style="width:100%; height:120px; object-fit:contain; display:none; margin-bottom:10px; border-radius:8px; border:1px solid #ddd;">
                 <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold;">💾 SPEICHERN & DRUCKEN</button>
             </div>
+            
             <div style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; backdrop-filter: blur(5px); border:1px solid rgba(255,255,255,0.1);">
                 <h4 style="margin-top:0; color:var(--accent);">Listenpflege</h4>
-                <div style="display:flex; gap:5px; margin-bottom:10px;"><input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;"><button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button></div>
-                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white;"><option value="locations">Lagerorte</option><option value="cats">Kategorien</option><option value="regale">Regale</option><option value="faecher">Fächer</option></select>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
+                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
+                </div>
+                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white;">
+                    <option value="locations">Lagerorte</option>
+                    <option value="cats">Kategorien</option>
+                    <option value="regale">Regale</option>
+                    <option value="faecher">Fächer</option>
+                </select>
                 <div id="listDisplay" style="max-height:200px; overflow-y:auto; font-size:0.85rem;"></div>
             </div>
         </div>
+
         <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
     </div>
+
     <nav>
         <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">📦 LAGER</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">⚙️ ADMIN</button>
@@ -98,12 +153,15 @@
         <h3>Bearbeiten</h3>
         <input type="text" id="editName" class="form-input">
         <input type="number" id="editQty" class="form-input">
-        <div style="display:flex; gap:10px;"><button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">OK</button><button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button></div>
+        <div style="display:flex; gap:10px;">
+            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">OK</button>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button>
+        </div>
     </div>
 </div>
 
 <div id="photo-overlay">
-    <button onclick="closePhotoOverlay()" style="position:fixed; top:calc(20px + env(safe-area-inset-top)); right:20px; background:var(--danger); border:none; color:white; padding:12px 20px; border-radius:10px; font-weight:bold; z-index:10001;">X</button>
+    <button onclick="closePhotoOverlay()" style="position:fixed; top:calc(20px + env(safe-area-inset-top)); right:20px; background:var(--danger); border:none; color:white; padding:12px 20px; border-radius:10px; font-weight:bold; z-index:10001;">X SCHLIESSEN</button>
     <img id="generated-label" src="">
     <div style="background:rgba(255,255,255,0.1); padding:15px; border-radius:12px; text-align:center; color:white; font-size:0.85rem;">Halten zum Speichern & Drucken</div>
 </div>
@@ -128,9 +186,8 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
-    // --- NEUE DRUCK-LOGIK FÜR 29MM QUERFORMAT ---
+    // --- DRUCK LOGIK FÜR 29MM QUERFORMAT ---
     function printLabel(key, meta, name) {
-        // Querformat: 1200px breit, 400px hoch (ca. 3:1 Verhältnis)
         const w = 1200; const h = 400;
         const canvas = document.createElement('canvas'); 
         canvas.width = w; canvas.height = h;
@@ -141,30 +198,19 @@
         
         qrImg.onload = function() {
             ctx.fillStyle = "white"; ctx.fillRect(0, 0, w, h);
-            
-            // 1. QR-Code links positionieren
             ctx.drawImage(qrImg, 25, 25, 350, 350);
-            
-            // 2. Text rechts daneben
             ctx.fillStyle = "black";
             ctx.textAlign = "left";
-            
-            // Lagerort & Info (Etwas kleiner oben)
             ctx.font = "900 60px Arial";
             ctx.fillText(meta || '-', 400, 100);
             
-            // Artikelname (Groß und Fett in der Mitte)
-            // Falls Name zu lang, Schriftgröße reduzieren
             let fontSize = 95;
             ctx.font = `900 ${fontSize}px Arial`;
             const maxTextWidth = 750;
             while(ctx.measureText(name).width > maxTextWidth && fontSize > 40) {
-                fontSize -= 5;
-                ctx.font = `900 ${fontSize}px Arial`;
+                fontSize -= 5; ctx.font = `900 ${fontSize}px Arial`;
             }
             ctx.fillText(name, 400, 240);
-            
-            // Trennlinie zur Optik
             ctx.fillRect(400, 120, 750, 6);
 
             document.getElementById('generated-label').src = canvas.toDataURL("image/png");
@@ -173,10 +219,12 @@
     }
 
     function closePhotoOverlay() { document.getElementById('photo-overlay').style.display = 'none'; }
+
     function checkLogin() {
         const u = document.getElementById('loginName').value; const p = document.getElementById('loginPass').value;
-        if(u && p === "1234") { state.user = u.toUpperCase(); document.getElementById('displayUserName').innerText = state.user; document.getElementById('loginScreen').style.display = 'none'; document.getElementById('ui-wrapper').style.display = 'flex'; initApp(); } else { alert("Falsch!"); }
+        if(u && p === "1234") { state.user = u.toUpperCase(); document.getElementById('displayUserName').innerText = state.user; document.getElementById('loginScreen').style.display = 'none'; document.getElementById('ui-wrapper').style.display = 'flex'; initApp(); } else { alert("Login falsch!"); }
     }
+
     function initApp() {
         mainRef.on('value', snap => {
             state.config = snap.val() || {};
@@ -190,6 +238,7 @@
             fill(['itemRegalSelect'], state.config.regale); fill(['itemFachSelect'], state.config.faecher);
         });
     }
+
     function render() {
         const s = document.getElementById('searchInput').value.toLowerCase();
         const f = document.getElementById('filterCategory').value;
@@ -201,32 +250,104 @@
                 const meta = `${i.location||''} R:${i.regal||'-'} F:${i.fach||'-'}`;
                 return `<div class="item-card ${isOut ? 'status-out' : ''}">
                     <img src="${i.img || 'https://via.placeholder.com/70'}" class="item-thumb">
-                    <div class="item-info"><div class="item-name">${i.name} <span>${i.qty||1}x</span></div><div class="item-meta">${meta}</div></div>
-                    <div class="qr-side" onclick="printLabel('${i.key}', '${meta}', '${i.name}')"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}" style="width:100%;"><span>PRINT</span></div>
-                    <div class="action-btns"><button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
-                    <div style="display:flex; flex-direction:column; gap:12px; font-size:1.4rem; margin-top:5px;"><span onclick="openEdit('${i.key}')">✏️</span><span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger);">🗑️</span></div></div></div>`;
+                    <div class="item-info">
+                        <div class="item-name">${i.name} <span>${i.qty||1}x</span></div>
+                        <div class="item-meta">${meta}</div>
+                    </div>
+                    <div class="qr-side" onclick="printLabel('${i.key}', '${meta}', '${i.name}')">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${i.key}" style="width:100%;">
+                        <span>PRINT</span>
+                    </div>
+                    <div class="action-btns">
+                        <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'EIN':'AUS'}</button>
+                        <div style="display:flex; flex-direction:column; gap:12px; font-size:1.4rem; margin-top:5px;">
+                            <span onclick="openEdit('${i.key}')" style="cursor:pointer;">✏️</span>
+                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger); cursor:pointer;">🗑️</span>
+                        </div>
+                    </div>
+                </div>`;
             }).join('');
     }
-    function quickAdd() { const t = document.getElementById('manageType').value; const v = document.getElementById('addInput').value; if(!v) return; let l = state.config[t] || []; l.push(v); mainRef.child(t).set(l); document.getElementById('addInput').value = ""; }
-    function updateManageList() { const t = document.getElementById('manageType').value; const l = state.config[t] || []; document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:white;">${v} <span onclick="removeFromList('${t}',${i})">❌</span></div>`).join(''); }
+
+    function quickAdd() {
+        const t = document.getElementById('manageType').value; const v = document.getElementById('addInput').value; if(!v) return;
+        let l = state.config[t] || []; l.push(v); mainRef.child(t).set(l); document.getElementById('addInput').value = "";
+    }
+
+    function updateManageList() {
+        const t = document.getElementById('manageType').value; const l = state.config[t] || [];
+        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:white;">${v} <span onclick="removeFromList('${t}',${i})" style="cursor:pointer;">❌</span></div>`).join('');
+    }
+
     function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
+
     function saveNewItem(p) {
-        const n = document.getElementById('itemName').value; if(!n) return; const newRef = mainRef.child('items').push();
+        const n = document.getElementById('itemName').value; if(!n) return;
+        const newRef = mainRef.child('items').push();
         const d = { name: n, qty: document.getElementById('itemQty').value, location: document.getElementById('itemLagerSelect').value, cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value, img: document.getElementById('imagePreview').src || "", status: "im Lager", ts: Date.now(), lastUser: state.user };
-        newRef.set(d).then(() => { if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); document.getElementById('itemName').value = ''; document.getElementById('imagePreview').style.display='none'; switchTab(null, 'tab-lager'); });
+        newRef.set(d).then(() => { 
+            if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); 
+            document.getElementById('itemName').value = ''; 
+            document.getElementById('imagePreview').style.display='none'; 
+            switchTab(null, 'tab-lager'); 
+        });
     }
-    function toggleStatus(key, name, oldS) { const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager"; mainRef.child('items/'+key).update({status: newS, lastUser: state.user}); mainRef.child('logs').push({ user: state.user, text: `${name} -> ${newS}`, ts: Date.now() }); }
-    function openEdit(key) { state.currentEditKey = key; const i = state.items.find(x => x.key === key); document.getElementById('editName').value = i.name; document.getElementById('editQty').value = i.qty; document.getElementById('editModal').style.display = 'flex'; }
+
+    function toggleStatus(key, name, oldS) {
+        const newS = oldS === "im Lager" ? "ausgeliehen" : "im Lager";
+        mainRef.child('items/'+key).update({status: newS, lastUser: state.user});
+        mainRef.child('logs').push({ user: state.user, text: `${name} -> ${newS}`, ts: Date.now() });
+    }
+
+    function openEdit(key) {
+        state.currentEditKey = key; const i = state.items.find(x => x.key === key);
+        document.getElementById('editName').value = i.name; document.getElementById('editQty').value = i.qty;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
     function saveEdit() {
-        const item = state.items.find(x => x.key === state.currentEditKey); const nN = document.getElementById('editName').value; const nQ = document.getElementById('editQty').value;
-        mainRef.child('items/'+state.currentEditKey).update({ name: nN, qty: nQ, lastUser: state.user }).then(() => { mainRef.child('logs').push({ user: state.user, text: `Edit: ${item.name} -> ${nN} (${nQ}x)`, ts: Date.now() }); document.getElementById('editModal').style.display = 'none'; });
+        const item = state.items.find(x => x.key === state.currentEditKey);
+        const newN = document.getElementById('editName').value;
+        const newQ = document.getElementById('editQty').value;
+        const logT = `Edit: ${item.name} (${item.qty}x) -> ${newN} (${newQ}x)`;
+        mainRef.child('items/'+state.currentEditKey).update({ name: newN, qty: newQ, lastUser: state.user }).then(() => {
+            mainRef.child('logs').push({ user: state.user, text: logT, ts: Date.now() });
+            document.getElementById('editModal').style.display = 'none';
+        });
     }
-    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) { mainRef.child('items/'+k).remove(); mainRef.child('logs').push({ user: state.user, text: `GELÖSCHT: ${n}`, ts: Date.now() }); } }
-    function renderLogs() { const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,50); document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#ccc; background:rgba(0,0,0,0.2);"><b>${l.user}</b>: ${l.text} <small style="float:right;">${new Date(l.ts).toLocaleTimeString()}</small></div>`).join(''); }
-    function switchTab(e, id) { document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.getElementById(id).style.display = 'block'; if(e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); } }
-    function previewImage(i) { if (i.files && i.files[0]) { const r = new FileReader(); r.onload = e => { document.getElementById('imagePreview').src = e.target.result; document.getElementById('imagePreview').style.display='block'; }; r.readAsDataURL(i.files[0]); } }
+
+    function deleteItem(k, n) { 
+        if(confirm(`${n} wirklich löschen?`)) {
+            mainRef.child('items/'+k).remove();
+            mainRef.child('logs').push({ user: state.user, text: `GELÖSCHT: ${n}`, ts: Date.now() });
+        }
+    }
+
+    function renderLogs() {
+        const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,50);
+        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#ccc; background:rgba(0,0,0,0.2);"><b>${l.user}</b>: ${l.text} <small style="float:right;">${new Date(l.ts).toLocaleTimeString()}</small></div>`).join('');
+    }
+
+    function switchTab(e, id) {
+        document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        if(e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); }
+    }
+
+    function previewImage(i) {
+        if (i.files && i.files[0]) {
+            const r = new FileReader(); r.onload = e => { document.getElementById('imagePreview').src = e.target.result; document.getElementById('imagePreview').style.display='block'; };
+            r.readAsDataURL(i.files[0]);
+        }
+    }
+    
     let scanner = null;
-    function startScanner() { document.getElementById('scanner-container').style.display = 'flex'; scanner = new Html5Qrcode("qr-reader"); scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { const item = state.items.find(x => x.key === txt); if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); } }).catch(() => { stopScanner(); }); }
+    function startScanner() {
+        document.getElementById('scanner-container').style.display = 'flex'; scanner = new Html5Qrcode("qr-reader");
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+            const item = state.items.find(x => x.key === txt); if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
+        }).catch(() => { stopScanner(); });
+    }
     function stopScanner() { if(scanner) scanner.stop().then(() => { document.getElementById('scanner-container').style.display = 'none'; }); }
 </script>
 </body>
