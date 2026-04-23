@@ -158,28 +158,64 @@
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
     // --- DRUCK 80mm x 29mm ---
+    <script>
+    const APP_VERSION = 163.36; // Version erhöht für Auto-Update
+
     function printLabel(key, meta, name) {
-        const w = 945, h = 342; // 80x29mm bei 300dpi
+        // Maße getauscht: 29mm breit (342px), 80mm hoch (945px)
+        const w = 342, h = 945; 
         const canvas = document.createElement('canvas'); 
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
+        
         const qrImg = new Image(); 
         qrImg.crossOrigin = "anonymous";
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${key}`;
         
         qrImg.onload = function() {
-            ctx.fillStyle = "white"; ctx.fillRect(0, 0, w, h);
-            ctx.drawImage(qrImg, 20, 20, 300, 300);
-            ctx.fillStyle = "black"; ctx.textAlign = "left";
-            ctx.font = "900 45px Arial"; ctx.fillText(meta || '-', 340, 80);
-            ctx.fillRect(340, 100, 580, 6);
-            let fontSize = 85; ctx.font = `900 ${fontSize}px Arial`;
-            while(ctx.measureText(name).width > 580 && fontSize > 35) { fontSize -= 5; ctx.font = `900 ${fontSize}px Arial`; }
-            ctx.fillText(name, 340, 210);
+            // Weißer Hintergrund
+            ctx.fillStyle = "white"; 
+            ctx.fillRect(0, 0, w, h);
+            
+            // 1. QR-Code oben (zentriert)
+            ctx.drawImage(qrImg, 21, 20, 300, 300);
+            
+            // 2. Trennlinie unter QR-Code
+            ctx.fillStyle = "black";
+            ctx.fillRect(20, 340, 302, 4);
+            
+            // 3. Lager-Meta (z.B. "HAUS 1 R:2 F:A")
+            ctx.textAlign = "center";
+            ctx.font = "900 35px Arial";
+            ctx.fillText(meta || '-', w / 2, 390);
+            
+            // 4. Artikelname (Vertikal fließend mit automatischem Umbruch)
+            ctx.font = "900 50px Arial";
+            const words = name.split(' ');
+            let line = '';
+            let y = 460;
+            const lineHeight = 55;
+
+            // Einfacher Textumbruch für das schmale Format
+            for(let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                let metrics = ctx.measureText(testLine);
+                if (metrics.width > 300 && n > 0) {
+                    ctx.fillText(line, w / 2, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, w / 2, y);
+
+            // Bild in der Vorschau anzeigen
             document.getElementById('generated-label').src = canvas.toDataURL("image/png");
             document.getElementById('photo-overlay').style.display = 'flex';
         };
     }
+</script>
 
     function checkVersion(v) { if (v && v > APP_VERSION) location.reload(true); else if(!v) mainRef.child('version').set(APP_VERSION); }
     function closePhotoOverlay() { document.getElementById('photo-overlay').style.display = 'none'; }
