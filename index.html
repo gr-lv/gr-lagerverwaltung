@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V163.35</title>
+    <title>GR-Lager V163.37</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -17,7 +17,7 @@
 
         .header { 
             background: rgba(0,0,0,0.9); 
-            padding: calc(20px + env(safe-area-inset-top)) 15px 15px 15px; 
+            padding: calc(25px + env(safe-area-inset-top)) 15px 15px 15px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
@@ -47,7 +47,7 @@
         
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
         #photo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #generated-label { width: 95%; max-width: 600px; border: 3px solid white; border-radius: 10px; background: white; object-fit: contain; }
+        #generated-label { width: auto; height: 80vh; border: 3px solid white; border-radius: 10px; background: white; object-fit: contain; }
         #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 6000; flex-direction: column; }
     </style>
 </head>
@@ -56,18 +56,18 @@
 <div class="global-bg"></div>
 
 <div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:transparent;">
-    <div style="background:rgba(30, 41, 59, 0.95); padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; width: 85%; max-width: 320px;">
+    <div style="background:rgba(30, 41, 59, 0.95); padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; width: 85%; max-width: 320px; backdrop-filter: blur(10px);">
         <h2 style="color:var(--accent); margin-bottom:20px;">GR-LAGER</h2>
         <input type="text" id="loginName" class="form-input" placeholder="Name">
         <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
-        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">START</button>
+        <button id="loginBtn" onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">START</button>
     </div>
 </div>
 
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem; letter-spacing: 1px;">GR-LAGER V163.35</h2>
+        <h2 style="margin:0; font-size:0.9rem; letter-spacing: 1px;">GR-LAGER V163.37</h2>
         <div id="displayUserName" style="font-size:0.75rem; color:var(--accent); font-weight: bold;"></div>
     </div>
 
@@ -107,7 +107,6 @@
                 <div id="listDisplay" style="max-height:200px; overflow-y:auto; font-size:0.85rem;"></div>
             </div>
         </div>
-
         <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
     </div>
 
@@ -133,7 +132,7 @@
 <div id="photo-overlay">
     <button onclick="closePhotoOverlay()" style="position:fixed; top:40px; right:20px; background:var(--danger); border:none; color:white; padding:15px; border-radius:10px; font-weight:bold; z-index:10001;">X</button>
     <img id="generated-label" src="">
-    <p style="color:white;">Format: 80mm x 29mm</p>
+    <p style="color:white; font-weight:bold; margin-top:10px;">Hochformat 29x80mm</p>
 </div>
 
 <div id="scanner-container">
@@ -142,7 +141,7 @@
 </div>
 
 <script>
-    const APP_VERSION = 163.35;
+    const APP_VERSION = 163.37;
     const firebaseConfig = {
         apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
         authDomain: "gr-lagerverwaltung.firebaseapp.com",
@@ -157,72 +156,55 @@
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
-    // --- DRUCK 80mm x 29mm ---
-    <script>
-    const APP_VERSION = 163.36; // Version erhöht für Auto-Update
+    // --- LOGIN REPARIERT ---
+    function checkLogin() {
+        const u = document.getElementById('loginName').value;
+        const p = document.getElementById('loginPass').value;
+        if(u && p === "1234") { 
+            state.user = u.toUpperCase(); 
+            document.getElementById('displayUserName').innerText = state.user; 
+            document.getElementById('loginScreen').style.display = 'none'; 
+            document.getElementById('ui-wrapper').style.display = 'flex'; 
+            initApp(); 
+        } else {
+            alert("Name eingeben oder Passwort falsch!");
+        }
+    }
 
+    // --- DRUCK 29mm x 80mm (Hochkant) ---
     function printLabel(key, meta, name) {
-        // Maße getauscht: 29mm breit (342px), 80mm hoch (945px)
         const w = 342, h = 945; 
         const canvas = document.createElement('canvas'); 
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
-        
         const qrImg = new Image(); 
         qrImg.crossOrigin = "anonymous";
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${key}`;
         
         qrImg.onload = function() {
-            // Weißer Hintergrund
-            ctx.fillStyle = "white"; 
-            ctx.fillRect(0, 0, w, h);
-            
-            // 1. QR-Code oben (zentriert)
+            ctx.fillStyle = "white"; ctx.fillRect(0, 0, w, h);
             ctx.drawImage(qrImg, 21, 20, 300, 300);
-            
-            // 2. Trennlinie unter QR-Code
-            ctx.fillStyle = "black";
-            ctx.fillRect(20, 340, 302, 4);
-            
-            // 3. Lager-Meta (z.B. "HAUS 1 R:2 F:A")
+            ctx.fillStyle = "black"; ctx.fillRect(20, 340, 302, 4);
             ctx.textAlign = "center";
-            ctx.font = "900 35px Arial";
-            ctx.fillText(meta || '-', w / 2, 390);
+            ctx.font = "900 35px Arial"; ctx.fillText(meta || '-', w / 2, 390);
             
-            // 4. Artikelname (Vertikal fließend mit automatischem Umbruch)
             ctx.font = "900 50px Arial";
             const words = name.split(' ');
-            let line = '';
-            let y = 460;
-            const lineHeight = 55;
-
-            // Einfacher Textumbruch für das schmale Format
+            let line = ''; let y = 460;
             for(let n = 0; n < words.length; n++) {
                 let testLine = line + words[n] + ' ';
-                let metrics = ctx.measureText(testLine);
-                if (metrics.width > 300 && n > 0) {
-                    ctx.fillText(line, w / 2, y);
-                    line = words[n] + ' ';
-                    y += lineHeight;
-                } else {
-                    line = testLine;
-                }
+                if (ctx.measureText(testLine).width > 300 && n > 0) {
+                    ctx.fillText(line, w / 2, y); line = words[n] + ' '; y += 55;
+                } else { line = testLine; }
             }
             ctx.fillText(line, w / 2, y);
-
-            // Bild in der Vorschau anzeigen
             document.getElementById('generated-label').src = canvas.toDataURL("image/png");
             document.getElementById('photo-overlay').style.display = 'flex';
         };
     }
-</script>
 
     function checkVersion(v) { if (v && v > APP_VERSION) location.reload(true); else if(!v) mainRef.child('version').set(APP_VERSION); }
     function closePhotoOverlay() { document.getElementById('photo-overlay').style.display = 'none'; }
-    function checkLogin() {
-        const u = document.getElementById('loginName').value;
-        if(u && document.getElementById('loginPass').value === "1234") { state.user = u.toUpperCase(); document.getElementById('displayUserName').innerText = state.user; document.getElementById('loginScreen').style.display = 'none'; document.getElementById('ui-wrapper').style.display = 'flex'; initApp(); }
-    }
 
     function initApp() {
         mainRef.on('value', snap => {
