@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V163.42</title>
+    <title>GR-Lager V163.43</title>
     
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -12,17 +16,15 @@
     <style>
         :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
         
-        /* DRUCK-STEUERUNG: Erzwingt 85x29mm im Druckdialog */
         @media print {
             @page { size: 85mm 29mm; margin: 0; }
             body * { display: none !important; }
             #print-section, #print-section * { display: block !important; width: 85mm; height: 29mm; }
-            #print-section { position: absolute; left: 0; top: 0; }
+            #print-section { position: absolute; left: 0; top: 0; background: white; }
         }
 
         .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
         body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
-        
         #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; background: transparent; }
 
         .header { 
@@ -33,7 +35,7 @@
             align-items: center; 
             border-bottom: 2px solid var(--accent); 
         }
-        
+        /* ... restliches CSS identisch zu V163.42 ... */
         .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); background: rgba(0,0,0,0.3); -webkit-overflow-scrolling: touch; }
         .item-card { background: rgba(255,255,255,0.95); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); align-items: center; }
         .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
@@ -41,20 +43,16 @@
         .item-info { flex: 1; min-width: 0; }
         .item-name { font-weight: 900; font-size: 0.85rem; color: #1e293b; }
         .item-meta { font-size: 0.6rem; color: #64748b; margin-top: 2px; }
-        
         .qr-side { width: 55px; height: 55px; background: white; padding: 3px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
         .qr-side span { font-size: 0.45rem; color: #000; font-weight: bold; margin-top: 2px; }
-        
         .action-btns { display: flex; flex-direction: column; gap: 8px; align-items: center; border-left: 1px solid #ddd; padding-left: 10px; min-width: 55px; }
         .btn-status { border: none; padding: 8px 2px; border-radius: 6px; color: white; font-weight: bold; width: 50px; font-size: 0.7rem; cursor: pointer; }
         .btn-in { background: var(--success); }
         .btn-out { background: var(--danger); }
-        
         .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
         nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: calc(70px + env(safe-area-inset-bottom)); border-top: 2px solid var(--accent); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
         .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
         .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
-        
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
         #photo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         #generated-label { width: 95%; max-width: 600px; border: 3px solid white; border-radius: 10px; background: white; object-fit: contain; }
@@ -65,10 +63,7 @@
 </head>
 <body>
 
-<div id="print-section" style="display:none;">
-    <img id="print-image" style="width: 100%; height: 100%;">
-</div>
-
+<div id="print-section" style="display:none;"><img id="print-image" style="width: 100%; height: 100%;"></div>
 <div class="global-bg"></div>
 
 <div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; background:transparent;">
@@ -83,7 +78,7 @@
 <div id="ui-wrapper">
     <div class="header">
         <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem; letter-spacing: 1px;">GR-LAGER V163.42</h2>
+        <h2 style="margin:0; font-size:0.9rem; letter-spacing: 1px;">GR-LAGER V163.43</h2>
         <div id="displayUserName" style="font-size:0.75rem; color:var(--accent); font-weight: bold;"></div>
     </div>
 
@@ -93,7 +88,6 @@
             <select id="filterCategory" class="form-input" style="background:#1e293b; color:white;" onchange="render()"></select>
             <div id="itemList"></div>
         </div>
-
         <div id="tab-neu" class="content" style="display:none;">
             <div style="background:rgba(255,255,255,0.95); padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
                 <h4 style="margin-top:0;">Neuer Artikel</h4>
@@ -107,7 +101,6 @@
                 <img id="imagePreview" style="width:100%; height:120px; object-fit:contain; display:none; margin-bottom:10px; border-radius:8px;">
                 <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border:none; border-radius:10px; font-weight:bold;">💾 SPEICHERN & DRUCKEN</button>
             </div>
-
             <div style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
                 <h4 style="margin-top:0; color:var(--accent);">Listenpflege</h4>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
@@ -123,10 +116,7 @@
                 <div id="listDisplay" style="max-height:200px; overflow-y:auto; font-size:0.85rem;"></div>
             </div>
         </div>
-
-        <div id="tab-log" class="content" style="display:none;">
-            <div id="logList"></div>
-        </div>
+        <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
     </div>
 
     <nav>
@@ -154,31 +144,27 @@
     <button onclick="window.print()" style="margin-top:20px; width:80%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold; font-size:1.2rem;">JETZT DRUCKEN</button>
 </div>
 
-<div id="scanner-container">
-    <div id="qr-reader" style="width: 100%;"></div>
-    <button onclick="stopScanner()" style="margin:20px; padding:15px; background:var(--danger); color:white; border-radius:10px; border:none;">ABBRECHEN</button>
-</div>
-
 <script>
-    const APP_VERSION = 163.42;
+    const APP_VERSION = 163.43;
     const firebaseConfig = { apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk", authDomain: "gr-lagerverwaltung.firebaseapp.com", databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gr-lagerverwaltung", storageBucket: "gr-lagerverwaltung.firebasestorage.app", messagingSenderId: "561219570576", appId: "1:561219570576:web:65824b199a12933fd88115" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
-    // --- AUTOMATISCHE VERSIONSPRÜFUNG ---
+    // --- VERBESSERTE VERSIONSPRÜFUNG MIT CACHE-BREAKER ---
     function checkVersion(v) { 
         if (v && v > APP_VERSION) {
-            location.reload(true); 
+            console.log("Neue Version erkannt. Erwirke frischen Reload...");
+            // Wir hängen einen Zeitstempel an, um den Cache zu umgehen
+            const cleanUrl = window.location.href.split('?')[0];
+            window.location.href = cleanUrl + "?update=" + Date.now();
         } else if(!v) {
             mainRef.child('version').set(APP_VERSION); 
         }
     }
 
-    // --- DRUCK FUNKTION (Maße 85x29mm) ---
     function printLabel(key, meta, name) {
-        // Wir nutzen 300 DPI für scharfe Drucke: 85mm ca 1004px, 29mm ca 342px
         const w = 1004, h = 342; 
         const canvas = document.createElement('canvas'); 
         canvas.width = w; canvas.height = h;
@@ -186,28 +172,31 @@
         const qrImg = new Image(); 
         qrImg.crossOrigin = "anonymous";
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${key}`;
-        
         qrImg.onload = function() {
             ctx.fillStyle = "white"; ctx.fillRect(0, 0, w, h);
             ctx.drawImage(qrImg, 20, 20, 300, 300);
             ctx.fillStyle = "black"; ctx.textAlign = "left";
-            ctx.font = "900 45px Arial";
-            ctx.fillText(meta || '-', 340, 80); 
+            ctx.font = "900 45px Arial"; ctx.fillText(meta || '-', 340, 80); 
             ctx.fillRect(340, 100, 620, 6);
             let fontSize = 90; ctx.font = `900 ${fontSize}px Arial`;
             while(ctx.measureText(name).width > 620 && fontSize > 35) { fontSize -= 5; ctx.font = `900 ${fontSize}px Arial`; }
             ctx.fillText(name, 340, 220); 
-            
-            const dataUrl = canvas.toDataURL("image/png");
-            document.getElementById('generated-label').src = dataUrl;
-            document.getElementById('print-image').src = dataUrl; // Für den echten Druck-Befehl
+            const dUrl = canvas.toDataURL("image/png");
+            document.getElementById('generated-label').src = dUrl;
+            document.getElementById('print-image').src = dUrl;
             document.getElementById('photo-overlay').style.display = 'flex';
         };
     }
 
     function checkLogin() {
         const u = document.getElementById('loginName').value;
-        if(u && document.getElementById('loginPass').value === "1234") { state.user = u.toUpperCase(); document.getElementById('displayUserName').innerText = state.user; document.getElementById('loginScreen').style.display = 'none'; document.getElementById('ui-wrapper').style.display = 'flex'; initApp(); }
+        if(u && document.getElementById('loginPass').value === "1234") { 
+            state.user = u.toUpperCase(); 
+            document.getElementById('displayUserName').innerText = state.user; 
+            document.getElementById('loginScreen').style.display = 'none'; 
+            document.getElementById('ui-wrapper').style.display = 'flex'; 
+            initApp(); 
+        }
     }
 
     function initApp() {
@@ -242,8 +231,8 @@
                     <div class="action-btns">
                         <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${i.status === 'im Lager'?'btn-in':'btn-out'}">${i.status === 'im Lager'?'EIN':'AUS'}</button>
                         <div style="display:flex; flex-direction:column; gap:10px; font-size:1.4rem; margin-top:2px;">
-                            <span onclick="openEdit('${i.key}')" style="cursor:pointer;">✏️</span>
-                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger); cursor:pointer;">🗑️</span>
+                            <span onclick="openEdit('${i.key}')">✏️</span>
+                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger);">🗑️</span>
                         </div>
                     </div></div>`;
             }).join('');
@@ -287,15 +276,15 @@
     function previewImage(i) { if (i.files && i.files[0]) { const r = new FileReader(); r.onload = e => { document.getElementById('imagePreview').src = e.target.result; document.getElementById('imagePreview').style.display='block'; }; r.readAsDataURL(i.files[0]); } }
     function closePhotoOverlay() { document.getElementById('photo-overlay').style.display = 'none'; }
     function openEdit(key) { state.currentEditKey = key; const i = state.items.find(x => x.key === key); document.getElementById('editName').value = i.name; document.getElementById('editQty').value = i.qty; document.getElementById('editModal').style.display = 'flex'; }
-
-    let scanner = null;
     function startScanner() {
-        document.getElementById('scanner-container').style.display = 'flex'; scanner = new Html5Qrcode("qr-reader");
+        const scannerContainer = document.getElementById('scanner-container');
+        scannerContainer.style.display = 'flex';
+        const scanner = new Html5Qrcode("qr-reader");
         scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-            const item = state.items.find(x => x.key === txt); if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
-        }).catch(() => { stopScanner(); });
+            const item = state.items.find(x => x.key === txt);
+            if(item) { toggleStatus(item.key, item.name, item.status); scanner.stop(); scannerContainer.style.display = 'none'; }
+        }).catch(() => { scannerContainer.style.display = 'none'; });
     }
-    function stopScanner() { if(scanner) scanner.stop().then(() => { document.getElementById('scanner-container').style.display = 'none'; }); }
 </script>
 </body>
 </html>
