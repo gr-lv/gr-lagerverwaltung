@@ -3,290 +3,848 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V163.52</title>
+    <title>GR-Lager V163.53</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        :root { --accent: #06b6d4; --danger: #ef4444; --success: #10b981; }
-        
+        /* ─── PRINT ─────────────────────────────────────────────────── */
         @media print {
-            @page { size: 85mm 29mm; margin: 0 !important; }
+            @page {
+                size: 85mm 29mm;
+                margin: 0 !important;
+            }
             body { background: white !important; margin: 0 !important; padding: 0 !important; }
-            #ui-wrapper, .global-bg, nav, .header, #photo-overlay, .modal, #scanner-container { display: none !important; }
-            #print-section { display: block !important; width: 85mm !important; height: 29mm !important; position: absolute; top: 0; left: 0; }
-            #print-image { width: 85mm !important; height: 29mm !important; display: block !important; }
+            #ui-wrapper, .global-bg, nav, .header,
+            #photo-overlay, .modal, #scanner-container { display: none !important; }
+            #print-section {
+                display: block !important;
+                width: 85mm !important;
+                height: 29mm !important;
+                overflow: hidden;
+                position: absolute;
+                top: 0; left: 0;
+            }
+            #print-image {
+                width: 85mm !important;
+                height: 29mm !important;
+                object-fit: fill;
+                display: block !important;
+            }
         }
 
-        .global-bg { position: fixed; inset: 0; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('haus_background.jpg') no-repeat center center; background-size: cover; z-index: 1; }
-        body, html { margin: 0; padding: 0; height: 100vh; width: 100%; font-family: sans-serif; background-color: #000; color: white; overflow: hidden; }
-        #ui-wrapper { position: relative; z-index: 10; height: 100vh; display: none; flex-direction: column; background: transparent; }
-        .header { background: rgba(0,0,0,0.9); padding: calc(45px + env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); }
-        .content-area { flex: 1; overflow-y: auto; padding: 10px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); background: rgba(0,0,0,0.3); }
-        
-        .item-card { background: rgba(255,255,255,0.95); border-radius: 12px; margin-bottom: 12px; padding: 10px; color: #000; display: flex; gap: 10px; border-left: 6px solid var(--accent); align-items: center; }
-        .item-card.status-out { border-left-color: var(--danger); background: #fff1f1; }
-        .item-thumb { width: 65px; height: 65px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+        /* ─── BASE ───────────────────────────────────────────────────── */
+        :root {
+            --accent:   #06b6d4;
+            --accent2:  #0891b2;
+            --danger:   #ef4444;
+            --success:  #10b981;
+            --warn:     #f59e0b;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body, html {
+            margin: 0; padding: 0;
+            height: 100vh; width: 100%;
+            font-family: sans-serif;
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+        }
+
+        .global-bg {
+            position: fixed; inset: 0;
+            background: linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.88)),
+                        url('haus_background.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: 1;
+        }
+
+        /* ─── LOGIN ──────────────────────────────────────────────────── */
+        #loginScreen {
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-box {
+            background: rgba(15, 23, 42, 0.96);
+            padding: 32px 28px;
+            border-radius: 20px;
+            border: 1.5px solid var(--accent);
+            text-align: center;
+            width: 88%; max-width: 320px;
+            box-shadow: 0 0 40px rgba(6,182,212,0.18);
+        }
+        .login-box h2 {
+            color: var(--accent);
+            font-size: 1.6rem;
+            letter-spacing: 0.12em;
+            margin: 0 0 6px;
+        }
+        .login-box p {
+            color: #64748b;
+            font-size: 0.72rem;
+            margin: 0 0 22px;
+            letter-spacing: 0.04em;
+        }
+
+        /* ─── LAYOUT ─────────────────────────────────────────────────── */
+        #ui-wrapper {
+            position: relative; z-index: 10;
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+            background: transparent;
+        }
+
+        .header {
+            background: rgba(0,0,0,0.92);
+            padding: calc(48px + env(safe-area-inset-top)) 15px 14px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--accent);
+        }
+        .header h2 {
+            margin: 0;
+            font-size: 0.88rem;
+            letter-spacing: 0.08em;
+            color: white;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            padding-bottom: calc(90px + env(safe-area-inset-bottom));
+            background: rgba(0,0,0,0.28);
+        }
+
+        /* ─── FORMS ──────────────────────────────────────────────────── */
+        .form-input {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            background: rgba(30,41,59,0.85);
+            color: white;
+        }
+        .form-input::placeholder { color: #64748b; }
+        .form-input:focus { outline: none; border-color: var(--accent); }
+
+        select.form-input option { background: #1e293b; color: white; }
+
+        /* ─── ITEM CARDS ──────────────────────────────────────────────── */
+        .item-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 12px;
+            margin-bottom: 10px;
+            padding: 10px;
+            color: #000;
+            display: flex;
+            gap: 9px;
+            border-left: 5px solid var(--accent);
+            align-items: center;
+            transition: transform 0.15s;
+        }
+        .item-card:active { transform: scale(0.99); }
+        .item-card.status-out {
+            border-left-color: var(--danger);
+            background: #fff1f1;
+        }
+
+        .item-thumb {
+            width: 62px; height: 62px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
         .item-info { flex: 1; min-width: 0; }
-        .item-name { font-weight: 900; font-size: 0.85rem; color: #1e293b; }
-        .item-meta { font-size: 0.6rem; color: #64748b; }
-        
-        .qr-side { width: 55px; height: 55px; background: white; padding: 3px; border: 1px solid #ccc; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .qr-side span { font-size: 0.4rem; color: #000; font-weight: bold; }
-        
-        .action-btns { display: flex; flex-direction: column; gap: 8px; align-items: center; border-left: 1px solid #ddd; padding-left: 10px; }
-        .btn-status { border: none; padding: 8px 2px; border-radius: 6px; color: white; font-weight: bold; width: 50px; font-size: 0.7rem; }
-        .btn-in { background: var(--success); }
+        .item-name {
+            font-weight: 900;
+            font-size: 0.82rem;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .item-meta { font-size: 0.6rem; color: #64748b; margin-top: 3px; }
+        .item-status {
+            display: inline-block;
+            font-size: 0.55rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            letter-spacing: 0.05em;
+        }
+        .item-status.in  { background: #d1fae5; color: #065f46; }
+        .item-status.out { background: #fee2e2; color: #991b1b; }
+
+        /* QR thumbnail */
+        .qr-side {
+            width: 52px; height: 52px;
+            background: white;
+            padding: 3px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: box-shadow 0.15s;
+        }
+        .qr-side:active { box-shadow: 0 0 0 2px var(--accent); }
+        .qr-side span { font-size: 0.38rem; color: #000; font-weight: 700; margin-top: 2px; letter-spacing: 0.04em; }
+
+        /* Action buttons */
+        .action-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            align-items: center;
+            border-left: 1px solid #e2e8f0;
+            padding-left: 9px;
+        }
+        .btn-status {
+            border: none;
+            padding: 7px 4px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 800;
+            width: 46px;
+            font-size: 0.65rem;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+        }
+        .btn-in  { background: var(--success); }
         .btn-out { background: var(--danger); }
-        
-        .form-input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
-        nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3, 7, 18, 0.95); display: flex; height: calc(70px + env(safe-area-inset-bottom)); border-top: 2px solid var(--accent); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-        .tab-btn { flex: 1; border: none; background: none; color: #94a3b8; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; }
-        .tab-btn.active { color: white; background: rgba(6, 182, 212, 0.2); border-top: 4px solid var(--accent); }
-        
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 5000; align-items: center; justify-content: center; padding: 20px; }
-        #scanner-container { display: none; position: fixed; inset: 0; background: #000; z-index: 6000; flex-direction: column; }
-        #photo-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        #generated-label { width: 100%; max-width: 500px; border: 2px solid white; background: white; }
+
+        /* ─── NAV ────────────────────────────────────────────────────── */
+        nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(3,7,18,0.96);
+            display: flex;
+            height: calc(64px + env(safe-area-inset-bottom));
+            border-top: 2px solid var(--accent);
+            z-index: 100;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .tab-btn {
+            flex: 1; border: none; background: none;
+            color: #64748b;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: color 0.15s, background 0.15s;
+        }
+        .tab-btn .tab-icon { font-size: 1.2rem; margin-bottom: 2px; }
+        .tab-btn.active {
+            color: white;
+            background: rgba(6,182,212,0.15);
+            border-top: 3px solid var(--accent);
+        }
+
+        /* ─── ADMIN PANEL ─────────────────────────────────────────────── */
+        .admin-card {
+            background: rgba(255,255,255,0.97);
+            padding: 16px;
+            border-radius: 14px;
+            color: #000;
+            margin-bottom: 16px;
+        }
+        .admin-card h4 { margin: 0 0 12px; font-size: 0.9rem; color: #1e293b; }
+
+        .manage-card {
+            background: rgba(15,23,42,0.7);
+            padding: 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 16px;
+        }
+        .manage-card h4 { color: var(--accent); margin: 0 0 12px; font-size: 0.88rem; }
+
+        /* ─── MODAL ──────────────────────────────────────────────────── */
+        .modal {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 5000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-box {
+            background: white;
+            color: #000;
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .modal-box h3 { margin: 0 0 14px; color: #1e293b; }
+
+        /* ─── SCANNER ────────────────────────────────────────────────── */
+        #scanner-container {
+            display: none;
+            position: fixed; inset: 0;
+            background: #000;
+            z-index: 6000;
+            flex-direction: column;
+        }
+
+        /* ─── PHOTO OVERLAY ──────────────────────────────────────────── */
+        #photo-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.96);
+            z-index: 10000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #generated-label {
+            width: 100%;
+            max-width: 500px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* ─── UTIL ───────────────────────────────────────────────────── */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            letter-spacing: 0.04em;
+        }
+        .btn-dark {
+            width: 100%;
+            padding: 14px;
+            background: #1e293b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        .empty-state .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+
+        /* ─── LOG LIST ───────────────────────────────────────────────── */
+        .log-item {
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            font-size: 0.73rem;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .log-item b { color: var(--accent); }
+        .log-time { font-size: 0.62rem; color: #475569; white-space: nowrap; flex-shrink: 0; }
+
+        /* ─── SCAN HINT ──────────────────────────────────────────────── */
+        .scan-hint {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
 
-<div id="print-section"><img id="print-image"></div>
+<!-- Print target (hidden in normal view) -->
+<div id="print-section"><img id="print-image" alt="Label"></div>
+
 <div class="global-bg"></div>
 
-<div id="loginScreen" style="position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center;">
-    <div style="background:rgba(30, 41, 59, 0.95); padding:30px; border-radius:20px; border:2px solid var(--accent); text-align:center; width: 85%; max-width: 320px;">
-        <h2 style="color:var(--accent);">GR-LAGER</h2>
-        <input type="text" id="loginName" class="form-input" placeholder="Name">
+<!-- ═══ LOGIN ════════════════════════════════════════════════════════════ -->
+<div id="loginScreen">
+    <div class="login-box">
+        <h2>GR-LAGER</h2>
+        <p>V163.53 — Lagerverwaltung</p>
+        <input type="text"     id="loginName" class="form-input" placeholder="Name" autocomplete="off">
         <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
-        <button onclick="checkLogin()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:bold;">START</button>
+        <button onclick="checkLogin()" class="btn-primary">START</button>
     </div>
 </div>
 
+<!-- ═══ MAIN UI ═══════════════════════════════════════════════════════════ -->
 <div id="ui-wrapper">
     <div class="header">
-        <button onclick="startScanner()" style="background:none; border:none; font-size:1.5rem;">📷</button>
-        <h2 style="margin:0; font-size:0.9rem;">GR-LAGER V163.52</h2>
-        <div id="displayUserName" style="font-size:0.75rem; color:var(--accent);"></div>
+        <button onclick="startScanner()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;" title="QR Scanner">📷</button>
+        <h2>GR-LAGER V163.53</h2>
+        <div id="displayUserName" style="font-size:0.72rem;color:var(--accent);font-weight:700;"></div>
     </div>
 
     <div class="content-area">
+
+        <!-- ── TAB: LAGER ──────────────────────────────────────────── -->
         <div id="tab-lager" class="content">
-            <input type="text" id="searchInput" placeholder="Suche..." onkeyup="render()" class="form-input">
-            <select id="filterCategory" class="form-input" onchange="render()" style="background:#1e293b; color:white;"></select>
+            <input type="search" id="searchInput" placeholder="🔍 Suche..." onkeyup="render()" class="form-input">
+            <select id="filterCategory" class="form-input" onchange="render()"></select>
             <div id="itemList"></div>
         </div>
 
+        <!-- ── TAB: ADMIN ──────────────────────────────────────────── -->
         <div id="tab-neu" class="content" style="display:none;">
-            <div style="background:#fff; padding:15px; border-radius:15px; color:#000; margin-bottom:20px;">
-                <h4 style="margin:0;">Neuer Artikel</h4>
-                <input type="text" id="itemName" class="form-input" placeholder="Name">
-                <input type="number" id="itemQty" class="form-input" value="1">
+            <div class="admin-card">
+                <h4>➕ Neuer Artikel</h4>
+                <input type="text"   id="itemName"        class="form-input" placeholder="Artikelname">
+                <input type="number" id="itemQty"         class="form-input" value="1" min="1">
                 <select id="itemLagerSelect" class="form-input"></select>
-                <select id="itemCatSelect" class="form-input"></select>
-                <div style="display:flex; gap:5px;"><select id="itemRegalSelect" class="form-input" style="flex:1;"></select><select id="itemFachSelect" class="form-input" style="flex:1;"></select></div>
-                <button onclick="document.getElementById('itemImgInput').click()" class="form-input">📷 FOTO</button>
-                <input type="file" id="itemImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
-                <img id="imagePreview" style="width:100%; height:100px; object-fit:contain; display:none; margin-bottom:10px;">
-                <button onclick="saveNewItem(true)" style="width:100%; padding:15px; background:#000; color:white; border-radius:10px;">💾 SPEICHERN & DRUCKEN</button>
-            </div>
-            
-            <div style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; border:1px solid rgba(255,255,255,0.1);">
-                <h4 style="color:var(--accent);">Listenpflege</h4>
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <input type="text" id="addInput" class="form-input" placeholder="Neu..." style="margin:0;">
-                    <button onclick="quickAdd()" style="background:var(--success); color:white; border:none; border-radius:8px; padding:0 15px;">+</button>
+                <select id="itemCatSelect"   class="form-input"></select>
+                <div style="display:flex;gap:8px;">
+                    <select id="itemRegalSelect" class="form-input" style="flex:1;"></select>
+                    <select id="itemFachSelect"  class="form-input" style="flex:1;"></select>
                 </div>
-                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#000; color:white;">
+                <button onclick="document.getElementById('itemImgInput').click()" class="btn-dark" style="margin-bottom:10px;">📷 FOTO AUFNEHMEN</button>
+                <input type="file" id="itemImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
+                <img id="imagePreview" style="width:100%;height:110px;object-fit:contain;display:none;margin-bottom:10px;border-radius:8px;background:#f1f5f9;">
+                <button onclick="saveNewItem(true)" class="btn-primary">💾 SPEICHERN & DRUCKEN</button>
+            </div>
+
+            <div class="manage-card">
+                <h4>⚙️ Listenpflege</h4>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                    <input type="text" id="addInput" class="form-input" placeholder="Neuer Eintrag..." style="margin:0;flex:1;">
+                    <button onclick="quickAdd()" style="background:var(--success);color:white;border:none;border-radius:8px;padding:0 16px;font-weight:700;font-size:1rem;cursor:pointer;">+</button>
+                </div>
+                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#0f172a;color:white;">
                     <option value="locations">Lagerorte</option>
                     <option value="cats">Kategorien</option>
                     <option value="regale">Regale</option>
                     <option value="faecher">Fächer</option>
                 </select>
-                <div id="listDisplay" style="max-height:200px; overflow-y:auto;"></div>
+                <div id="listDisplay" style="max-height:220px;overflow-y:auto;border-radius:8px;overflow:hidden;"></div>
             </div>
         </div>
-        
-        <div id="tab-log" class="content" style="display:none;"><div id="logList"></div></div>
-    </div>
+
+        <!-- ── TAB: LOGS ───────────────────────────────────────────── -->
+        <div id="tab-log" class="content" style="display:none;">
+            <div id="logList"></div>
+        </div>
+
+    </div><!-- /content-area -->
 
     <nav>
-        <button class="tab-btn active" onclick="switchTab(event, 'tab-lager')">📦 LAGER</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-neu')">⚙️ ADMIN</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 LOGS</button>
+        <button class="tab-btn active" onclick="switchTab(event,'tab-lager')">
+            <span class="tab-icon">📦</span>LAGER
+        </button>
+        <button class="tab-btn" onclick="switchTab(event,'tab-neu')">
+            <span class="tab-icon">⚙️</span>ADMIN
+        </button>
+        <button class="tab-btn" onclick="switchTab(event,'tab-log')">
+            <span class="tab-icon">📜</span>LOGS
+        </button>
     </nav>
 </div>
 
+<!-- ═══ EDIT MODAL ════════════════════════════════════════════════════════ -->
 <div id="editModal" class="modal">
-    <div style="background:white; color:black; padding:20px; border-radius:15px; width:100%; max-width:320px;">
-        <h3>Bearbeiten</h3>
-        <input type="text" id="editName" class="form-input">
-        <input type="number" id="editQty" class="form-input">
-        <div style="display:flex; gap:10px;">
-            <button onclick="saveEdit()" style="flex:1; padding:12px; background:var(--success); color:white; border:none; border-radius:8px;">OK</button>
-            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1; padding:12px; background:var(--danger); color:white; border:none; border-radius:8px;">X</button>
+    <div class="modal-box">
+        <h3>✏️ Bearbeiten</h3>
+        <input type="text"   id="editName" class="form-input" style="color:#000;background:#f1f5f9;">
+        <input type="number" id="editQty"  class="form-input" style="color:#000;background:#f1f5f9;">
+        <div style="display:flex;gap:10px;margin-top:4px;">
+            <button onclick="saveEdit()" style="flex:1;padding:12px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✓ OK</button>
+            <button onclick="document.getElementById('editModal').style.display='none'" style="flex:1;padding:12px;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✕ Abbrechen</button>
         </div>
     </div>
 </div>
 
+<!-- ═══ SCANNER ═══════════════════════════════════════════════════════════ -->
 <div id="scanner-container">
-    <div id="qr-reader" style="width: 100%;"></div>
-    <button onclick="stopScanner()" style="margin:20px; padding:15px; background:var(--danger); color:white; border-radius:10px; border:none; font-weight:bold;">ABBRECHEN</button>
+    <div id="qr-reader" style="width:100%;"></div>
+    <div class="scan-hint">Halte den QR-Code in den Rahmen</div>
+    <button onclick="stopScanner()" style="margin:16px;padding:14px;background:var(--danger);color:white;border-radius:10px;border:none;font-weight:700;cursor:pointer;">✕ ABBRECHEN</button>
 </div>
 
+<!-- ═══ PRINT / PHOTO OVERLAY ════════════════════════════════════════════ -->
 <div id="photo-overlay">
-    <img id="generated-label">
-    <div style="display:flex; gap:10px; width:100%; max-width:500px; margin-top:20px;">
-        <button onclick="window.print()" style="flex:2; padding:20px; background:var(--success); color:white; border:none; border-radius:12px; font-weight:bold; font-size:1.2rem;">DRUCKEN</button>
-        <button onclick="closePhotoOverlay()" style="flex:1; padding:20px; background:var(--danger); color:white; border:none; border-radius:12px; font-weight:bold;">X</button>
+    <p style="color:#94a3b8;font-size:0.75rem;margin-bottom:12px;">85 × 29 mm Etikett — Vorschau</p>
+    <img id="generated-label" alt="Etikett Vorschau">
+    <div style="display:flex;gap:10px;width:100%;max-width:500px;margin-top:18px;">
+        <button onclick="window.print()" style="flex:2;padding:18px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:1.05rem;cursor:pointer;">🖨️ DRUCKEN</button>
+        <button onclick="closePhotoOverlay()" style="flex:1;padding:18px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">✕</button>
     </div>
 </div>
 
+<!-- ═══ JAVASCRIPT ════════════════════════════════════════════════════════ -->
 <script>
-    const firebaseConfig = { apiKey: "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk", authDomain: "gr-lagerverwaltung.firebaseapp.com", databaseURL: "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app", projectId: "gr-lagerverwaltung", storageBucket: "gr-lagerverwaltung.firebasestorage.app", messagingSenderId: "561219570576", appId: "1:561219570576:web:65824b199a12933fd88115" };
+    /* ── Firebase ──────────────────────────────────────────────────────── */
+    const firebaseConfig = {
+        apiKey:            "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
+        authDomain:        "gr-lagerverwaltung.firebaseapp.com",
+        databaseURL:       "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId:         "gr-lagerverwaltung",
+        storageBucket:     "gr-lagerverwaltung.firebasestorage.app",
+        messagingSenderId: "561219570576",
+        appId:             "1:561219570576:web:65824b199a12933fd88115"
+    };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const db      = firebase.database();
     const mainRef = db.ref('lager_v90_multilager');
+
     let state = { user: "", items: [], config: {}, currentEditKey: null };
 
+    /* ── Label Print (85×29 mm = 1020×348 px bei 12 px/mm) ────────────── */
     function printLabel(key, meta, name) {
-        const w = 1004, h = 342; 
-        const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+        const W = 1020, H = 348;
+        const canvas = document.createElement('canvas');
+        canvas.width  = W;
+        canvas.height = H;
         const ctx = canvas.getContext('2d');
-        const qrImg = new Image(); qrImg.crossOrigin = "anonymous";
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${key}`;
-        qrImg.onload = function() {
-            ctx.fillStyle = "white"; ctx.fillRect(0, 0, w, h);
-            ctx.drawImage(qrImg, 100, 40, 260, 260);
-            ctx.fillStyle = "black"; ctx.textAlign = "left";
-            ctx.font = "900 38px Arial"; ctx.fillText(meta || '-', 450, 85); 
-            ctx.fillRect(450, 105, 450, 6);
-            let fontSize = 85; ctx.font = `900 ${fontSize}px Arial`;
-            while(ctx.measureText(name).width > 450 && fontSize > 30) { fontSize -= 5; ctx.font = `900 ${fontSize}px Arial`; }
-            ctx.fillText(name, 450, 230); 
+
+        const qrImg = new Image();
+        qrImg.crossOrigin = "anonymous";
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(key)}`;
+
+        qrImg.onload = function () {
+            /* Background */
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, W, H);
+
+            /* Accent bar left */
+            ctx.fillStyle = "#06b6d4";
+            ctx.fillRect(0, 0, 12, H);
+
+            /* QR code */
+            const qrSize = 280;
+            const qrX    = 28;
+            const qrY    = (H - qrSize) / 2;
+            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+            /* Text area */
+            const textX = qrX + qrSize + 24;
+            const maxW  = W - textX - 16;
+
+            ctx.fillStyle = "#000000";
+            ctx.textAlign  = "left";
+            ctx.textBaseline = "top";
+
+            /* Meta (location, shelf, compartment) */
+            ctx.font = "500 36px Arial";
+            ctx.fillStyle = "#64748b";
+            ctx.fillText(meta || '—', textX, 32, maxW);
+
+            /* Divider line */
+            ctx.fillStyle = "#06b6d4";
+            ctx.fillRect(textX, 82, maxW, 5);
+
+            /* Article name — auto-fit font size */
+            ctx.fillStyle = "#000000";
+            let fz = 96;
+            ctx.font = `900 ${fz}px Arial`;
+            while (ctx.measureText(name).width > maxW && fz > 28) {
+                fz -= 4;
+                ctx.font = `900 ${fz}px Arial`;
+            }
+            /* Vertically center name in remaining space */
+            const nameY = 90 + (H - 90 - 20 - fz) / 2;
+            ctx.fillText(name, textX, Math.max(nameY, 90), maxW);
+
+            /* Tiny key watermark bottom-right */
+            ctx.font = "300 18px Arial";
+            ctx.fillStyle = "#cbd5e1";
+            ctx.textAlign = "right";
+            ctx.fillText(key, W - 12, H - 22);
+
             const dataUrl = canvas.toDataURL("image/png");
             document.getElementById('generated-label').src = dataUrl;
-            document.getElementById('print-image').src = dataUrl;
+            document.getElementById('print-image').src      = dataUrl;
             document.getElementById('photo-overlay').style.display = 'flex';
+        };
+
+        qrImg.onerror = function () {
+            alert("QR-Code konnte nicht geladen werden. Bitte Verbindung prüfen.");
         };
     }
 
+    /* ── Login ─────────────────────────────────────────────────────────── */
     function checkLogin() {
-        const u = document.getElementById('loginName').value;
-        if(u && document.getElementById('loginPass').value === "1234") { 
-            state.user = u.toUpperCase(); document.getElementById('displayUserName').innerText = state.user; 
-            document.getElementById('loginScreen').style.display = 'none'; document.getElementById('ui-wrapper').style.display = 'flex'; 
-            initApp(); 
-        }
+        const u = document.getElementById('loginName').value.trim();
+        const p = document.getElementById('loginPass').value;
+        if (!u) { alert("Bitte Namen eingeben."); return; }
+        if (p !== "1234") { alert("Falsches Passwort."); return; }
+        state.user = u.toUpperCase();
+        document.getElementById('displayUserName').innerText = state.user;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('ui-wrapper').style.display  = 'flex';
+        initApp();
     }
 
+    /* ── App init ──────────────────────────────────────────────────────── */
     function initApp() {
         mainRef.on('value', snap => {
             state.config = snap.val() || {};
-            state.items = Object.keys(state.config.items || {}).map(k => ({...state.config.items[k], key: k}));
-            render(); renderLogs(); updateManageList();
-            const fill = (id, list) => {
-                const el = document.getElementById(id);
-                if(el) el.innerHTML = (id.includes('filter') ? '<option value="">Alle</option>' : '') + (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
-            };
-            fill('itemLagerSelect', state.config.locations); fill('itemCatSelect', state.config.cats); fill('filterCategory', state.config.cats);
-            fill('itemRegalSelect', state.config.regale); fill('itemFachSelect', state.config.faecher);
+            state.items  = Object.keys(state.config.items || {})
+                               .map(k => ({ ...state.config.items[k], key: k }));
+            render();
+            renderLogs();
+            updateManageList();
+            populateSelects();
         });
     }
 
+    function populateSelects() {
+        const fill = (id, list, addAll) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = (addAll ? '<option value="">Alle Kategorien</option>' : '')
+                + (list || []).map(v => `<option value="${v}">${v}</option>`).join('');
+        };
+        fill('itemLagerSelect', state.config.locations, false);
+        fill('itemCatSelect',   state.config.cats,      false);
+        fill('filterCategory',  state.config.cats,      true);
+        fill('itemRegalSelect', state.config.regale,    false);
+        fill('itemFachSelect',  state.config.faecher,   false);
+    }
+
+    /* ── Render item list ─────────────────────────────────────────────── */
     function render() {
-        const s = document.getElementById('searchInput').value.toLowerCase();
-        const f = document.getElementById('filterCategory').value;
-        document.getElementById('itemList').innerHTML = state.items
+        const s = (document.getElementById('searchInput').value || '').toLowerCase();
+        const f =  document.getElementById('filterCategory').value;
+        const filtered = state.items
             .filter(i => i.name.toLowerCase().includes(s) && (f === "" || i.cat === f))
-            .sort((a,b) => b.ts - a.ts)
-            .map(i => {
-                const isOut = i.status !== 'im Lager';
-                const meta = `${i.location||''} R:${i.regal||'-'} F:${i.fach||'-'}`;
-                return `<div class="item-card ${isOut ? 'status-out' : ''}">
-                    <img src="${i.img || 'https://via.placeholder.com/70'}" class="item-thumb">
-                    <div class="item-info"><div class="item-name">${i.name} (${i.qty}x)</div><div class="item-meta">${meta}</div></div>
-                    <div class="qr-side" onclick="printLabel('${i.key}', '${meta}', '${i.name}')">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${i.key}" style="width:40px;"><span>PRINT</span>
+            .sort((a, b) => b.ts - a.ts);
+
+        if (filtered.length === 0) {
+            document.getElementById('itemList').innerHTML =
+                `<div class="empty-state"><span class="empty-icon">📦</span>Keine Artikel gefunden.</div>`;
+            return;
+        }
+
+        document.getElementById('itemList').innerHTML = filtered.map(i => {
+            const isOut = i.status !== 'im Lager';
+            const meta  = `${i.location || ''} · R:${i.regal || '—'} · F:${i.fach || '—'}`;
+            const thumb = i.img || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${encodeURIComponent(i.name.charAt(0))}`;
+            return `
+            <div class="item-card ${isOut ? 'status-out' : ''}">
+                <img src="${thumb}" class="item-thumb" onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
+                <div class="item-info">
+                    <div class="item-name">${escHtml(i.name)} (${i.qty}x)</div>
+                    <div class="item-meta">${escHtml(meta)}</div>
+                    <span class="item-status ${isOut ? 'out' : 'in'}">${isOut ? '⬆ AUSGELIEHEN' : '✔ IM LAGER'}</span>
+                </div>
+                <div class="qr-side" onclick="printLabel('${i.key}','${escAttr(meta)}','${escAttr(i.name)}')">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(i.key)}" style="width:38px;" alt="QR">
+                    <span>PRINT</span>
+                </div>
+                <div class="action-btns">
+                    <button onclick="toggleStatus('${i.key}','${escAttr(i.name)}','${i.status}')"
+                            class="btn-status ${isOut ? 'btn-out' : 'btn-in'}">${isOut ? 'OUT' : 'IN'}</button>
+                    <div style="display:flex;gap:10px;margin-top:2px;">
+                        <span onclick="openEdit('${i.key}')" style="cursor:pointer;font-size:1rem;">✏️</span>
+                        <span onclick="deleteItem('${i.key}','${escAttr(i.name)}')" style="cursor:pointer;font-size:1rem;color:var(--danger);">🗑️</span>
                     </div>
-                    <div class="action-btns">
-                        <button onclick="toggleStatus('${i.key}', '${i.name}', '${i.status}')" class="btn-status ${!isOut?'btn-in':'btn-out'}">${!isOut?'IN':'OUT'}</button>
-                        <div style="display:flex; gap:10px; margin-top:5px;">
-                            <span onclick="openEdit('${i.key}')" style="cursor:pointer;">✏️</span>
-                            <span onclick="deleteItem('${i.key}', '${i.name}')" style="color:var(--danger); cursor:pointer;">🗑️</span>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+                </div>
+            </div>`;
+        }).join('');
     }
 
+    /* ── Manage lists ─────────────────────────────────────────────────── */
     function quickAdd() {
-        const t = document.getElementById('manageType').value; const v = document.getElementById('addInput').value; if(!v) return;
-        let l = state.config[t] || []; l.push(v); mainRef.child(t).set(l); document.getElementById('addInput').value = "";
+        const t = document.getElementById('manageType').value;
+        const v = document.getElementById('addInput').value.trim();
+        if (!v) return;
+        const l = state.config[t] || [];
+        l.push(v);
+        mainRef.child(t).set(l);
+        document.getElementById('addInput').value = "";
     }
+
     function updateManageList() {
-        const t = document.getElementById('manageType').value; const l = state.config[t] || [];
-        document.getElementById('listDisplay').innerHTML = l.map((v,i) => `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid rgba(255,255,255,0.1); color:white;">${v} <span onclick="removeFromList('${t}',${i})" style="cursor:pointer;">❌</span></div>`).join('');
+        const t = document.getElementById('manageType').value;
+        const l = state.config[t] || [];
+        document.getElementById('listDisplay').innerHTML = l.length
+            ? l.map((v, i) => `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);color:white;font-size:0.83rem;">
+                    <span>${escHtml(v)}</span>
+                    <span onclick="removeFromList('${t}',${i})" style="cursor:pointer;color:#ef4444;font-size:0.9rem;">✕</span>
+                </div>`).join('')
+            : `<div style="padding:14px;color:#64748b;font-size:0.8rem;text-align:center;">Noch keine Einträge</div>`;
     }
-    function removeFromList(t,i) { let l = state.config[t]; l.splice(i,1); mainRef.child(t).set(l); }
 
-    function saveNewItem(p) {
-        const n = document.getElementById('itemName').value; if(!n) return;
+    function removeFromList(t, i) {
+        const l = [...(state.config[t] || [])];
+        l.splice(i, 1);
+        mainRef.child(t).set(l);
+    }
+
+    /* ── Save new item ────────────────────────────────────────────────── */
+    function saveNewItem(print) {
+        const n = document.getElementById('itemName').value.trim();
+        if (!n) { alert("Bitte Artikelnamen eingeben."); return; }
         const newRef = mainRef.child('items').push();
-        const d = { name: n, qty: document.getElementById('itemQty').value, location: document.getElementById('itemLagerSelect').value, cat: document.getElementById('itemCatSelect').value, regal: document.getElementById('itemRegalSelect').value, fach: document.getElementById('itemFachSelect').value, img: document.getElementById('imagePreview').src || "", status: "im Lager", ts: Date.now(), lastUser: state.user };
-        newRef.set(d).then(() => { if(p) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name); switchTab(null, 'tab-lager'); });
+        const d = {
+            name:     n,
+            qty:      parseInt(document.getElementById('itemQty').value) || 1,
+            location: document.getElementById('itemLagerSelect').value,
+            cat:      document.getElementById('itemCatSelect').value,
+            regal:    document.getElementById('itemRegalSelect').value,
+            fach:     document.getElementById('itemFachSelect').value,
+            img:      document.getElementById('imagePreview').src.startsWith('data:') ? document.getElementById('imagePreview').src : "",
+            status:   "im Lager",
+            ts:       Date.now(),
+            lastUser: state.user
+        };
+        newRef.set(d).then(() => {
+            mainRef.child('logs').push({ user: state.user, text: `NEU: ${n}`, ts: Date.now() });
+            if (print) printLabel(newRef.key, `${d.location} R:${d.regal}`, d.name);
+            document.getElementById('itemName').value = "";
+            document.getElementById('itemQty').value  = "1";
+            document.getElementById('imagePreview').style.display = 'none';
+            switchTab(null, 'tab-lager');
+        });
     }
 
+    /* ── Toggle status ────────────────────────────────────────────────── */
     function toggleStatus(k, n, s) {
         const ns = s === "im Lager" ? "ausgeliehen" : "im Lager";
-        mainRef.child('items/'+k).update({status: ns, lastUser: state.user});
-        mainRef.child('logs').push({ user: state.user, text: `${n} -> ${ns}`, ts: Date.now() });
+        mainRef.child('items/' + k).update({ status: ns, lastUser: state.user });
+        mainRef.child('logs').push({ user: state.user, text: `${n} → ${ns}`, ts: Date.now() });
     }
 
+    /* ── Edit ─────────────────────────────────────────────────────────── */
     function openEdit(key) {
-        state.currentEditKey = key; const i = state.items.find(x => x.key === key);
-        document.getElementById('editName').value = i.name; document.getElementById('editQty').value = i.qty;
+        state.currentEditKey = key;
+        const i = state.items.find(x => x.key === key);
+        document.getElementById('editName').value = i.name;
+        document.getElementById('editQty').value  = i.qty;
         document.getElementById('editModal').style.display = 'flex';
     }
+
     function saveEdit() {
         const item = state.items.find(x => x.key === state.currentEditKey);
-        const newN = document.getElementById('editName').value; const newQ = document.getElementById('editQty').value;
-        mainRef.child('items/'+state.currentEditKey).update({ name: newN, qty: newQ, lastUser: state.user }).then(() => {
-            mainRef.child('logs').push({ user: state.user, text: `Edit: ${item.name} -> ${newN}`, ts: Date.now() });
-            document.getElementById('editModal').style.display = 'none';
-        });
+        const newN = document.getElementById('editName').value.trim();
+        const newQ = document.getElementById('editQty').value;
+        if (!newN) return;
+        mainRef.child('items/' + state.currentEditKey).update({ name: newN, qty: newQ, lastUser: state.user })
+            .then(() => {
+                mainRef.child('logs').push({ user: state.user, text: `Edit: ${item.name} → ${newN}`, ts: Date.now() });
+                document.getElementById('editModal').style.display = 'none';
+            });
     }
-    function deleteItem(k, n) { if(confirm(`${n} löschen?`)) { mainRef.child('items/'+k).remove(); mainRef.child('logs').push({ user: state.user, text: `GELÖSCHT: ${n}`, ts: Date.now() }); } }
 
+    /* ── Delete ───────────────────────────────────────────────────────── */
+    function deleteItem(k, n) {
+        if (!confirm(`"${n}" wirklich löschen?`)) return;
+        mainRef.child('items/' + k).remove();
+        mainRef.child('logs').push({ user: state.user, text: `GELÖSCHT: ${n}`, ts: Date.now() });
+    }
+
+    /* ── Logs ─────────────────────────────────────────────────────────── */
     function renderLogs() {
-        const logs = Object.values(state.config.logs || {}).sort((a,b) => b.ts - a.ts).slice(0,50);
-        document.getElementById('logList').innerHTML = logs.map(l => `<div style="padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); font-size:0.75rem; color:#ccc;"><b>${l.user}</b>: ${l.text} <small style="float:right;">${new Date(l.ts).toLocaleTimeString()}</small></div>`).join('');
+        const logs = Object.values(state.config.logs || {}).sort((a, b) => b.ts - a.ts).slice(0, 60);
+        document.getElementById('logList').innerHTML = logs.length
+            ? logs.map(l => `
+                <div class="log-item">
+                    <span><b>${escHtml(l.user)}</b>: ${escHtml(l.text)}</span>
+                    <span class="log-time">${new Date(l.ts).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+                </div>`).join('')
+            : `<div class="empty-state"><span class="empty-icon">📜</span>Noch keine Einträge.</div>`;
     }
 
+    /* ── Tabs ─────────────────────────────────────────────────────────── */
     function switchTab(e, id) {
-        document.querySelectorAll('.content').forEach(c => c.style.display = 'none'); document.getElementById(id).style.display = 'block';
-        if(e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); }
+        document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
+        document.getElementById(id).style.display = 'block';
+        if (e) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+        }
+        if (id === 'tab-log') renderLogs();
+        if (id === 'tab-neu') updateManageList();
     }
 
-    function previewImage(i) {
-        if (i.files && i.files[0]) {
-            const r = new FileReader(); r.onload = e => { document.getElementById('imagePreview').src = e.target.result; document.getElementById('imagePreview').style.display='block'; };
-            r.readAsDataURL(i.files[0]);
+    /* ── Image preview ────────────────────────────────────────────────── */
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            const r = new FileReader();
+            r.onload = e => {
+                const el = document.getElementById('imagePreview');
+                el.src   = e.target.result;
+                el.style.display = 'block';
+            };
+            r.readAsDataURL(input.files[0]);
         }
     }
 
+    /* ── QR Scanner ───────────────────────────────────────────────────── */
     let scanner = null;
+
     function startScanner() {
-        document.getElementById('scanner-container').style.display = 'flex'; scanner = new Html5Qrcode("qr-reader");
-        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-            const item = state.items.find(x => x.key === txt); if(item) { toggleStatus(item.key, item.name, item.status); stopScanner(); }
-        }).catch(() => { stopScanner(); });
+        document.getElementById('scanner-container').style.display = 'flex';
+        scanner = new Html5Qrcode("qr-reader");
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            txt => {
+                const item = state.items.find(x => x.key === txt);
+                if (item) {
+                    toggleStatus(item.key, item.name, item.status);
+                    stopScanner();
+                } else {
+                    alert("Kein Artikel mit diesem QR-Code gefunden.");
+                }
+            }
+        ).catch(() => stopScanner());
     }
-    function stopScanner() { if(scanner) scanner.stop().then(() => { document.getElementById('scanner-container').style.display = 'none'; }); }
-    function closePhotoOverlay() { document.getElementById('photo-overlay').style.display = 'none'; }
+
+    function stopScanner() {
+        if (scanner) {
+            scanner.stop().then(() => {
+                document.getElementById('scanner-container').style.display = 'none';
+                scanner = null;
+            }).catch(() => {
+                document.getElementById('scanner-container').style.display = 'none';
+                scanner = null;
+            });
+        }
+    }
+
+    function closePhotoOverlay() {
+        document.getElementById('photo-overlay').style.display = 'none';
+    }
+
+    /* ── Helpers ──────────────────────────────────────────────────────── */
+    function escHtml(str) {
+        return String(str || '')
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(str) {
+        return String(str || '').replace(/'/g,"\\'");
+    }
+
+    /* ── Enter key on login ───────────────────────────────────────────── */
+    document.getElementById('loginPass').addEventListener('keyup', e => {
+        if (e.key === 'Enter') checkLogin();
+    });
 </script>
 </body>
 </html>
