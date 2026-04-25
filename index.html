@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V170</title>
+    <title>GR-Lagerverwaltung V171</title>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -149,7 +149,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V170 — Lagerverwaltung</p>
+        <p>V171 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -441,7 +441,9 @@ function askQty(type, key) {
         ? `<b>${esc(item.name)}</b><br>Verfügbar: <b>${inStock}</b> von ${total} Stück<br>Wieviel möchtest du ausleihen?`
         : `<b>${esc(item.name)}</b><br>Aktuell ausgeliehen: <b>${borrowed}</b> Stück<br>Wieviel möchtest du zurückbringen?`;
     const inp = document.getElementById('qtyInput');
-    inp.value = '1'; inp.min = 1; inp.max = max;
+    // Vorschlag: bei AUS = 1 (meist nur 1 Stück), bei EIN = alle ausgeliehenen
+    inp.value = (type === 'ein') ? max : 1;
+    inp.min = 1; inp.max = max;
     document.getElementById('qtyAllBtn').textContent = `Alle ${max}`;
     document.getElementById('qtyOkBtn').style.background = (type==='aus') ? 'var(--danger)' : 'var(--success)';
     document.getElementById('qtyOkBtn').textContent = (type==='aus') ? '📤 AUSLEIHEN' : '📥 ZURÜCK';
