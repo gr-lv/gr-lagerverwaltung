@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V167</title>
+    <title>GR-Lager V168</title>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -139,7 +139,7 @@
 <div id="ui-wrapper">
     <div class="app-header">
         <button onclick="startScanner()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;">📷</button>
-        <h2>GR-LAGER V167</h2>
+        <h2>GR-LAGER V168</h2>
         <div id="displayUserName" style="font-size:.72rem;color:var(--accent);font-weight:700;"></div>
     </div>
 
@@ -294,11 +294,15 @@ let state = { user:"", items:[], config:{}, currentEditKey:null, currentLabel:nu
 
 /* ── IP speichern/laden ─────────────────────────────────────────────── */
 function loadPrinterSettings(){
-    const ip = localStorage.getItem('printerIP') || '';
-    document.getElementById('printerIP').value = ip;
+    try {
+        const ip = localStorage.getItem('printerIP') || '';
+        document.getElementById('printerIP').value = ip;
+    } catch(e) { /* localStorage nicht verfügbar */ }
 }
 function savePrinterSettings(){
-    localStorage.setItem('printerIP', document.getElementById('printerIP').value.trim());
+    try {
+        localStorage.setItem('printerIP', document.getElementById('printerIP').value.trim());
+    } catch(e) { /* localStorage nicht verfügbar */ }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -436,16 +440,20 @@ function showPrintGuide(ip, copies){
 
 /* ── Login ─────────────────────────────────────────────────────────── */
 function checkLogin(){
-    const u=document.getElementById('loginName').value.trim();
-    const p=document.getElementById('loginPass').value;
-    if(!u){alert("Bitte Namen eingeben.");return;}
-    if(p!=="1234"){alert("Falsches Passwort.");return;}
-    state.user=u.toUpperCase();
-    document.getElementById('displayUserName').innerText=state.user;
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('ui-wrapper').style.display='flex';
-    loadPrinterSettings();
-    initApp();
+    try {
+        const u=document.getElementById('loginName').value.trim();
+        const p=document.getElementById('loginPass').value;
+        if(!u){alert("Bitte Namen eingeben.");return;}
+        if(p!=="1234"){alert("Falsches Passwort.");return;}
+        state.user=u.toUpperCase();
+        document.getElementById('displayUserName').innerText=state.user;
+        document.getElementById('loginScreen').style.display='none';
+        document.getElementById('ui-wrapper').style.display='flex';
+        loadPrinterSettings();
+        initApp();
+    } catch(e) {
+        alert("Fehler beim Login: " + e.message);
+    }
 }
 
 /* ── App ─────────────────────────────────────────────────────────────  */
