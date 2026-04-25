@@ -3,245 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lager V165</title>
+    <title>GR-Lager V166</title>
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        /* ═══════════════════════════════════════════════════════════════
-           PRINT  –  Brother QL-820NWB  –  29mm Endlosband
-           Strategie: Das Label wird als reines HTML/CSS gerendert.
-           Kein Canvas, kein Bild. Der Brother AirPrint-Treiber bekommt
-           eine Seite mit size: 85mm 29mm und rendert sie direkt.
-        ═══════════════════════════════════════════════════════════════ */
-        @media print {
-            @page {
-                size: 85mm 29mm;
-                margin: 0;
-            }
-            html, body {
-                width: 85mm !important;
-                height: 29mm !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden !important;
-                background: white !important;
-            }
-            /* Alles ausblenden außer dem Label */
-            body > *:not(#print-label-page) { display: none !important; }
-            #print-label-page {
-                display: flex !important;
-                width: 85mm !important;
-                height: 29mm !important;
-                position: fixed !important;
-                top: 0 !important; left: 0 !important;
-                margin: 0 !important; padding: 0 !important;
-                overflow: hidden !important;
-                background: white !important;
-                align-items: center !important;
-            }
-            .lp-bar   { display: block !important; }
-            .lp-qr    { display: block !important; }
-            .lp-text  { display: block !important; }
-        }
-
-        /* ─── VARS & RESET ─────────────────────────────────────────── */
         :root { --accent:#06b6d4; --danger:#ef4444; --success:#10b981; }
-        *, *::before, *::after { box-sizing: border-box; }
-        body, html {
-            margin:0; padding:0; height:100vh; width:100%;
-            font-family:sans-serif; background:#000; color:white; overflow:hidden;
-        }
-        .global-bg {
-            position:fixed; inset:0;
-            background:linear-gradient(rgba(0,0,0,0.72),rgba(0,0,0,0.88)),
-                        url('haus_background.jpg') no-repeat center/cover;
-            z-index:1;
-        }
+        *, *::before, *::after { box-sizing:border-box; }
+        body, html { margin:0; padding:0; height:100vh; width:100%; font-family:sans-serif; background:#000; color:white; overflow:hidden; }
 
-        /* ─── PRINT LABEL PAGE (unsichtbar im App-Modus) ───────────── */
-        #print-label-page {
-            display: none;
-            width: 85mm; height: 29mm;
-            position: fixed; top:0; left:0;
-            background: white;
-            z-index: 99999;
-            overflow: hidden;
-            align-items: center;
-        }
-        .lp-bar {
-            width: 4mm; height: 29mm;
-            background: #06b6d4;
-            flex-shrink: 0;
-        }
-        .lp-qr {
-            width: 25mm; height: 25mm;
-            margin: 0 1.5mm;
-            flex-shrink: 0;
-        }
-        .lp-qr img { width: 25mm; height: 25mm; display: block; }
-        .lp-text {
-            flex: 1;
-            padding: 1mm 1mm 1mm 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 27mm;
-        }
-        .lp-meta {
-            font-size: 5.5pt;
-            color: #64748b;
-            font-family: Arial, sans-serif;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 0.8mm;
-        }
-        .lp-divider {
-            width: 100%; height: 0.4mm;
-            background: #06b6d4;
-            margin-bottom: 1mm;
-        }
-        .lp-name {
-            font-family: Arial, sans-serif;
-            font-weight: 900;
-            color: #000;
-            line-height: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            /* font-size wird per JS gesetzt */
-        }
-        .lp-key {
-            font-size: 4pt;
-            color: #cbd5e1;
-            font-family: Arial, sans-serif;
-            margin-top: 1mm;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
+        .global-bg { position:fixed; inset:0; background:linear-gradient(rgba(0,0,0,0.72),rgba(0,0,0,0.88)), url('haus_background.jpg') no-repeat center/cover; z-index:1; }
 
-        /* ─── LOGIN ────────────────────────────────────────────────── */
-        #loginScreen {
-            position:fixed; inset:0; z-index:9999;
-            display:flex; align-items:center; justify-content:center;
-        }
-        .login-box {
-            background:rgba(15,23,42,0.96); padding:32px 28px;
-            border-radius:20px; border:1.5px solid var(--accent);
-            text-align:center; width:88%; max-width:320px;
-            box-shadow:0 0 40px rgba(6,182,212,0.18);
-        }
+        /* LOGIN */
+        #loginScreen { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
+        .login-box { background:rgba(15,23,42,0.96); padding:32px 28px; border-radius:20px; border:1.5px solid var(--accent); text-align:center; width:88%; max-width:320px; box-shadow:0 0 40px rgba(6,182,212,0.18); }
         .login-box h2 { color:var(--accent); font-size:1.6rem; letter-spacing:.1em; margin:0 0 4px; }
         .login-box p  { color:#64748b; font-size:.72rem; margin:0 0 20px; }
 
-        /* ─── LAYOUT ───────────────────────────────────────────────── */
-        #ui-wrapper {
-            position:relative; z-index:10; height:100vh;
-            display:none; flex-direction:column;
-        }
-        .app-header {
-            background:rgba(0,0,0,0.92);
-            padding:calc(48px + env(safe-area-inset-top)) 14px 13px;
-            display:flex; justify-content:space-between; align-items:center;
-            border-bottom:2px solid var(--accent);
-        }
+        /* LAYOUT */
+        #ui-wrapper { position:relative; z-index:10; height:100vh; display:none; flex-direction:column; }
+        .app-header { background:rgba(0,0,0,0.92); padding:calc(48px + env(safe-area-inset-top)) 14px 13px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); }
         .app-header h2 { margin:0; font-size:.87rem; letter-spacing:.07em; }
-        .content-area {
-            flex:1; overflow-y:auto; padding:10px;
-            padding-bottom:calc(88px + env(safe-area-inset-bottom));
-            background:rgba(0,0,0,0.28);
-        }
+        .content-area { flex:1; overflow-y:auto; padding:10px; padding-bottom:calc(88px + env(safe-area-inset-bottom)); background:rgba(0,0,0,0.28); }
 
-        /* ─── FORMS ────────────────────────────────────────────────── */
-        .form-input {
-            width:100%; padding:11px 14px; border-radius:8px;
-            border:1px solid rgba(255,255,255,0.12);
-            font-size:.95rem; margin-bottom:10px;
-            background:rgba(30,41,59,0.85); color:white;
-        }
+        /* FORMS */
+        .form-input { width:100%; padding:11px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); font-size:.95rem; margin-bottom:10px; background:rgba(30,41,59,0.85); color:white; }
         .form-input::placeholder { color:#64748b; }
         .form-input:focus { outline:none; border-color:var(--accent); }
         select.form-input option { background:#1e293b; }
 
-        /* ─── ITEM CARDS ───────────────────────────────────────────── */
-        .item-card {
-            background:rgba(255,255,255,0.97); border-radius:12px;
-            margin-bottom:10px; padding:10px; color:#000;
-            display:flex; gap:9px; align-items:center;
-            border-left:5px solid var(--accent);
-        }
+        /* ITEM CARDS */
+        .item-card { background:rgba(255,255,255,0.97); border-radius:12px; margin-bottom:10px; padding:10px; color:#000; display:flex; gap:9px; align-items:center; border-left:5px solid var(--accent); }
         .item-card.status-out { border-left-color:var(--danger); background:#fff1f1; }
         .item-thumb { width:62px; height:62px; object-fit:cover; border-radius:8px; flex-shrink:0; }
-        .item-info  { flex:1; min-width:0; }
-        .item-name  { font-weight:900; font-size:.82rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .item-meta  { font-size:.6rem; color:#64748b; margin-top:3px; }
+        .item-info { flex:1; min-width:0; }
+        .item-name { font-weight:900; font-size:.82rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .item-meta { font-size:.6rem; color:#64748b; margin-top:3px; }
         .item-badge { display:inline-block; font-size:.55rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-top:4px; }
         .badge-in  { background:#d1fae5; color:#065f46; }
         .badge-out { background:#fee2e2; color:#991b1b; }
-        .qr-side {
-            width:52px; height:52px; background:white; padding:3px;
-            border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;
-            display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0;
-        }
-        .qr-side span { font-size:.38rem; color:#000; font-weight:700; margin-top:2px; }
-        .action-btns {
-            display:flex; flex-direction:column; gap:7px; align-items:center;
-            border-left:1px solid #e2e8f0; padding-left:9px;
-        }
-        .btn-toggle { border:none; padding:7px 2px; border-radius:6px; color:white; font-weight:800; width:46px; font-size:.65rem; cursor:pointer; }
-        .btn-in  { background:var(--success); }
-        .btn-out { background:var(--danger); }
 
-        /* ─── NAV ──────────────────────────────────────────────────── */
-        nav {
-            position:fixed; bottom:0; left:0; width:100%;
-            background:rgba(3,7,18,0.96); display:flex;
-            height:calc(64px + env(safe-area-inset-bottom));
-            border-top:2px solid var(--accent); z-index:100;
-            padding-bottom:env(safe-area-inset-bottom);
-        }
-        .tab-btn {
-            flex:1; border:none; background:none; color:#64748b;
-            display:flex; flex-direction:column; align-items:center; justify-content:center;
-            font-size:.65rem; font-weight:700; cursor:pointer;
-        }
+        .qr-side { width:52px; height:52px; background:white; padding:3px; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+        .qr-side span { font-size:.38rem; color:#000; font-weight:700; margin-top:2px; }
+
+        .action-btns { display:flex; flex-direction:column; gap:7px; align-items:center; border-left:1px solid #e2e8f0; padding-left:9px; }
+        .btn-toggle { border:none; padding:7px 2px; border-radius:6px; color:white; font-weight:800; width:46px; font-size:.65rem; cursor:pointer; }
+        .btn-ein { background:var(--success); }
+        .btn-aus { background:var(--danger); }
+
+        /* NAV */
+        nav { position:fixed; bottom:0; left:0; width:100%; background:rgba(3,7,18,0.96); display:flex; height:calc(64px + env(safe-area-inset-bottom)); border-top:2px solid var(--accent); z-index:100; padding-bottom:env(safe-area-inset-bottom); }
+        .tab-btn { flex:1; border:none; background:none; color:#64748b; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.65rem; font-weight:700; cursor:pointer; }
         .tab-btn .ti { font-size:1.2rem; margin-bottom:2px; }
         .tab-btn.active { color:white; background:rgba(6,182,212,0.15); border-top:3px solid var(--accent); }
 
-        /* ─── MODAL ────────────────────────────────────────────────── */
+        /* MODAL */
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:5000; align-items:center; justify-content:center; padding:20px; }
         .modal-box { background:white; color:#000; padding:20px; border-radius:16px; width:100%; max-width:320px; }
 
-        /* ─── SCANNER ──────────────────────────────────────────────── */
+        /* SCANNER */
         #scanner-container { display:none; position:fixed; inset:0; background:#000; z-index:6000; flex-direction:column; }
 
-        /* ─── PRINT OVERLAY ────────────────────────────────────────── */
-        #photo-overlay {
-            display:none; position:fixed; inset:0;
-            background:rgba(0,0,0,0.96); z-index:10000;
-            flex-direction:column; align-items:center; justify-content:center;
-            padding:24px; gap:12px;
-        }
-        /* Vorschau-Box im echten 85:29-Verhältnis */
-        #preview-box {
-            width:100%; max-width:510px;
-            aspect-ratio:85/29;
-            background:white; border-radius:6px;
-            border:2px solid rgba(255,255,255,0.15);
-            overflow:hidden; position:relative;
-        }
-        /* Das HTML-Label-Layout als Vorschau (identisch zum Druck-DOM) */
-        #preview-inner {
-            width:100%; height:100%;
-            display:flex; align-items:center;
-            background:white; overflow:hidden;
-        }
+        /* PRINT OVERLAY */
+        #photo-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.96); z-index:10000; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:12px; }
+        #preview-box { width:100%; max-width:510px; aspect-ratio:85/29; background:white; border-radius:6px; border:2px solid rgba(255,255,255,0.15); overflow:hidden; }
+        #preview-inner { width:100%; height:100%; display:flex; align-items:center; background:white; overflow:hidden; }
         .pv-bar  { height:100%; background:#06b6d4; flex-shrink:0; width:14%; }
-        .pv-qr   { flex-shrink:0; padding:2%; display:flex; align-items:center; justify-content:center; }
+        .pv-qr   { flex-shrink:0; padding:2%; display:flex; align-items:center; justify-content:center; width:28%; }
         .pv-qr img { width:100%; height:auto; display:block; }
         .pv-text { flex:1; padding:3% 2% 3% 0; display:flex; flex-direction:column; justify-content:center; overflow:hidden; }
         .pv-meta { font-size:clamp(6px,1.5vw,11px); color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3%; }
@@ -249,25 +79,30 @@
         .pv-name { font-weight:900; color:#000; line-height:1.1; white-space:nowrap; overflow:hidden; font-size:clamp(14px,4vw,32px); }
         .pv-key  { font-size:clamp(5px,1vw,8px); color:#cbd5e1; margin-top:4%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-        .print-info {
-            width:100%; max-width:510px;
-            background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.3);
-            border-radius:10px; padding:12px 16px;
-            font-size:.78rem; color:#94a3b8; line-height:1.6;
-        }
+        .print-info { width:100%; max-width:510px; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.3); border-radius:10px; padding:12px 16px; font-size:.78rem; color:#94a3b8; line-height:1.6; }
         .print-info b { color:var(--accent); }
         .print-btns { display:flex; gap:10px; width:100%; max-width:510px; }
 
-        /* ─── ADMIN ────────────────────────────────────────────────── */
-        .admin-card { background:rgba(255,255,255,0.97); padding:16px; border-radius:14px; color:#000; margin-bottom:14px; }
+        /* ADMIN */
+        .admin-card  { background:rgba(255,255,255,0.97); padding:16px; border-radius:14px; color:#000; margin-bottom:14px; }
         .admin-card h4 { margin:0 0 12px; font-size:.9rem; color:#1e293b; }
         .manage-card { background:rgba(15,23,42,0.7); padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); margin-bottom:14px; }
         .manage-card h4 { color:var(--accent); margin:0 0 12px; font-size:.88rem; }
 
-        /* ─── LOGS ─────────────────────────────────────────────────── */
-        .log-item { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:.73rem; color:#94a3b8; display:flex; justify-content:space-between; gap:8px; }
+        /* LOGS */
+        .log-filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+        .log-filter-btn { border:1px solid rgba(255,255,255,0.2); background:rgba(30,41,59,0.8); color:#94a3b8; padding:5px 10px; border-radius:20px; font-size:.68rem; cursor:pointer; font-weight:600; }
+        .log-filter-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
+        .log-item { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:.73rem; color:#94a3b8; display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
         .log-item b { color:var(--accent); }
         .log-time { font-size:.6rem; color:#475569; white-space:nowrap; flex-shrink:0; }
+        .log-tag { display:inline-block; font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px; }
+        .tag-aus   { background:#fee2e2; color:#991b1b; }
+        .tag-ein   { background:#d1fae5; color:#065f46; }
+        .tag-neu   { background:#dbeafe; color:#1e40af; }
+        .tag-edit  { background:#fef3c7; color:#92400e; }
+        .tag-del   { background:#f3e8ff; color:#6b21a8; }
+
         .empty-state { text-align:center; padding:40px 20px; color:#64748b; font-size:.85rem; }
         .empty-state .ei { font-size:2.5rem; display:block; margin-bottom:10px; }
         .btn-primary { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
@@ -276,41 +111,24 @@
 </head>
 <body>
 
-<!-- ═══ PRINT LABEL PAGE ════════════════════════════════════════════════
-     Dieses DIV ist im App-Modus unsichtbar (display:none).
-     Beim window.print() macht @media print → display:flex und
-     blendet alles andere aus. Der Browser druckt diese HTML-Seite
-     direkt auf 85mm×29mm – kein Canvas, kein Bild.
-═══════════════════════════════════════════════════════════════════════ -->
-<div id="print-label-page">
-    <div class="lp-bar"></div>
-    <div class="lp-qr"><img id="lp-qr-img" src="" alt="QR"></div>
-    <div class="lp-text">
-        <div class="lp-meta" id="lp-meta-txt"></div>
-        <div class="lp-divider"></div>
-        <div class="lp-name" id="lp-name-txt"></div>
-        <div class="lp-key"  id="lp-key-txt"></div>
-    </div>
-</div>
-
 <div class="global-bg"></div>
 
-<!-- ═══ LOGIN ═══════════════════════════════════════════════════════════ -->
+<!-- LOGIN -->
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V165 — Lagerverwaltung</p>
+        <p>V166 — Lagerverwaltung</p>
         <input type="text"     id="loginName" class="form-input" placeholder="Name" autocomplete="off">
         <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
         <button onclick="checkLogin()" class="btn-primary">START</button>
     </div>
 </div>
 
-<!-- ═══ MAIN UI ══════════════════════════════════════════════════════════ -->
+<!-- MAIN UI -->
 <div id="ui-wrapper">
     <div class="app-header">
         <button onclick="startScanner()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;">📷</button>
-        <h2>GR-LAGER V165</h2>
+        <h2>GR-LAGER V166</h2>
         <div id="displayUserName" style="font-size:.72rem;color:var(--accent);font-weight:700;"></div>
     </div>
 
@@ -357,6 +175,14 @@
 
         <!-- TAB: LOGS -->
         <div id="tab-log" class="content" style="display:none;">
+            <div class="log-filters">
+                <button class="log-filter-btn active" onclick="setLogFilter('all',this)">Alles</button>
+                <button class="log-filter-btn" onclick="setLogFilter('aus',this)">Ausgelagert</button>
+                <button class="log-filter-btn" onclick="setLogFilter('ein',this)">Eingelagert</button>
+                <button class="log-filter-btn" onclick="setLogFilter('neu',this)">Neu angelegt</button>
+                <button class="log-filter-btn" onclick="setLogFilter('edit',this)">Geändert</button>
+                <button class="log-filter-btn" onclick="setLogFilter('del',this)">Gelöscht</button>
+            </div>
             <div id="logList"></div>
         </div>
     </div>
@@ -368,7 +194,7 @@
     </nav>
 </div>
 
-<!-- ═══ EDIT MODAL ══════════════════════════════════════════════════════ -->
+<!-- EDIT MODAL -->
 <div id="editModal" class="modal">
     <div class="modal-box">
         <h3 style="margin:0 0 14px;color:#1e293b;">✏️ Bearbeiten</h3>
@@ -381,24 +207,20 @@
     </div>
 </div>
 
-<!-- ═══ SCANNER ════════════════════════════════════════════════════════ -->
+<!-- SCANNER -->
 <div id="scanner-container">
     <div id="qr-reader" style="width:100%;"></div>
     <div style="text-align:center;padding:16px;color:#94a3b8;font-size:.8rem;">Halte den QR-Code in den Rahmen</div>
     <button onclick="stopScanner()" style="margin:10px 16px;padding:14px;background:var(--danger);color:white;border-radius:10px;border:none;font-weight:700;cursor:pointer;">✕ ABBRECHEN</button>
 </div>
 
-<!-- ═══ PRINT OVERLAY ══════════════════════════════════════════════════ -->
+<!-- PRINT OVERLAY -->
 <div id="photo-overlay">
-    <p style="color:#94a3b8;font-size:.72rem;margin:0;align-self:flex-start;width:100%;max-width:510px;">
-        Vorschau — 85 × 29 mm Endlosband
-    </p>
-
-    <!-- Live-Vorschau (CSS-basiert, kein Canvas) -->
+    <p style="color:#94a3b8;font-size:.72rem;margin:0;align-self:flex-start;width:100%;max-width:510px;">Vorschau — 85 × 29 mm Endlosband</p>
     <div id="preview-box">
         <div id="preview-inner">
             <div class="pv-bar"></div>
-            <div class="pv-qr" style="width:28%;"><img id="pv-qr-img" src="" alt="QR"></div>
+            <div class="pv-qr"><img id="pv-qr-img" src="" alt="QR"></div>
             <div class="pv-text">
                 <div class="pv-meta" id="pv-meta-txt"></div>
                 <div class="pv-div"></div>
@@ -407,82 +229,106 @@
             </div>
         </div>
     </div>
-
-    <!-- Info -->
     <div class="print-info">
         <b>Brother QL-820NWB — 29 mm Endlosband</b><br>
-        Tippe <b>🖨️ DRUCKEN</b> → wähle den Brother-Drucker →
-        <b>Papierformat: 29 mm Endlos</b> (nicht 29×12,7 mm!) →
-        Drucken.<br>
-        <span style="color:#64748b;font-size:.7rem;">
-            Das Etikett ist reines HTML — kein Bild, keine Datei.
-            iOS übergibt es direkt an AirPrint.
-        </span>
+        Tippe <b>🖨️ DRUCKEN</b> → es öffnet sich ein neues Fenster speziell für den Druck.<br>
+        Dort: Drucker auswählen → <b>Papierformat: 29 mm Endlos</b> → Drucken.<br>
+        <span style="color:#64748b;font-size:.7rem;">Das Label-Fenster schließt sich automatisch nach dem Drucken.</span>
     </div>
-
-    <!-- Buttons -->
     <div class="print-btns">
-        <button onclick="doPrint()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;">
-            🖨️ DRUCKEN
-        </button>
-        <button onclick="closePhotoOverlay()" style="flex:0 0 56px;padding:16px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">
-            ✕
-        </button>
+        <button onclick="openPrintWindow()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;">🖨️ DRUCKEN</button>
+        <button onclick="closePhotoOverlay()" style="flex:0 0 56px;padding:16px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">✕</button>
     </div>
 </div>
 
-<!-- ═══ JS ══════════════════════════════════════════════════════════════ -->
 <script>
 /* ── Firebase ──────────────────────────────────────────────────────── */
 const firebaseConfig = {
-    apiKey:            "AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
-    authDomain:        "gr-lagerverwaltung.firebaseapp.com",
-    databaseURL:       "https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId:         "gr-lagerverwaltung",
-    storageBucket:     "gr-lagerverwaltung.firebasestorage.app",
-    messagingSenderId: "561219570576",
-    appId:             "1:561219570576:web:65824b199a12933fd88115"
+    apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
+    authDomain:"gr-lagerverwaltung.firebaseapp.com",
+    databaseURL:"https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId:"gr-lagerverwaltung",
+    storageBucket:"gr-lagerverwaltung.firebasestorage.app",
+    messagingSenderId:"561219570576",
+    appId:"1:561219570576:web:65824b199a12933fd88115"
 };
 firebase.initializeApp(firebaseConfig);
-const db      = firebase.database();
+const db = firebase.database();
 const mainRef = db.ref('lager_v90_multilager');
-let state = { user:"", items:[], config:{}, currentEditKey:null };
+let state = { user:"", items:[], config:{}, currentEditKey:null, currentLabel:null, logFilter:'all' };
 
-/* ── Label vorbereiten (HTML-DOM, kein Canvas) ─────────────────────── */
+/* ── PRINT: Popup-Fenster Strategie ────────────────────────────────────
+   Safari/iOS ignoriert @page size in der Hauptseite komplett.
+   Lösung: Wir öffnen ein neues Fenster (window.open) mit einer
+   mini HTML-Seite die NUR das Etikett enthält + sofort print() aufruft.
+   In diesem Popup-Kontext funktioniert @page size auf vielen iOS-Versionen.
+───────────────────────────────────────────────────────────────────── */
 function printLabel(key, meta, name) {
+    state.currentLabel = { key, meta, name };
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(key)}`;
-
-    /* Print-DOM befüllen */
-    document.getElementById('lp-qr-img').src  = qrUrl;
-    document.getElementById('lp-meta-txt').textContent = meta || '—';
-    document.getElementById('lp-key-txt').textContent  = key;
-
-    /* Artikelname: Schriftgröße automatisch anpassen (pt) */
-    const nameEl = document.getElementById('lp-name-txt');
-    nameEl.textContent = name;
-    let pt = 16;
-    nameEl.style.fontSize = pt + 'pt';
-    /* Für Drucklayout: grob schätzen (1pt ≈ 1.33px; verfügbare Breite ≈ 170pt) */
-    while (name.length * pt * 0.55 > 170 && pt > 7) { pt -= 0.5; }
-    nameEl.style.fontSize = pt + 'pt';
-
-    /* Vorschau-DOM befüllen */
     document.getElementById('pv-qr-img').src  = qrUrl;
     document.getElementById('pv-meta-txt').textContent = meta || '—';
     document.getElementById('pv-name-txt').textContent = name;
     document.getElementById('pv-key-txt').textContent  = key;
-
     document.getElementById('photo-overlay').style.display = 'flex';
 }
 
-/* ── Drucken ────────────────────────────────────────────────────────── */
-function doPrint() {
-    /* Kurz warten damit QR-Bild vollständig geladen ist */
-    const img = document.getElementById('lp-qr-img');
-    if (!img.complete) {
-        img.onload = () => window.print();
+function openPrintWindow() {
+    if (!state.currentLabel) return;
+    const { key, meta, name } = state.currentLabel;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(key)}`;
+
+    /* Schriftgröße schätzen: verfügbar ca 50mm Breite, 1pt ≈ 0.353mm */
+    let pt = 22;
+    while (name.length * pt * 0.5 > 140 && pt > 8) pt -= 0.5;
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Etikett</title>
+<style>
+@page { size: 85mm 29mm; margin: 0; }
+html, body {
+    width: 85mm; height: 29mm;
+    margin: 0; padding: 0;
+    overflow: hidden; background: white;
+}
+#label {
+    width: 85mm; height: 29mm;
+    display: flex; align-items: center;
+    background: white; overflow: hidden;
+}
+.bar  { width: 4mm; height: 29mm; background: #06b6d4; flex-shrink: 0; }
+.qr   { width: 25mm; height: 25mm; margin: 0 1.5mm; flex-shrink: 0; }
+.qr img { width: 25mm; height: 25mm; display: block; }
+.txt  { flex: 1; padding: 1.5mm 1.5mm 1.5mm 0; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.meta { font: 500 6pt/1 Arial; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 1mm; }
+.div  { width: 100%; height: 0.5mm; background: #06b6d4; margin-bottom: 1.5mm; }
+.name { font: 900 ${pt}pt/1 Arial; color: #000; white-space: nowrap; overflow: hidden; }
+.key  { font: 300 4.5pt/1 Arial; color: #cbd5e1; margin-top: 1.5mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="label">
+    <div class="bar"></div>
+    <div class="qr"><img src="${qrUrl}" onload="window.print();setTimeout(()=>window.close(),500);"></div>
+    <div class="txt">
+        <div class="meta">${h(meta)}</div>
+        <div class="div"></div>
+        <div class="name">${h(name)}</div>
+        <div class="key">${h(key)}</div>
+    </div>
+</div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=400,height=200');
+    if (win) {
+        win.document.write(html);
+        win.document.close();
     } else {
-        window.print();
+        alert("Popup wurde blockiert! Bitte Popups für diese Seite erlauben und erneut versuchen.");
     }
 }
 
@@ -503,11 +349,11 @@ function checkLogin() {
 function initApp() {
     mainRef.on('value', snap => {
         state.config = snap.val() || {};
-        state.items  = Object.keys(state.config.items || {})
-                           .map(k => ({ ...state.config.items[k], key: k }));
+        state.items  = Object.keys(state.config.items || {}).map(k => ({ ...state.config.items[k], key: k }));
         render(); renderLogs(); updateManageList(); populateSelects();
     });
 }
+
 function populateSelects() {
     const fill = (id, list, addAll) => {
         const el = document.getElementById(id); if (!el) return;
@@ -521,29 +367,34 @@ function populateSelects() {
     fill('itemFachSelect',  state.config.faecher,   false);
 }
 
-/* ── Render ─────────────────────────────────────────────────────────── */
+/* ── Render items ───────────────────────────────────────────────────── */
 function render() {
     const s = (document.getElementById('searchInput').value||'').toLowerCase();
     const f =  document.getElementById('filterCategory').value;
     const list = state.items
-        .filter(i=>i.name.toLowerCase().includes(s)&&(f===""||i.cat===f))
-        .sort((a,b)=>b.ts-a.ts);
+        .filter(i => i.name.toLowerCase().includes(s) && (f===""||i.cat===f))
+        .sort((a,b) => b.ts - a.ts);
+
     if (!list.length) {
         document.getElementById('itemList').innerHTML =
             `<div class="empty-state"><span class="ei">📦</span>Keine Artikel gefunden.</div>`;
         return;
     }
-    document.getElementById('itemList').innerHTML = list.map(i=>{
-        const isOut = i.status!=='im Lager';
+    document.getElementById('itemList').innerHTML = list.map(i => {
+        const isOut = i.status !== 'im Lager';
         const meta  = `${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
-        const thumb = i.img||`https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${encodeURIComponent((i.name||'?').charAt(0))}`;
+        const thumb = i.img || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${encodeURIComponent((i.name||'?').charAt(0))}`;
+        /* Badge: bei ausgeliehen zeige "von [User]" */
+        const badgeText = isOut
+            ? `⬆ AUSGELIEHEN${i.lastUser ? ' von ' + i.lastUser : ''}`
+            : '✔ IM LAGER';
         return `
         <div class="item-card ${isOut?'status-out':''}">
             <img src="${thumb}" class="item-thumb" onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
             <div class="item-info">
                 <div class="item-name">${h(i.name)} (${i.qty}x)</div>
                 <div class="item-meta">${h(meta)}</div>
-                <span class="item-badge ${isOut?'badge-out':'badge-in'}">${isOut?'⬆ AUSGELIEHEN':'✔ IM LAGER'}</span>
+                <span class="item-badge ${isOut?'badge-out':'badge-in'}">${badgeText}</span>
             </div>
             <div class="qr-side" onclick="printLabel('${i.key}','${a(meta)}','${a(i.name)}')">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(i.key)}" style="width:38px;" alt="QR">
@@ -551,7 +402,7 @@ function render() {
             </div>
             <div class="action-btns">
                 <button onclick="toggleStatus('${i.key}','${a(i.name)}','${i.status}')"
-                        class="btn-toggle ${isOut?'btn-out':'btn-in'}">${isOut?'OUT':'IN'}</button>
+                        class="btn-toggle ${isOut?'btn-aus':'btn-ein'}">${isOut?'AUS':'EIN'}</button>
                 <div style="display:flex;gap:10px;margin-top:2px;">
                     <span onclick="openEdit('${i.key}')" style="cursor:pointer;font-size:1rem;">✏️</span>
                     <span onclick="deleteItem('${i.key}','${a(i.name)}')" style="cursor:pointer;font-size:1rem;color:var(--danger);">🗑️</span>
@@ -561,7 +412,7 @@ function render() {
     }).join('');
 }
 
-/* ── Manage ─────────────────────────────────────────────────────────── */
+/* ── Manage lists ───────────────────────────────────────────────────── */
 function quickAdd(){
     const t=document.getElementById('manageType').value;
     const v=document.getElementById('addInput').value.trim(); if(!v) return;
@@ -578,7 +429,7 @@ function updateManageList(){
 }
 function removeFromList(t,i){ const l=[...(state.config[t]||[])]; l.splice(i,1); mainRef.child(t).set(l); }
 
-/* ── Save ───────────────────────────────────────────────────────────── */
+/* ── Save new item ──────────────────────────────────────────────────── */
 function saveNewItem(print){
     const n=document.getElementById('itemName').value.trim();
     if(!n){ alert("Bitte Artikelnamen eingeben."); return; }
@@ -593,7 +444,8 @@ function saveNewItem(print){
         status:"im Lager", ts:Date.now(), lastUser:state.user
     };
     newRef.set(d).then(()=>{
-        mainRef.child('logs').push({user:state.user,text:`NEU: ${n}`,ts:Date.now()});
+        /* Log mit Typ */
+        addLog('neu', `Neuer Artikel: "${n}" · Menge: ${d.qty} · ${d.location} R:${d.regal} F:${d.fach}`);
         if(print) printLabel(newRef.key,`${d.location} R:${d.regal}`,d.name);
         document.getElementById('itemName').value="";
         document.getElementById('itemQty').value="1";
@@ -602,11 +454,15 @@ function saveNewItem(print){
     });
 }
 
-/* ── Status ─────────────────────────────────────────────────────────── */
+/* ── Toggle status EIN/AUS ──────────────────────────────────────────── */
 function toggleStatus(k,n,s){
-    const ns=s==="im Lager"?"ausgeliehen":"im Lager";
-    mainRef.child('items/'+k).update({status:ns,lastUser:state.user});
-    mainRef.child('logs').push({user:state.user,text:`${n} → ${ns}`,ts:Date.now()});
+    const isOut = s === "im Lager";
+    const ns = isOut ? "ausgeliehen" : "im Lager";
+    const typ = isOut ? "aus" : "ein";
+    mainRef.child('items/'+k).update({status:ns, lastUser:state.user});
+    addLog(typ, isOut
+        ? `"${n}" ausgelagert von ${state.user}`
+        : `"${n}" eingelagert von ${state.user}`);
 }
 
 /* ── Edit ───────────────────────────────────────────────────────────── */
@@ -620,29 +476,80 @@ function openEdit(key){
 function saveEdit(){
     const item=state.items.find(x=>x.key===state.currentEditKey);
     const newN=document.getElementById('editName').value.trim();
-    const newQ=document.getElementById('editQty').value;
+    const newQ=parseInt(document.getElementById('editQty').value)||1;
     if(!newN) return;
-    mainRef.child('items/'+state.currentEditKey).update({name:newN,qty:newQ,lastUser:state.user}).then(()=>{
-        mainRef.child('logs').push({user:state.user,text:`Edit: ${item.name} → ${newN}`,ts:Date.now()});
+
+    const changes=[];
+    if(newN !== item.name) changes.push(`Name: "${item.name}" → "${newN}"`);
+    if(newQ !== parseInt(item.qty)) changes.push(`Menge: ${item.qty} → ${newQ}`);
+
+    mainRef.child('items/'+state.currentEditKey).update({name:newN, qty:newQ, lastUser:state.user}).then(()=>{
+        if(changes.length){
+            const typ = (newN !== item.name) ? 'edit' : 'qty';
+            addLog('edit', `"${item.name}" geändert: ${changes.join(' | ')}`);
+        }
         closeModal('editModal');
     });
 }
+
+/* ── Delete ─────────────────────────────────────────────────────────── */
 function deleteItem(k,n){
     if(!confirm(`"${n}" wirklich löschen?`)) return;
     mainRef.child('items/'+k).remove();
-    mainRef.child('logs').push({user:state.user,text:`GELÖSCHT: ${n}`,ts:Date.now()});
+    addLog('del', `"${n}" gelöscht`);
 }
 
-/* ── Logs ───────────────────────────────────────────────────────────── */
+/* ── Log helper ─────────────────────────────────────────────────────── */
+function addLog(typ, text){
+    mainRef.child('logs').push({ user:state.user, text, typ, ts:Date.now() });
+}
+
+/* ── Log filter & render ────────────────────────────────────────────── */
+let currentLogFilter = 'all';
+function setLogFilter(f, btn){
+    currentLogFilter = f;
+    document.querySelectorAll('.log-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderLogs();
+}
+
+const LOG_TAG = {
+    aus:  ['tag-aus',  '⬆ AUS'],
+    ein:  ['tag-ein',  '⬇ EIN'],
+    neu:  ['tag-neu',  '✚ NEU'],
+    edit: ['tag-edit', '✏ EDIT'],
+    del:  ['tag-del',  '🗑 DEL'],
+};
+
 function renderLogs(){
-    const logs=Object.values(state.config.logs||{}).sort((a,b)=>b.ts-a.ts).slice(0,60);
-    document.getElementById('logList').innerHTML=logs.length
-        ? logs.map(l=>`<div class="log-item"><span><b>${h(l.user)}</b>: ${h(l.text)}</span>
-            <span class="log-time">${new Date(l.ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')
-        : `<div class="empty-state"><span class="ei">📜</span>Noch keine Einträge.</div>`;
+    let logs = Object.values(state.config.logs||{}).sort((a,b)=>b.ts-a.ts);
+
+    /* Filter */
+    if(currentLogFilter !== 'all'){
+        logs = logs.filter(l => l.typ === currentLogFilter);
+    }
+    logs = logs.slice(0, 80);
+
+    if(!logs.length){
+        document.getElementById('logList').innerHTML =
+            `<div class="empty-state"><span class="ei">📜</span>Keine Einträge für diesen Filter.</div>`;
+        return;
+    }
+
+    document.getElementById('logList').innerHTML = logs.map(l => {
+        const [cls, label] = LOG_TAG[l.typ] || ['tag-edit','•'];
+        const ts = new Date(l.ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        return `<div class="log-item">
+            <span>
+                <span class="log-tag ${cls}">${label}</span>
+                <b>${h(l.user)}</b>: ${h(l.text)}
+            </span>
+            <span class="log-time">${ts}</span>
+        </div>`;
+    }).join('');
 }
 
-/* ── UI ─────────────────────────────────────────────────────────────── */
+/* ── UI helpers ─────────────────────────────────────────────────────── */
 function switchTab(e,id){
     document.querySelectorAll('.content').forEach(c=>c.style.display='none');
     document.getElementById(id).style.display='block';
@@ -651,7 +558,7 @@ function switchTab(e,id){
     if(id==='tab-neu') updateManageList();
 }
 function closeModal(id){ document.getElementById(id).style.display='none'; }
-function closePhotoOverlay(){ document.getElementById('photo-overlay').style.display='none'; }
+function closePhotoOverlay(){ document.getElementById('photo-overlay').style.display='none'; state.currentLabel=null; }
 function previewImage(input){
     if(input.files&&input.files[0]){
         const r=new FileReader();
@@ -677,7 +584,7 @@ function stopScanner(){
         .catch(()=>{ document.getElementById('scanner-container').style.display='none'; scanner=null; });
 }
 
-/* ── Helpers ────────────────────────────────────────────────────────── */
+/* ── Escape ─────────────────────────────────────────────────────────── */
 function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function a(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 document.getElementById('loginPass').addEventListener('keyup',e=>{ if(e.key==='Enter') checkLogin(); });
