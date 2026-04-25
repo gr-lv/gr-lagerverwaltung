@@ -10,275 +10,254 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        :root { --accent:#06b6d4; --danger:#ef4444; --success:#10b981; --warn:#f59e0b; }
+        :root { --accent:#06b6d4; --danger:#ef4444; --success:#10b981; }
         *, *::before, *::after { box-sizing:border-box; }
         body, html { margin:0; padding:0; height:100vh; width:100%; font-family:sans-serif; background:#000; color:white; overflow:hidden; }
-
         .global-bg { position:fixed; inset:0; background:linear-gradient(rgba(0,0,0,0.72),rgba(0,0,0,0.88)), url('haus_background.jpg') no-repeat center/cover; z-index:1; }
 
+        /* LOGIN */
         #loginScreen { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
-        .login-box { background:rgba(15,23,42,0.96); padding:32px 28px; border-radius:20px; border:1.5px solid var(--accent); text-align:center; width:88%; max-width:320px; box-shadow:0 0 40px rgba(6,182,212,0.18); }
-        .login-box h2 { color:var(--accent); font-size:1.6rem; letter-spacing:.1em; margin:0 0 4px; }
+        .login-box { background:rgba(15,23,42,0.96); padding:32px 28px; border-radius:20px; border:1.5px solid var(--accent); text-align:center; width:88%; max-width:320px; }
+        .login-box h2 { color:var(--accent); font-size:1.6rem; margin:0 0 4px; }
         .login-box p  { color:#64748b; font-size:.72rem; margin:0 0 20px; }
 
+        /* LAYOUT */
         #ui-wrapper { position:relative; z-index:10; height:100vh; display:none; flex-direction:column; }
         .app-header { background:rgba(0,0,0,0.92); padding:calc(48px + env(safe-area-inset-top)) 14px 13px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); }
-        .app-header h2 { margin:0; font-size:.87rem; letter-spacing:.07em; }
+        .app-header h2 { margin:0; font-size:.87rem; }
         .content-area { flex:1; overflow-y:auto; padding:10px; padding-bottom:calc(88px + env(safe-area-inset-bottom)); background:rgba(0,0,0,0.28); }
 
-        .form-input { width:100%; padding:11px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); font-size:.95rem; margin-bottom:10px; background:rgba(30,41,59,0.85); color:white; }
-        .form-input::placeholder { color:#64748b; }
-        .form-input:focus { outline:none; border-color:var(--accent); }
-        select.form-input option { background:#1e293b; }
+        /* FORMS */
+        .fi { width:100%; padding:11px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); font-size:.95rem; margin-bottom:10px; background:rgba(30,41,59,0.85); color:white; }
+        .fi::placeholder { color:#64748b; }
+        .fi:focus { outline:none; border-color:var(--accent); }
+        select.fi option { background:#1e293b; }
 
+        /* CARDS */
         .item-card { background:rgba(255,255,255,0.97); border-radius:12px; margin-bottom:10px; padding:10px; color:#000; display:flex; gap:9px; align-items:center; border-left:5px solid var(--accent); }
-        .item-card.status-out { border-left-color:var(--danger); background:#fff1f1; }
+        .item-card.out { border-left-color:var(--danger); background:#fff1f1; }
         .item-thumb { width:62px; height:62px; object-fit:cover; border-radius:8px; flex-shrink:0; }
-        .item-info { flex:1; min-width:0; }
-        .item-name { font-weight:900; font-size:.82rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .item-meta { font-size:.6rem; color:#64748b; margin-top:3px; }
+        .item-info  { flex:1; min-width:0; }
+        .item-name  { font-weight:900; font-size:.82rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .item-meta  { font-size:.6rem; color:#64748b; margin-top:3px; }
         .item-badge { display:inline-block; font-size:.55rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-top:4px; }
-        .badge-in { background:#d1fae5; color:#065f46; }
-        .badge-out { background:#fee2e2; color:#991b1b; }
+        .b-in  { background:#d1fae5; color:#065f46; }
+        .b-out { background:#fee2e2; color:#991b1b; }
         .qr-side { width:52px; height:52px; background:white; padding:3px; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
         .qr-side span { font-size:.38rem; color:#000; font-weight:700; margin-top:2px; }
-        .action-btns { display:flex; flex-direction:column; gap:7px; align-items:center; border-left:1px solid #e2e8f0; padding-left:9px; }
-        .btn-toggle { border:none; padding:7px 2px; border-radius:6px; color:white; font-weight:800; width:46px; font-size:.65rem; cursor:pointer; }
-        .btn-ein { background:var(--success); }
-        .btn-aus { background:var(--danger); }
+        .act { display:flex; flex-direction:column; gap:7px; align-items:center; border-left:1px solid #e2e8f0; padding-left:9px; }
+        .btn-tog { border:none; padding:7px 2px; border-radius:6px; color:white; font-weight:800; width:46px; font-size:.65rem; cursor:pointer; }
+        .t-ein { background:var(--success); }
+        .t-aus { background:var(--danger); }
 
+        /* NAV */
         nav { position:fixed; bottom:0; left:0; width:100%; background:rgba(3,7,18,0.96); display:flex; height:calc(64px + env(safe-area-inset-bottom)); border-top:2px solid var(--accent); z-index:100; padding-bottom:env(safe-area-inset-bottom); }
         .tab-btn { flex:1; border:none; background:none; color:#64748b; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.65rem; font-weight:700; cursor:pointer; }
-        .tab-btn .ti { font-size:1.2rem; margin-bottom:2px; }
+        .tab-btn span { font-size:1.2rem; margin-bottom:2px; }
         .tab-btn.active { color:white; background:rgba(6,182,212,0.15); border-top:3px solid var(--accent); }
 
+        /* MODAL */
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:5000; align-items:center; justify-content:center; padding:20px; }
-        .modal-box { background:white; color:#000; padding:20px; border-radius:16px; width:100%; max-width:340px; }
-        .modal-box h3 { margin:0 0 14px; color:#1e293b; }
+        .mbox  { background:white; color:#000; padding:20px; border-radius:16px; width:100%; max-width:340px; }
+        .mbox h3 { margin:0 0 14px; color:#1e293b; }
 
-        #scanner-container { display:none; position:fixed; inset:0; background:#000; z-index:6000; flex-direction:column; }
+        /* SCANNER */
+        #scanbox { display:none; position:fixed; inset:0; background:#000; z-index:6000; flex-direction:column; }
 
-        /* ── PRINT OVERLAY ── */
-        #photo-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.97); z-index:10000; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:12px; overflow-y:auto; }
-
-        #preview-box { width:100%; max-width:510px; aspect-ratio:85/29; background:white; border-radius:6px; border:2px solid rgba(255,255,255,0.15); overflow:hidden; flex-shrink:0; }
-        #preview-inner { width:100%; height:100%; display:flex; align-items:center; background:white; overflow:hidden; }
-        .pv-bar  { height:100%; background:#06b6d4; flex-shrink:0; width:14%; }
-        .pv-qr   { flex-shrink:0; padding:2%; width:28%; display:flex; align-items:center; }
-        .pv-qr img { width:100%; height:auto; display:block; }
-        .pv-text { flex:1; padding:3% 2% 3% 0; display:flex; flex-direction:column; justify-content:center; overflow:hidden; }
+        /* PRINT OVERLAY */
+        #printOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.97); z-index:10000; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:12px; overflow-y:auto; }
+        #pvBox { width:100%; max-width:510px; aspect-ratio:85/29; background:white; border-radius:6px; border:2px solid rgba(255,255,255,0.15); overflow:hidden; flex-shrink:0; }
+        #pvInner { width:100%; height:100%; display:flex; align-items:center; background:white; }
+        .pv-bar  { height:100%; background:#06b6d4; width:14%; flex-shrink:0; }
+        .pv-qr   { width:28%; padding:2%; flex-shrink:0; }
+        .pv-qr img { width:100%; display:block; }
+        .pv-txt  { flex:1; padding:3% 2% 3% 0; display:flex; flex-direction:column; justify-content:center; overflow:hidden; }
         .pv-meta { font-size:clamp(6px,1.5vw,10px); color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3%; }
         .pv-div  { height:2px; background:#06b6d4; margin-bottom:4%; }
         .pv-name { font-weight:900; color:#000; line-height:1.1; white-space:nowrap; overflow:hidden; font-size:clamp(14px,4vw,30px); }
-        .pv-key  { font-size:clamp(5px,1vw,8px); color:#cbd5e1; margin-top:4%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pv-key  { font-size:clamp(5px,1vw,8px); color:#cbd5e1; margin-top:4%; overflow:hidden; white-space:nowrap; }
 
-        /* Drucker-Einstellungen Box */
-        .printer-box { width:100%; max-width:510px; background:rgba(15,23,42,0.9); border:1px solid rgba(6,182,212,0.3); border-radius:12px; padding:14px 16px; }
-        .printer-box-title { font-size:.78rem; font-weight:700; color:var(--accent); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
-        .printer-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-        .printer-row label { font-size:.72rem; color:#94a3b8; white-space:nowrap; min-width:80px; }
-        .printer-row input { flex:1; padding:8px 12px; border-radius:7px; border:1px solid rgba(255,255,255,0.15); background:rgba(30,41,59,0.9); color:white; font-size:.85rem; }
-        .printer-row input:focus { outline:none; border-color:var(--accent); }
+        .pbox { width:100%; max-width:510px; background:rgba(15,23,42,0.9); border:1px solid rgba(6,182,212,0.3); border-radius:12px; padding:14px 16px; }
+        .pbox-t { font-size:.78rem; font-weight:700; color:var(--accent); margin-bottom:10px; }
+        .prow { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+        .prow label { font-size:.72rem; color:#94a3b8; min-width:80px; }
+        .prow input { flex:1; padding:8px 12px; border-radius:7px; border:1px solid rgba(255,255,255,0.15); background:rgba(30,41,59,0.9); color:white; font-size:.85rem; }
 
-        /* Status-Anzeige */
-        .print-status { width:100%; max-width:510px; border-radius:10px; padding:10px 14px; font-size:.75rem; display:none; align-items:center; gap:10px; }
-        .print-status.info { background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.3); color:#94a3b8; }
-        .print-status.ok   { background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#6ee7b7; }
-        .print-status.err  { background:rgba(239,68,68,0.12);  border:1px solid rgba(239,68,68,0.3);  color:#fca5a5; }
-        .print-status.spin::before { content:"⏳"; animation:spin 1s linear infinite; display:inline-block; }
-        @keyframes spin { to { transform:rotate(360deg); } }
+        #pStatus { width:100%; max-width:510px; border-radius:10px; padding:10px 14px; font-size:.75rem; display:none; }
+        #pStatus.ok  { background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#6ee7b7; }
+        #pStatus.err { background:rgba(239,68,68,0.12);  border:1px solid rgba(239,68,68,0.3);  color:#fca5a5; }
+        #pStatus.inf { background:rgba(6,182,212,0.12);  border:1px solid rgba(6,182,212,0.3);  color:#94a3b8; }
 
-        .print-btns { display:flex; gap:10px; width:100%; max-width:510px; }
+        .pbtns { display:flex; gap:10px; width:100%; max-width:510px; }
 
         /* ADMIN */
-        .admin-card  { background:rgba(255,255,255,0.97); padding:16px; border-radius:14px; color:#000; margin-bottom:14px; }
-        .admin-card h4 { margin:0 0 12px; font-size:.9rem; color:#1e293b; }
-        .manage-card { background:rgba(15,23,42,0.7); padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); margin-bottom:14px; }
-        .manage-card h4 { color:var(--accent); margin:0 0 12px; font-size:.88rem; }
+        .ac  { background:rgba(255,255,255,0.97); padding:16px; border-radius:14px; color:#000; margin-bottom:14px; }
+        .ac h4 { margin:0 0 12px; font-size:.9rem; color:#1e293b; }
+        .mc  { background:rgba(15,23,42,0.7); padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); margin-bottom:14px; }
+        .mc h4 { color:var(--accent); margin:0 0 12px; font-size:.88rem; }
 
         /* LOGS */
-        .log-filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-        .log-filter-btn { border:1px solid rgba(255,255,255,0.2); background:rgba(30,41,59,0.8); color:#94a3b8; padding:5px 10px; border-radius:20px; font-size:.68rem; cursor:pointer; font-weight:600; }
-        .log-filter-btn.active { background:var(--accent); color:white; border-color:var(--accent); }
-        .log-item { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:.73rem; color:#94a3b8; display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+        .lfb { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+        .lfbtn { border:1px solid rgba(255,255,255,0.2); background:rgba(30,41,59,0.8); color:#94a3b8; padding:5px 10px; border-radius:20px; font-size:.68rem; cursor:pointer; font-weight:600; }
+        .lfbtn.active { background:var(--accent); color:white; border-color:var(--accent); }
+        .log-item { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:.73rem; color:#94a3b8; display:flex; justify-content:space-between; gap:8px; }
         .log-item b { color:var(--accent); }
         .log-time { font-size:.6rem; color:#475569; white-space:nowrap; flex-shrink:0; }
-        .log-tag { display:inline-block; font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px; }
-        .tag-aus  { background:#fee2e2; color:#991b1b; }
-        .tag-ein  { background:#d1fae5; color:#065f46; }
-        .tag-neu  { background:#dbeafe; color:#1e40af; }
-        .tag-edit { background:#fef3c7; color:#92400e; }
-        .tag-del  { background:#f3e8ff; color:#6b21a8; }
+        .ltag { display:inline-block; font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px; }
+        .t-aus  { background:#fee2e2; color:#991b1b; }
+        .t-ein  { background:#d1fae5; color:#065f46; }
+        .t-neu  { background:#dbeafe; color:#1e40af; }
+        .t-edit { background:#fef3c7; color:#92400e; }
+        .t-del  { background:#f3e8ff; color:#6b21a8; }
 
-        .empty-state { text-align:center; padding:40px 20px; color:#64748b; font-size:.85rem; }
-        .empty-state .ei { font-size:2.5rem; display:block; margin-bottom:10px; }
-        .btn-primary { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
-        .btn-dark    { width:100%; padding:13px; background:#1e293b; color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; margin-bottom:10px; }
+        .empty { text-align:center; padding:40px 20px; color:#64748b; font-size:.85rem; }
+        .empty i { font-size:2.5rem; display:block; margin-bottom:10px; }
+        .btn-p { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
+        .btn-d { width:100%; padding:13px; background:#1e293b; color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; margin-bottom:10px; }
 
-        /* Canvas Druck (versteckt) */
-        #printCanvas { display:none; }
+        #cvs { display:none; }
     </style>
 </head>
 <body>
 
-<canvas id="printCanvas"></canvas>
+<canvas id="cvs"></canvas>
 <div class="global-bg"></div>
 
 <!-- LOGIN -->
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V167 — Lagerverwaltung</p>
-        <input type="text"     id="loginName" class="form-input" placeholder="Name" autocomplete="off">
-        <input type="password" id="loginPass" class="form-input" placeholder="Passwort">
-        <button onclick="checkLogin()" class="btn-primary">START</button>
+        <p>V168 — Lagerverwaltung</p>
+        <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
+        <input type="password" id="lPass" class="fi" placeholder="Passwort">
+        <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;">START</button>
     </div>
 </div>
 
-<!-- MAIN UI -->
+<!-- MAIN -->
 <div id="ui-wrapper">
     <div class="app-header">
         <button onclick="startScanner()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;">📷</button>
         <h2>GR-LAGER V168</h2>
-        <div id="displayUserName" style="font-size:.72rem;color:var(--accent);font-weight:700;"></div>
+        <div id="uName" style="font-size:.72rem;color:var(--accent);font-weight:700;"></div>
     </div>
-
     <div class="content-area">
-        <!-- TAB: LAGER -->
-        <div id="tab-lager" class="content">
-            <input type="search" id="searchInput" placeholder="🔍 Suche..." onkeyup="render()" class="form-input">
-            <select id="filterCategory" class="form-input" onchange="render()"></select>
+        <!-- LAGER -->
+        <div id="tab-lager" class="tab-c">
+            <input type="search" id="searchInput" placeholder="🔍 Suche..." onkeyup="render()" class="fi">
+            <select id="filterCat" class="fi" onchange="render()"></select>
             <div id="itemList"></div>
         </div>
-
-        <!-- TAB: ADMIN -->
-        <div id="tab-neu" class="content" style="display:none;">
-            <div class="admin-card">
+        <!-- ADMIN -->
+        <div id="tab-neu" class="tab-c" style="display:none;">
+            <div class="ac">
                 <h4>➕ Neuer Artikel</h4>
-                <input type="text"   id="itemName"        class="form-input" placeholder="Artikelname" style="color:#000;background:#f8fafc;">
-                <input type="number" id="itemQty"         class="form-input" value="1" min="1" style="color:#000;background:#f8fafc;">
-                <select id="itemLagerSelect" class="form-input" style="color:#000;background:#f8fafc;"></select>
-                <select id="itemCatSelect"   class="form-input" style="color:#000;background:#f8fafc;"></select>
+                <input type="text"   id="iName" class="fi" placeholder="Artikelname" style="color:#000;background:#f8fafc;">
+                <input type="number" id="iQty"  class="fi" value="1" min="1" style="color:#000;background:#f8fafc;">
+                <select id="iLager"  class="fi" style="color:#000;background:#f8fafc;"></select>
+                <select id="iCat"    class="fi" style="color:#000;background:#f8fafc;"></select>
                 <div style="display:flex;gap:8px;">
-                    <select id="itemRegalSelect" class="form-input" style="flex:1;color:#000;background:#f8fafc;"></select>
-                    <select id="itemFachSelect"  class="form-input" style="flex:1;color:#000;background:#f8fafc;"></select>
+                    <select id="iRegal" class="fi" style="flex:1;color:#000;background:#f8fafc;"></select>
+                    <select id="iFach"  class="fi" style="flex:1;color:#000;background:#f8fafc;"></select>
                 </div>
-                <button onclick="document.getElementById('itemImgInput').click()" class="btn-dark">📷 FOTO AUFNEHMEN</button>
-                <input type="file" id="itemImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImage(this)">
-                <img id="imagePreview" style="width:100%;height:110px;object-fit:contain;display:none;margin-bottom:10px;border-radius:8px;background:#f1f5f9;">
-                <button onclick="saveNewItem(true)" class="btn-primary">💾 SPEICHERN & ETIKETT</button>
+                <button onclick="document.getElementById('imgInput').click()" class="btn-d">📷 FOTO</button>
+                <input type="file" id="imgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImg(this)">
+                <img id="imgPrev" style="width:100%;height:110px;object-fit:contain;display:none;margin-bottom:10px;border-radius:8px;background:#f1f5f9;">
+                <button onclick="saveItem()" class="btn-p">💾 SPEICHERN & ETIKETT</button>
             </div>
-            <div class="manage-card">
+            <div class="mc">
                 <h4>⚙️ Listenpflege</h4>
                 <div style="display:flex;gap:8px;margin-bottom:10px;">
-                    <input type="text" id="addInput" class="form-input" placeholder="Neuer Eintrag..." style="margin:0;flex:1;">
+                    <input type="text" id="addIn" class="fi" placeholder="Neuer Eintrag..." style="margin:0;flex:1;">
                     <button onclick="quickAdd()" style="background:var(--success);color:white;border:none;border-radius:8px;padding:0 16px;font-weight:700;font-size:1.1rem;cursor:pointer;">+</button>
                 </div>
-                <select id="manageType" class="form-input" onchange="updateManageList()" style="background:#0f172a;color:white;">
+                <select id="manType" class="fi" onchange="renderManage()" style="background:#0f172a;color:white;">
                     <option value="locations">Lagerorte</option>
                     <option value="cats">Kategorien</option>
                     <option value="regale">Regale</option>
                     <option value="faecher">Fächer</option>
                 </select>
-                <div id="listDisplay" style="max-height:220px;overflow-y:auto;border-radius:8px;overflow:hidden;"></div>
+                <div id="manList" style="max-height:220px;overflow-y:auto;border-radius:8px;"></div>
             </div>
         </div>
-
-        <!-- TAB: LOGS -->
-        <div id="tab-log" class="content" style="display:none;">
-            <div class="log-filters">
-                <button class="log-filter-btn active" onclick="setLogFilter('all',this)">Alles</button>
-                <button class="log-filter-btn" onclick="setLogFilter('aus',this)">Ausgelagert</button>
-                <button class="log-filter-btn" onclick="setLogFilter('ein',this)">Eingelagert</button>
-                <button class="log-filter-btn" onclick="setLogFilter('neu',this)">Neu angelegt</button>
-                <button class="log-filter-btn" onclick="setLogFilter('edit',this)">Geändert</button>
-                <button class="log-filter-btn" onclick="setLogFilter('del',this)">Gelöscht</button>
+        <!-- LOGS -->
+        <div id="tab-log" class="tab-c" style="display:none;">
+            <div class="lfb">
+                <button class="lfbtn active" onclick="setLF('all',this)">Alles</button>
+                <button class="lfbtn" onclick="setLF('aus',this)">Ausgelagert</button>
+                <button class="lfbtn" onclick="setLF('ein',this)">Eingelagert</button>
+                <button class="lfbtn" onclick="setLF('neu',this)">Neu angelegt</button>
+                <button class="lfbtn" onclick="setLF('edit',this)">Geändert</button>
+                <button class="lfbtn" onclick="setLF('del',this)">Gelöscht</button>
             </div>
             <div id="logList"></div>
         </div>
     </div>
-
     <nav>
-        <button class="tab-btn active" onclick="switchTab(event,'tab-lager')"><span class="ti">📦</span>LAGER</button>
-        <button class="tab-btn"        onclick="switchTab(event,'tab-neu')"  ><span class="ti">⚙️</span>ADMIN</button>
-        <button class="tab-btn"        onclick="switchTab(event,'tab-log')"  ><span class="ti">📜</span>LOGS</button>
+        <button class="tab-btn active" onclick="goTab(event,'tab-lager')"><span>📦</span>LAGER</button>
+        <button class="tab-btn"        onclick="goTab(event,'tab-neu')"  ><span>⚙️</span>ADMIN</button>
+        <button class="tab-btn"        onclick="goTab(event,'tab-log')"  ><span>📜</span>LOGS</button>
     </nav>
 </div>
 
 <!-- EDIT MODAL -->
 <div id="editModal" class="modal">
-    <div class="modal-box">
+    <div class="mbox">
         <h3>✏️ Bearbeiten</h3>
-        <input type="text"   id="editName" class="form-input" style="color:#000;background:#f1f5f9;">
-        <input type="number" id="editQty"  class="form-input" style="color:#000;background:#f1f5f9;">
-        <div style="display:flex;gap:10px;margin-top:4px;">
+        <input type="text"   id="eName" class="fi" style="color:#000;background:#f1f5f9;">
+        <input type="number" id="eQty"  class="fi" style="color:#000;background:#f1f5f9;">
+        <div style="display:flex;gap:10px;">
             <button onclick="saveEdit()" style="flex:1;padding:12px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✓ OK</button>
-            <button onclick="closeModal('editModal')" style="flex:1;padding:12px;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
+            <button onclick="closeModal()" style="flex:1;padding:12px;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
         </div>
     </div>
 </div>
 
 <!-- SCANNER -->
-<div id="scanner-container">
+<div id="scanbox">
     <div id="qr-reader" style="width:100%;"></div>
-    <div style="text-align:center;padding:16px;color:#94a3b8;font-size:.8rem;">Halte den QR-Code in den Rahmen</div>
-    <button onclick="stopScanner()" style="margin:10px 16px;padding:14px;background:var(--danger);color:white;border-radius:10px;border:none;font-weight:700;cursor:pointer;">✕ ABBRECHEN</button>
+    <div style="text-align:center;padding:14px;color:#94a3b8;font-size:.8rem;">QR-Code in den Rahmen halten</div>
+    <button onclick="stopScan()" style="margin:10px 16px;padding:14px;background:var(--danger);color:white;border-radius:10px;border:none;font-weight:700;cursor:pointer;">✕ ABBRECHEN</button>
 </div>
 
 <!-- PRINT OVERLAY -->
-<div id="photo-overlay">
+<div id="printOverlay">
     <p style="color:#94a3b8;font-size:.72rem;margin:0;align-self:flex-start;width:100%;max-width:510px;">Vorschau — 85 × 29 mm</p>
-
-    <div id="preview-box">
-        <div id="preview-inner">
+    <div id="pvBox">
+        <div id="pvInner">
             <div class="pv-bar"></div>
-            <div class="pv-qr"><img id="pv-qr-img" src="" alt="QR"></div>
-            <div class="pv-text">
-                <div class="pv-meta" id="pv-meta-txt"></div>
+            <div class="pv-qr"><img id="pvQR" src="" alt="QR"></div>
+            <div class="pv-txt">
+                <div class="pv-meta" id="pvMeta"></div>
                 <div class="pv-div"></div>
-                <div class="pv-name" id="pv-name-txt"></div>
-                <div class="pv-key"  id="pv-key-txt"></div>
+                <div class="pv-name" id="pvName"></div>
+                <div class="pv-key"  id="pvKey"></div>
             </div>
         </div>
     </div>
-
-    <!-- Drucker IP-Einstellungen -->
-    <div class="printer-box">
-        <div class="printer-box-title">🖨️ Brother QL-820NWB — Direkt-Druck über WLAN</div>
-        <div class="printer-row">
+    <div class="pbox">
+        <div class="pbox-t">🖨️ Brother QL-820NWB — Drucker-IP eingeben</div>
+        <div class="prow">
             <label>Drucker-IP</label>
-            <input type="text" id="printerIP" placeholder="z.B. 192.168.1.50" inputmode="decimal">
+            <input type="text" id="prIP" placeholder="z.B. 192.168.1.50" inputmode="decimal">
         </div>
-        <div style="font-size:.68rem;color:#475569;margin-top:-4px;margin-bottom:8px;">
-            💡 IP findest du am Drucker: Menü → WLAN → TCP/IP → IP-Adresse
-        </div>
-        <div class="printer-row">
-            <label>Anzahl</label>
-            <input type="number" id="printCopies" value="1" min="1" max="10" style="max-width:80px;">
+        <div style="font-size:.67rem;color:#475569;margin:-4px 0 8px;">💡 Am Drucker: Menü → WLAN → TCP/IP → IP-Adresse</div>
+        <div class="prow">
+            <label>Kopien</label>
+            <input type="number" id="prCopies" value="1" min="1" max="10" style="max-width:70px;">
         </div>
     </div>
-
-    <!-- Status -->
-    <div id="printStatus" class="print-status info">
-        <span id="printStatusText">Bereit zum Drucken.</span>
+    <div id="pStatus" class="inf"></div>
+    <div class="pbtns">
+        <button onclick="doPrint()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;">🖨️ DRUCKEN</button>
+        <button onclick="closePrint()" style="flex:0 0 56px;padding:16px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">✕</button>
     </div>
-
-    <!-- Buttons -->
-    <div class="print-btns">
-        <button onclick="sendToPrinter()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;">
-            🖨️ DIREKT DRUCKEN
-        </button>
-        <button onclick="closePhotoOverlay()" style="flex:0 0 56px;padding:16px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">✕</button>
-    </div>
-
-    <div style="font-size:.65rem;color:#334155;max-width:510px;width:100%;text-align:center;margin-top:-4px;">
-        Drucker muss im selben WLAN sein. Port 9100 muss offen sein (Standard bei Brother QL).
-    </div>
+    <p style="font-size:.63rem;color:#334155;max-width:510px;text-align:center;margin:0;">Drucker muss im selben WLAN sein.</p>
 </div>
 
 <script>
-/* ── Firebase ──────────────────────────────────────────────────────── */
-const firebaseConfig = {
+// ── Firebase ──────────────────────────────────────────────────────────
+const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
     authDomain:"gr-lagerverwaltung.firebaseapp.com",
     databaseURL:"https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
@@ -287,358 +266,301 @@ const firebaseConfig = {
     messagingSenderId:"561219570576",
     appId:"1:561219570576:web:65824b199a12933fd88115"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const mainRef = db.ref('lager_v90_multilager');
-let state = { user:"", items:[], config:{}, currentEditKey:null, currentLabel:null, logFilter:'all' };
+firebase.initializeApp(FB);
+const db  = firebase.database();
+const ref = db.ref('lager_v90_multilager');
 
-/* ── IP speichern/laden ─────────────────────────────────────────────── */
-function loadPrinterSettings(){
-    try {
-        const ip = localStorage.getItem('printerIP') || '';
-        document.getElementById('printerIP').value = ip;
-    } catch(e) { /* localStorage nicht verfügbar */ }
-}
-function savePrinterSettings(){
-    try {
-        localStorage.setItem('printerIP', document.getElementById('printerIP').value.trim());
-    } catch(e) { /* localStorage nicht verfügbar */ }
-}
+// ── State ─────────────────────────────────────────────────────────────
+const S = { user:"", items:[], cfg:{}, editKey:null, label:null, logF:'all' };
 
-/* ═══════════════════════════════════════════════════════════════════════
-   DIREKTDRUCK über fetch() an einen lokalen Proxy-Endpunkt.
+// ── LOGIN ─────────────────────────────────────────────────────────────
+document.getElementById('startBtn').addEventListener('click', function() {
+    const u = document.getElementById('lName').value.trim();
+    const p = document.getElementById('lPass').value;
+    if (!u) { alert('Bitte Namen eingeben.'); return; }
+    if (p !== '1234') { alert('Falsches Passwort.'); return; }
+    S.user = u.toUpperCase();
+    document.getElementById('uName').textContent = S.user;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('ui-wrapper').style.display  = 'flex';
+    loadIP();
+    initApp();
+});
 
-   Da Browser aus Sicherheitsgründen keine direkten TCP-Verbindungen
-   auf Port 9100 aufbauen können, nutzen wir einen Trick:
-   Wir senden das Bitmap als PNG an einen kleinen lokalen HTTP-Proxy,
-   den du einmal auf einem PC/Raspberry Pi im Netzwerk startest.
+document.getElementById('lPass').addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') document.getElementById('startBtn').click();
+});
 
-   ALTERNATIV (ohne Proxy): Wir öffnen ein neues Fenster mit der
-   Drucker-IP als URL – der Brother QL-820NWB hat ein eingebautes
-   Webinterface. Wir nutzen dessen /print Endpunkt.
-
-   BESTE LÖSUNG für reines iPhone ohne PC:
-   Das Canvas-PNG wird als Download gespeichert + Anleitung angezeigt.
-   Zusätzlich: window.open mit Popup für Drucker-Webinterface.
-═══════════════════════════════════════════════════════════════════════ */
-
-/* ── Etikett als Canvas rendern (1020×348 = 85×29mm @12px/mm) ──────── */
-function buildLabelCanvas(key, meta, name, callback) {
-    const W = 1020, H = 348;
-    const canvas = document.getElementById('printCanvas');
-    canvas.width  = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
-
-    const qrImg = new Image();
-    qrImg.crossOrigin = "anonymous";
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(key)}`;
-    qrImg.onload = () => {
-        ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,W,H);
-        ctx.fillStyle = "#06b6d4"; ctx.fillRect(0,0,14,H);
-        const qS=300, qX=26, qY=(H-qS)/2;
-        ctx.drawImage(qrImg, qX, qY, qS, qS);
-        const tX=qX+qS+22, maxW=W-tX-18;
-        ctx.textAlign="left"; ctx.textBaseline="alphabetic";
-        ctx.font="500 34px Arial"; ctx.fillStyle="#64748b";
-        ctx.fillText(meta||"—", tX, 68, maxW);
-        ctx.fillStyle="#06b6d4"; ctx.fillRect(tX,80,maxW,5);
-        ctx.fillStyle="#000";
-        let fz=108; ctx.font=`900 ${fz}px Arial`;
-        while(ctx.measureText(name).width>maxW && fz>26){fz-=4; ctx.font=`900 ${fz}px Arial`;}
-        const nameY=100+(H-110)/2+fz*0.36;
-        ctx.fillText(name, tX, nameY, maxW);
-        ctx.font="300 16px Arial"; ctx.fillStyle="#cbd5e1"; ctx.textAlign="right";
-        ctx.fillText(key, W-10, H-14);
-        callback(canvas);
-    };
-    qrImg.onerror = () => { setStatus('err','QR-Code konnte nicht geladen werden.'); };
-}
-
-/* ── Label anzeigen ─────────────────────────────────────────────────── */
-function printLabel(key, meta, name) {
-    state.currentLabel = {key, meta, name};
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(key)}`;
-    document.getElementById('pv-qr-img').src  = qrUrl;
-    document.getElementById('pv-meta-txt').textContent = meta||'—';
-    document.getElementById('pv-name-txt').textContent = name;
-    document.getElementById('pv-key-txt').textContent  = key;
-    setStatus('info','Bereit zum Drucken.');
-    document.getElementById('photo-overlay').style.display = 'flex';
-}
-
-/* ── Status-Anzeige ─────────────────────────────────────────────────── */
-function setStatus(type, msg){
-    const el = document.getElementById('printStatus');
-    el.className = `print-status ${type}`;
-    el.style.display = 'flex';
-    document.getElementById('printStatusText').textContent = msg;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   DIREKT-DRUCK STRATEGIE:
-   
-   Der Brother QL-820NWB hat ein eingebautes Web-Interface.
-   Wir versuchen es über fetch() an http://<IP>/etc/printer anzusprechen.
-   Da Browser CORS blockieren, funktioniert das von einer Webseite nicht.
-   
-   LÖSUNG: Wir nutzen das Brother-eigene "Wireless Direct" + 
-   speichern das PNG und zeigen eine klare Schritt-für-Schritt Anleitung,
-   PLUS öffnen das Brother-Webinterface im Browser für manuellen Druck.
-   
-   FÜR VOLLAUTOMATIK: Ein Mini-Proxy-Server (Node.js, 10 Zeilen) 
-   muss auf einem Gerät im Netzwerk laufen.
-═══════════════════════════════════════════════════════════════════════ */
-async function sendToPrinter(){
-    const ip     = document.getElementById('printerIP').value.trim();
-    const copies = parseInt(document.getElementById('printCopies').value)||1;
-    savePrinterSettings();
-
-    if(!ip){ setStatus('err','Bitte Drucker-IP eingeben!'); return; }
-    if(!state.currentLabel){ setStatus('err','Kein Etikett ausgewählt.'); return; }
-
-    setStatus('info spin','Etikett wird vorbereitet…');
-
-    buildLabelCanvas(state.currentLabel.key, state.currentLabel.meta, state.currentLabel.name, async canvas => {
-
-        /* Schritt 1: Versuche direkten fetch an Brother HTTP-Interface */
-        /* Das schlägt wegen CORS fehl, aber wir fangen das ab */
-        
-        /* Schritt 2: PNG-Download + Drucker-Webinterface öffnen */
-        const dataUrl = canvas.toDataURL('image/png');
-        
-        /* PNG herunterladen */
-        const a = document.createElement('a');
-        a.href     = dataUrl;
-        a.download = `etikett_${state.currentLabel.name.replace(/[^a-zA-Z0-9]/g,'_')}.png`;
-        a.click();
-
-        /* Brother Web-Interface öffnen (dort kann man PNG direkt drucken) */
-        setTimeout(()=>{
-            const printerUrl = `http://${ip}`;
-            window.open(printerUrl, '_blank');
-            setStatus('ok',
-                `✓ PNG gespeichert! Im Brother-Webinterface (${ip}) ` +
-                `unter "Drucken" hochladen → 29mm Endlos → ${copies}x drucken.`
-            );
-        }, 800);
-
-        /* Zeige auch detaillierte Anleitung */
-        setTimeout(()=>{
-            showPrintGuide(ip, copies);
-        }, 1200);
+// ── App init ──────────────────────────────────────────────────────────
+function initApp() {
+    ref.on('value', snap => {
+        S.cfg   = snap.val() || {};
+        S.items = Object.keys(S.cfg.items || {}).map(k => ({...S.cfg.items[k], key:k}));
+        render(); renderLogs(); renderManage(); fillSelects();
     });
 }
 
-function showPrintGuide(ip, copies){
-    setStatus('ok',
-        `PNG wurde gespeichert! ` +
-        `Öffne jetzt http://${ip} im Browser → ` +
-        `Drucken → Datei wählen → 29mm Endlos → ${copies}x → OK`
-    );
+function fillSelects() {
+    fill('iLager',   S.cfg.locations, false);
+    fill('iCat',     S.cfg.cats,      false);
+    fill('filterCat',S.cfg.cats,      true);
+    fill('iRegal',   S.cfg.regale,    false);
+    fill('iFach',    S.cfg.faecher,   false);
+}
+function fill(id, list, addAll) {
+    const el = document.getElementById(id); if (!el) return;
+    el.innerHTML = (addAll ? '<option value="">Alle Kategorien</option>' : '')
+        + (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
 }
 
-/* ── Login ─────────────────────────────────────────────────────────── */
-function checkLogin(){
-    try {
-        const u=document.getElementById('loginName').value.trim();
-        const p=document.getElementById('loginPass').value;
-        if(!u){alert("Bitte Namen eingeben.");return;}
-        if(p!=="1234"){alert("Falsches Passwort.");return;}
-        state.user=u.toUpperCase();
-        document.getElementById('displayUserName').innerText=state.user;
-        document.getElementById('loginScreen').style.display='none';
-        document.getElementById('ui-wrapper').style.display='flex';
-        loadPrinterSettings();
-        initApp();
-    } catch(e) {
-        alert("Fehler beim Login: " + e.message);
+// ── Render items ──────────────────────────────────────────────────────
+function render() {
+    const s = (document.getElementById('searchInput').value||'').toLowerCase();
+    const f =  document.getElementById('filterCat').value;
+    const list = S.items
+        .filter(i => i.name.toLowerCase().includes(s) && (!f || i.cat===f))
+        .sort((a,b) => b.ts - a.ts);
+
+    if (!list.length) {
+        document.getElementById('itemList').innerHTML = '<div class="empty"><i>📦</i>Keine Artikel.</div>';
+        return;
     }
-}
-
-/* ── App ─────────────────────────────────────────────────────────────  */
-function initApp(){
-    mainRef.on('value', snap=>{
-        state.config=snap.val()||{};
-        state.items=Object.keys(state.config.items||{}).map(k=>({...state.config.items[k],key:k}));
-        render(); renderLogs(); updateManageList(); populateSelects();
-    });
-}
-function populateSelects(){
-    const fill=(id,list,addAll)=>{
-        const el=document.getElementById(id); if(!el)return;
-        el.innerHTML=(addAll?'<option value="">Alle Kategorien</option>':'')+
-            (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
-    };
-    fill('itemLagerSelect',state.config.locations,false);
-    fill('itemCatSelect',  state.config.cats,false);
-    fill('filterCategory', state.config.cats,true);
-    fill('itemRegalSelect',state.config.regale,false);
-    fill('itemFachSelect', state.config.faecher,false);
-}
-
-/* ── Render ─────────────────────────────────────────────────────────── */
-function render(){
-    const s=(document.getElementById('searchInput').value||'').toLowerCase();
-    const f=document.getElementById('filterCategory').value;
-    const list=state.items.filter(i=>i.name.toLowerCase().includes(s)&&(f===""||i.cat===f)).sort((a,b)=>b.ts-a.ts);
-    if(!list.length){document.getElementById('itemList').innerHTML=`<div class="empty-state"><span class="ei">📦</span>Keine Artikel gefunden.</div>`;return;}
-    document.getElementById('itemList').innerHTML=list.map(i=>{
-        const isOut=i.status!=='im Lager';
-        const meta=`${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
-        const thumb=i.img||`https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${encodeURIComponent((i.name||'?').charAt(0))}`;
-        const badge=isOut?`⬆ AUS${i.lastUser?' von '+i.lastUser':''}`:'✔ EIN';
-        return `<div class="item-card ${isOut?'status-out':''}">
+    document.getElementById('itemList').innerHTML = list.map(i => {
+        const out  = i.status !== 'im Lager';
+        const meta = `${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
+        const thumb= i.img || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
+        const badge= out ? `⬆ AUS${i.lastUser?' von '+i.lastUser:''}` : '✔ EIN';
+        return `
+        <div class="item-card ${out?'out':''}">
             <img src="${thumb}" class="item-thumb" onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
             <div class="item-info">
-                <div class="item-name">${h(i.name)} (${i.qty}x)</div>
-                <div class="item-meta">${h(meta)}</div>
-                <span class="item-badge ${isOut?'badge-out':'badge-in'}">${badge}</span>
+                <div class="item-name">${esc(i.name)} (${i.qty}x)</div>
+                <div class="item-meta">${esc(meta)}</div>
+                <span class="item-badge ${out?'b-out':'b-in'}">${badge}</span>
             </div>
-            <div class="qr-side" onclick="printLabel('${i.key}','${a(meta)}','${a(i.name)}')">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(i.key)}" style="width:38px;" alt="QR">
+            <div class="qr-side" onclick="showPrint('${i.key}','${ea(meta)}','${ea(i.name)}')">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${enc(i.key)}" style="width:38px;" alt="QR">
                 <span>PRINT</span>
             </div>
-            <div class="action-btns">
-                <button onclick="toggleStatus('${i.key}','${a(i.name)}','${i.status}')"
-                        class="btn-toggle ${isOut?'btn-aus':'btn-ein'}">${isOut?'AUS':'EIN'}</button>
+            <div class="act">
+                <button onclick="toggle('${i.key}','${ea(i.name)}','${i.status}')"
+                        class="btn-tog ${out?'t-aus':'t-ein'}">${out?'AUS':'EIN'}</button>
                 <div style="display:flex;gap:10px;margin-top:2px;">
-                    <span onclick="openEdit('${i.key}')" style="cursor:pointer;font-size:1rem;">✏️</span>
-                    <span onclick="deleteItem('${i.key}','${a(i.name)}')" style="cursor:pointer;font-size:1rem;color:var(--danger);">🗑️</span>
+                    <span onclick="openEdit('${i.key}')" style="cursor:pointer;">✏️</span>
+                    <span onclick="delItem('${i.key}','${ea(i.name)}')" style="cursor:pointer;color:var(--danger);">🗑️</span>
                 </div>
             </div>
         </div>`;
     }).join('');
 }
 
-/* ── Manage ─────────────────────────────────────────────────────────── */
-function quickAdd(){
-    const t=document.getElementById('manageType').value;
-    const v=document.getElementById('addInput').value.trim(); if(!v)return;
-    const l=[...(state.config[t]||[])]; l.push(v);
-    mainRef.child(t).set(l); document.getElementById('addInput').value="";
+// ── Manage ────────────────────────────────────────────────────────────
+function quickAdd() {
+    const t=document.getElementById('manType').value;
+    const v=document.getElementById('addIn').value.trim(); if(!v) return;
+    const l=[...(S.cfg[t]||[])]; l.push(v);
+    ref.child(t).set(l); document.getElementById('addIn').value='';
 }
-function updateManageList(){
-    const t=document.getElementById('manageType').value, l=state.config[t]||[];
-    document.getElementById('listDisplay').innerHTML=l.length
+function renderManage() {
+    const t=document.getElementById('manType').value, l=S.cfg[t]||[];
+    document.getElementById('manList').innerHTML = l.length
         ? l.map((v,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);color:white;font-size:.83rem;">
-            <span>${h(v)}</span><span onclick="removeFromList('${t}',${i})" style="cursor:pointer;color:#ef4444;">✕</span></div>`).join('')
+            <span>${esc(v)}</span><span onclick="rmList('${t}',${i})" style="cursor:pointer;color:#ef4444;">✕</span></div>`).join('')
         : `<div style="padding:14px;color:#64748b;font-size:.8rem;text-align:center;">Noch keine Einträge</div>`;
 }
-function removeFromList(t,i){const l=[...(state.config[t]||[])];l.splice(i,1);mainRef.child(t).set(l);}
+function rmList(t,i){ const l=[...(S.cfg[t]||[])]; l.splice(i,1); ref.child(t).set(l); }
 
-/* ── Save ────────────────────────────────────────────────────────────  */
-function saveNewItem(print){
-    const n=document.getElementById('itemName').value.trim();
-    if(!n){alert("Bitte Artikelnamen eingeben.");return;}
-    const newRef=mainRef.child('items').push();
-    const d={name:n,qty:parseInt(document.getElementById('itemQty').value)||1,
-        location:document.getElementById('itemLagerSelect').value,
-        cat:document.getElementById('itemCatSelect').value,
-        regal:document.getElementById('itemRegalSelect').value,
-        fach:document.getElementById('itemFachSelect').value,
-        img:(()=>{const el=document.getElementById('imagePreview');return el.src.startsWith('data:')?el.src:"";})(),
-        status:"im Lager",ts:Date.now(),lastUser:state.user};
-    newRef.set(d).then(()=>{
-        addLog('neu',`Neuer Artikel: "${n}" · Menge: ${d.qty} · ${d.location} R:${d.regal} F:${d.fach}`);
-        if(print) printLabel(newRef.key,`${d.location} R:${d.regal}`,d.name);
-        document.getElementById('itemName').value="";
-        document.getElementById('itemQty').value="1";
-        const pv=document.getElementById('imagePreview'); pv.style.display='none'; pv.src="";
-        switchTab(null,'tab-lager');
+// ── Save item ─────────────────────────────────────────────────────────
+function saveItem() {
+    const n=document.getElementById('iName').value.trim();
+    if(!n){ alert('Bitte Artikelnamen eingeben.'); return; }
+    const nr=ref.child('items').push();
+    const d={
+        name:n, qty:parseInt(document.getElementById('iQty').value)||1,
+        location:document.getElementById('iLager').value,
+        cat:document.getElementById('iCat').value,
+        regal:document.getElementById('iRegal').value,
+        fach:document.getElementById('iFach').value,
+        img:(()=>{const e=document.getElementById('imgPrev');return e.src.startsWith('data:')?e.src:'';})(),
+        status:'im Lager', ts:Date.now(), lastUser:S.user
+    };
+    nr.set(d).then(()=>{
+        log('neu',`Neu: "${n}" · ${d.qty}x · ${d.location} R:${d.regal} F:${d.fach}`);
+        showPrint(nr.key, `${d.location} R:${d.regal}`, d.name);
+        document.getElementById('iName').value='';
+        document.getElementById('iQty').value='1';
+        const p=document.getElementById('imgPrev'); p.style.display='none'; p.src='';
+        goTab(null,'tab-lager');
     });
 }
 
-/* ── Status ─────────────────────────────────────────────────────────── */
-function toggleStatus(k,n,s){
-    const isOut=s==="im Lager";
-    const ns=isOut?"ausgeliehen":"im Lager";
-    mainRef.child('items/'+k).update({status:ns,lastUser:state.user});
-    addLog(isOut?'aus':'ein', isOut?`"${n}" ausgelagert von ${state.user}`:`"${n}" eingelagert von ${state.user}`);
+// ── Toggle EIN/AUS ────────────────────────────────────────────────────
+function toggle(k,n,s) {
+    const isOut = s==='im Lager';
+    ref.child('items/'+k).update({status:isOut?'ausgeliehen':'im Lager', lastUser:S.user});
+    log(isOut?'aus':'ein', isOut?`"${n}" ausgelagert von ${S.user}`:`"${n}" eingelagert von ${S.user}`);
 }
 
-/* ── Edit ────────────────────────────────────────────────────────────  */
-function openEdit(key){
-    state.currentEditKey=key;
-    const i=state.items.find(x=>x.key===key);
-    document.getElementById('editName').value=i.name;
-    document.getElementById('editQty').value=i.qty;
+// ── Edit ──────────────────────────────────────────────────────────────
+function openEdit(key) {
+    S.editKey=key;
+    const i=S.items.find(x=>x.key===key);
+    document.getElementById('eName').value=i.name;
+    document.getElementById('eQty').value=i.qty;
     document.getElementById('editModal').style.display='flex';
 }
-function saveEdit(){
-    const item=state.items.find(x=>x.key===state.currentEditKey);
-    const newN=document.getElementById('editName').value.trim();
-    const newQ=parseInt(document.getElementById('editQty').value)||1;
-    if(!newN)return;
-    const changes=[];
-    if(newN!==item.name) changes.push(`Name: "${item.name}" → "${newN}"`);
-    if(newQ!==parseInt(item.qty)) changes.push(`Menge: ${item.qty} → ${newQ}`);
-    mainRef.child('items/'+state.currentEditKey).update({name:newN,qty:newQ,lastUser:state.user}).then(()=>{
-        if(changes.length) addLog('edit',`"${item.name}" geändert: ${changes.join(' | ')}`);
-        closeModal('editModal');
+function saveEdit() {
+    const item=S.items.find(x=>x.key===S.editKey);
+    const newN=document.getElementById('eName').value.trim();
+    const newQ=parseInt(document.getElementById('eQty').value)||1;
+    if(!newN) return;
+    const ch=[];
+    if(newN!==item.name) ch.push(`Name: "${item.name}" → "${newN}"`);
+    if(newQ!==parseInt(item.qty)) ch.push(`Menge: ${item.qty} → ${newQ}`);
+    ref.child('items/'+S.editKey).update({name:newN,qty:newQ,lastUser:S.user}).then(()=>{
+        if(ch.length) log('edit',`"${item.name}": ${ch.join(' | ')}`);
+        closeModal();
     });
 }
-function deleteItem(k,n){
-    if(!confirm(`"${n}" wirklich löschen?`))return;
-    mainRef.child('items/'+k).remove();
-    addLog('del',`"${n}" gelöscht`);
+function delItem(k,n) {
+    if(!confirm(`"${n}" löschen?`)) return;
+    ref.child('items/'+k).remove();
+    log('del',`"${n}" gelöscht`);
 }
+function closeModal(){ document.getElementById('editModal').style.display='none'; }
 
-/* ── Logs ────────────────────────────────────────────────────────────  */
-function addLog(typ,text){mainRef.child('logs').push({user:state.user,text,typ,ts:Date.now()});}
+// ── Logs ──────────────────────────────────────────────────────────────
+function log(typ,text){ ref.child('logs').push({user:S.user,text,typ,ts:Date.now()}); }
 
-let currentLogFilter='all';
-function setLogFilter(f,btn){
-    currentLogFilter=f;
-    document.querySelectorAll('.log-filter-btn').forEach(b=>b.classList.remove('active'));
+function setLF(f,btn){
+    S.logF=f;
+    document.querySelectorAll('.lfbtn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active'); renderLogs();
 }
-const LOG_TAG={aus:['tag-aus','⬆ AUS'],ein:['tag-ein','⬇ EIN'],neu:['tag-neu','✚ NEU'],edit:['tag-edit','✏ EDIT'],del:['tag-del','🗑 DEL']};
+const LT={aus:['t-aus','⬆ AUS'],ein:['t-ein','⬇ EIN'],neu:['t-neu','✚ NEU'],edit:['t-edit','✏ EDIT'],del:['t-del','🗑 DEL']};
 function renderLogs(){
-    let logs=Object.values(state.config.logs||{}).sort((a,b)=>b.ts-a.ts);
-    if(currentLogFilter!=='all') logs=logs.filter(l=>l.typ===currentLogFilter);
+    let logs=Object.values(S.cfg.logs||{}).sort((a,b)=>b.ts-a.ts);
+    if(S.logF!=='all') logs=logs.filter(l=>l.typ===S.logF);
     logs=logs.slice(0,80);
-    if(!logs.length){document.getElementById('logList').innerHTML=`<div class="empty-state"><span class="ei">📜</span>Keine Einträge für diesen Filter.</div>`;return;}
-    document.getElementById('logList').innerHTML=logs.map(l=>{
-        const[cls,label]=LOG_TAG[l.typ]||['tag-edit','•'];
-        const ts=new Date(l.ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-        return `<div class="log-item"><span><span class="log-tag ${cls}">${label}</span><b>${h(l.user)}</b>: ${h(l.text)}</span><span class="log-time">${ts}</span></div>`;
-    }).join('');
+    document.getElementById('logList').innerHTML=logs.length
+        ? logs.map(l=>{
+            const[cls,lbl]=LT[l.typ]||['t-edit','•'];
+            const ts=new Date(l.ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+            return `<div class="log-item"><span><span class="ltag ${cls}">${lbl}</span><b>${esc(l.user)}</b>: ${esc(l.text)}</span><span class="log-time">${ts}</span></div>`;
+          }).join('')
+        : '<div class="empty"><i>📜</i>Keine Einträge.</div>';
 }
 
-/* ── UI ──────────────────────────────────────────────────────────────  */
-function switchTab(e,id){
-    document.querySelectorAll('.content').forEach(c=>c.style.display='none');
+// ── Print / Label ─────────────────────────────────────────────────────
+function showPrint(key,meta,name){
+    S.label={key,meta,name};
+    document.getElementById('pvQR').src=`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enc(key)}`;
+    document.getElementById('pvMeta').textContent=meta||'—';
+    document.getElementById('pvName').textContent=name;
+    document.getElementById('pvKey').textContent=key;
+    setPS('inf','Bereit.');
+    document.getElementById('printOverlay').style.display='flex';
+}
+function closePrint(){ document.getElementById('printOverlay').style.display='none'; S.label=null; }
+function setPS(cls,msg){
+    const el=document.getElementById('pStatus');
+    el.className=cls; el.style.display='block'; el.textContent=msg;
+}
+function loadIP(){
+    try { document.getElementById('prIP').value=localStorage.getItem('prIP')||''; } catch(e){}
+}
+function saveIP(){
+    try { localStorage.setItem('prIP', document.getElementById('prIP').value.trim()); } catch(e){}
+}
+
+function doPrint(){
+    const ip=document.getElementById('prIP').value.trim();
+    const copies=parseInt(document.getElementById('prCopies').value)||1;
+    saveIP();
+    if(!ip){ setPS('err','Bitte Drucker-IP eingeben!'); return; }
+    if(!S.label){ setPS('err','Kein Etikett.'); return; }
+
+    setPS('inf','Etikett wird erstellt…');
+
+    // Canvas 1020×348px = 85×29mm @ 12px/mm
+    const W=1020, H=348;
+    const cvs=document.getElementById('cvs');
+    cvs.width=W; cvs.height=H;
+    const ctx=cvs.getContext('2d');
+    const qr=new Image(); qr.crossOrigin='anonymous';
+    qr.src=`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${enc(S.label.key)}`;
+    qr.onload=()=>{
+        ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle='#06b6d4'; ctx.fillRect(0,0,14,H);
+        ctx.drawImage(qr,26,(H-300)/2,300,300);
+        const tX=26+300+22, mW=W-tX-18;
+        ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+        ctx.font='500 34px Arial'; ctx.fillStyle='#64748b';
+        ctx.fillText(S.label.meta||'—',tX,68,mW);
+        ctx.fillStyle='#06b6d4'; ctx.fillRect(tX,80,mW,5);
+        ctx.fillStyle='#000';
+        let fz=108; ctx.font=`900 ${fz}px Arial`;
+        while(ctx.measureText(S.label.name).width>mW&&fz>26){fz-=4;ctx.font=`900 ${fz}px Arial`;}
+        ctx.fillText(S.label.name,tX,100+(H-110)/2+fz*0.36,mW);
+        ctx.font='300 16px Arial'; ctx.fillStyle='#cbd5e1'; ctx.textAlign='right';
+        ctx.fillText(S.label.key,W-10,H-14);
+
+        // PNG herunterladen
+        const a=document.createElement('a');
+        a.href=cvs.toDataURL('image/png');
+        a.download=`label_${(S.label.name||'etikett').replace(/[^a-z0-9]/gi,'_')}.png`;
+        a.click();
+
+        // Brother Webinterface öffnen
+        setTimeout(()=>{
+            window.open(`http://${ip}`,'_blank');
+            setPS('ok',`✓ PNG gespeichert! Öffne http://${ip} → Drucken → Datei wählen → 29mm Endlos → ${copies}x`);
+        },600);
+    };
+    qr.onerror=()=>setPS('err','QR-Code konnte nicht geladen werden.');
+}
+
+// ── Nav / tabs ────────────────────────────────────────────────────────
+function goTab(e,id){
+    document.querySelectorAll('.tab-c').forEach(c=>c.style.display='none');
     document.getElementById(id).style.display='block';
-    if(e){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));e.currentTarget.classList.add('active');}
+    if(e){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); e.currentTarget.classList.add('active'); }
     if(id==='tab-log') renderLogs();
-    if(id==='tab-neu') updateManageList();
-}
-function closeModal(id){document.getElementById(id).style.display='none';}
-function closePhotoOverlay(){document.getElementById('photo-overlay').style.display='none'; state.currentLabel=null;}
-function previewImage(input){
-    if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{const el=document.getElementById('imagePreview');el.src=e.target.result;el.style.display='block';};r.readAsDataURL(input.files[0]);}
+    if(id==='tab-neu') renderManage();
 }
 
-/* ── Scanner ─────────────────────────────────────────────────────────  */
+// ── Scanner ───────────────────────────────────────────────────────────
 let scanner=null;
 function startScanner(){
-    document.getElementById('scanner-container').style.display='flex';
-    scanner=new Html5Qrcode("qr-reader");
-    scanner.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},
-        txt=>{const item=state.items.find(x=>x.key===txt);
-            if(item){toggleStatus(item.key,item.name,item.status);stopScanner();}
-            else alert("Kein Artikel gefunden.");}
-    ).catch(()=>stopScanner());
+    document.getElementById('scanbox').style.display='flex';
+    scanner=new Html5Qrcode('qr-reader');
+    scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},
+        txt=>{
+            const item=S.items.find(x=>x.key===txt);
+            if(item){toggle(item.key,item.name,item.status);stopScan();}
+            else alert('Artikel nicht gefunden.');
+        }
+    ).catch(()=>stopScan());
 }
-function stopScanner(){
-    if(scanner) scanner.stop().then(()=>{document.getElementById('scanner-container').style.display='none';scanner=null;}).catch(()=>{document.getElementById('scanner-container').style.display='none';scanner=null;});
+function stopScan(){
+    if(scanner) scanner.stop()
+        .then(()=>{document.getElementById('scanbox').style.display='none';scanner=null;})
+        .catch(()=>{document.getElementById('scanbox').style.display='none';scanner=null;});
 }
 
-/* ── Helpers ─────────────────────────────────────────────────────────  */
-function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function a(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
-document.getElementById('loginPass').addEventListener('keyup',e=>{if(e.key==='Enter')checkLogin();});
+// ── Image preview ─────────────────────────────────────────────────────
+function previewImg(inp){
+    if(inp.files&&inp.files[0]){
+        const r=new FileReader();
+        r.onload=e=>{const el=document.getElementById('imgPrev');el.src=e.target.result;el.style.display='block';};
+        r.readAsDataURL(inp.files[0]);
+    }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function ea(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function enc(s){return encodeURIComponent(s||'');}
 </script>
 </body>
 </html>
