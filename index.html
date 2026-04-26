@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V172</title>
+    <title>GR-Lagerverwaltung V173</title>
+
+    <!-- Auto-Update Mechanismus -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -65,16 +70,31 @@
         .tab-btn.active { color:white; background:rgba(6,182,212,0.15); border-top:3px solid var(--accent); }
 
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:5000; align-items:center; justify-content:center; padding:20px; }
-        .mbox  { background:white; color:#000; padding:22px; border-radius:16px; width:100%; max-width:340px; }
+        .mbox  { background:white; color:#000; padding:22px; border-radius:16px; width:100%; max-width:360px; }
         .mbox h3 { margin:0 0 6px; color:#1e293b; }
-        .mbox .mb-info { font-size:.8rem; color:#475569; margin-bottom:14px; line-height:1.4; }
+        .mbox .mb-info { font-size:.85rem; color:#475569; margin-bottom:16px; line-height:1.5; }
 
-        /* QTY suggestion buttons */
         .qty-suggest { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
         .qty-sbtn { background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; border-radius:7px; padding:8px 12px; font-size:.78rem; font-weight:700; cursor:pointer; flex:1 1 auto; min-width:60px; }
         .qty-sbtn.you { background:#dbeafe; color:#1e40af; border-color:#3b82f6; }
         .qty-sbtn.all { background:#fef3c7; color:#92400e; border-color:#fbbf24; }
         .qty-sbtn:active { transform:scale(0.96); }
+
+        /* Scanner-Choice Modal Buttons */
+        .choice-btns { display:flex; flex-direction:column; gap:10px; }
+        .choice-btn {
+            padding:18px 16px; border:none; border-radius:12px;
+            color:white; font-weight:800; font-size:1rem; cursor:pointer;
+            display:flex; align-items:center; gap:14px;
+            text-align:left; line-height:1.2;
+        }
+        .choice-btn .ci { font-size:1.6rem; line-height:1; flex-shrink:0; }
+        .choice-btn .ct { flex:1; }
+        .choice-btn .ct small { display:block; font-size:.7rem; opacity:0.85; font-weight:500; margin-top:2px; }
+        .choice-aus { background:var(--danger); }
+        .choice-ein { background:var(--success); }
+        .choice-cancel { background:#e2e8f0; color:#1e293b; padding:12px; font-size:.85rem; justify-content:center; }
+        .choice-cancel .ci { font-size:1rem; }
 
         #scanbox { display:none; position:fixed; inset:0; background:#000; z-index:6000; flex-direction:column; }
 
@@ -99,7 +119,6 @@
         .pv-name { font-weight:900; color:#000; line-height:1.1; white-space:nowrap; overflow:hidden; font-size:clamp(14px,4vw,30px); }
         .pv-key  { font-size:clamp(5px,1vw,8px); color:#cbd5e1; margin-top:4%; overflow:hidden; white-space:nowrap; }
 
-        /* Print Guide Box */
         .pguide { background:rgba(15,23,42,0.92); border:1px solid rgba(6,182,212,0.4); border-radius:12px; padding:14px 16px; }
         .pguide h4 { color:var(--accent); font-size:.82rem; margin:0 0 12px; display:flex; align-items:center; gap:6px; }
         .pstep { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; }
@@ -138,6 +157,23 @@
         .btn-p { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
         .btn-d { width:100%; padding:13px; background:#1e293b; color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; margin-bottom:10px; }
 
+        /* Update-Banner */
+        #updateBanner {
+            display:none; position:fixed;
+            top:calc(env(safe-area-inset-top) + 8px); left:8px; right:8px;
+            background:var(--success); color:white;
+            padding:12px 16px; border-radius:12px;
+            font-size:.85rem; font-weight:700;
+            z-index:20000; box-shadow:0 4px 20px rgba(0,0,0,0.4);
+            display:flex; align-items:center; justify-content:space-between; gap:10px;
+        }
+        #updateBanner.show { display:flex; }
+        #updateBanner button {
+            background:white; color:var(--success);
+            border:none; padding:8px 14px; border-radius:8px;
+            font-weight:800; cursor:pointer; font-size:.78rem;
+        }
+
         #cvs { display:none; }
     </style>
 </head>
@@ -146,11 +182,17 @@
 <canvas id="cvs"></canvas>
 <div class="global-bg"></div>
 
+<!-- AUTO-UPDATE BANNER -->
+<div id="updateBanner">
+    <span>🔄 Neue Version verfügbar!</span>
+    <button onclick="location.reload(true)">Aktualisieren</button>
+</div>
+
 <!-- LOGIN -->
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V172 — Lagerverwaltung</p>
+        <p>V173 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -170,7 +212,6 @@
             <select id="filterCat" class="fi" onchange="render()"></select>
             <div id="itemList"></div>
         </div>
-
         <div id="tab-neu" class="tab-c" style="display:none;">
             <div class="ac">
                 <h4>➕ Neuer Artikel</h4>
@@ -202,7 +243,6 @@
                 <div id="manList" style="max-height:220px;overflow-y:auto;border-radius:8px;"></div>
             </div>
         </div>
-
         <div id="tab-log" class="tab-c" style="display:none;">
             <div class="lfb">
                 <button class="lfbtn active" onclick="setLF('all',this)">Alles</button>
@@ -249,6 +289,28 @@
     </div>
 </div>
 
+<!-- SCANNER-CHOICE MODAL (statt confirm() Dialog) -->
+<div id="scanChoiceModal" class="modal">
+    <div class="mbox">
+        <h3 id="scTitle">📦 Was möchtest du tun?</h3>
+        <div id="scInfo" class="mb-info"></div>
+        <div class="choice-btns">
+            <button class="choice-btn choice-aus" onclick="scanChoice('aus')">
+                <span class="ci">📤</span>
+                <span class="ct">AUSLEIHEN<small>Artikel aus dem Lager nehmen</small></span>
+            </button>
+            <button class="choice-btn choice-ein" onclick="scanChoice('ein')">
+                <span class="ci">📥</span>
+                <span class="ct">ZURÜCKBRINGEN<small>Artikel ins Lager zurück</small></span>
+            </button>
+            <button class="choice-btn choice-cancel" onclick="closeModal('scanChoiceModal')">
+                <span class="ci">✕</span>
+                <span class="ct" style="text-align:center;">Schließen</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- SCANNER -->
 <div id="scanbox">
     <div id="qr-reader" style="width:100%;"></div>
@@ -284,13 +346,11 @@
                 </div>
             </div>
         </div>
-
-        <!-- Anleitung -->
         <div class="pguide">
-            <h4>🖨️ Drucken über Brother iPrint&Label App</h4>
+            <h4>🖨️ Drucken über Brother iPrint&Label</h4>
             <div class="pstep">
                 <div class="pstep-num">1</div>
-                <div class="pstep-txt">Tippe unten <b>"📥 BILD SPEICHERN"</b> — das Etikett wird in deine Fotos gespeichert.</div>
+                <div class="pstep-txt">Tippe <b>"📥 BILD TEILEN"</b> → wähle <b>"In Fotos sichern"</b></div>
             </div>
             <div class="pstep">
                 <div class="pstep-num">2</div>
@@ -298,28 +358,29 @@
             </div>
             <div class="pstep">
                 <div class="pstep-num">3</div>
-                <div class="pstep-txt">Wähle <b>"Erstellen"</b> → <b>"Fotos"</b> → wähle das gerade gespeicherte Bild</div>
+                <div class="pstep-txt"><b>"Erstellen"</b> → <b>"Fotos"</b> → wähle das gespeicherte Etikett</div>
             </div>
             <div class="pstep">
                 <div class="pstep-num">4</div>
-                <div class="pstep-txt">Wähle Etiketten-Format: <code>62 mm × 29 mm</code> oder <code>Endlos 29 mm</code> mit Länge <code>85 mm</code></div>
+                <div class="pstep-txt">Format: <code>62 × 29 mm</code> oder <code>Endlos 29 mm</code> mit Länge <code>85 mm</code></div>
             </div>
             <div class="pstep">
                 <div class="pstep-num">5</div>
-                <div class="pstep-txt"><b>Drucken</b> antippen — fertig! ✓</div>
+                <div class="pstep-txt"><b>Drucken</b> ✓</div>
             </div>
         </div>
-
         <div id="pStatus" class="inf"></div>
-
         <div class="pbtns">
-            <button onclick="saveLabelImage()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:.95rem;cursor:pointer;">📥 BILD SPEICHERN</button>
+            <button onclick="shareLabel()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:.95rem;cursor:pointer;">📥 BILD TEILEN</button>
             <button onclick="closePrint()" style="flex:0 0 56px;padding:16px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">✕</button>
         </div>
     </div>
 </div>
 
 <script>
+// ── APP-VERSION für Auto-Update ───────────────────────────────────────
+const APP_VERSION = "V173";
+
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
     authDomain:"gr-lagerverwaltung.firebaseapp.com",
@@ -333,7 +394,36 @@ firebase.initializeApp(FB);
 const db  = firebase.database();
 const ref = db.ref('lager_v90_multilager');
 
-const S = { user:"", items:[], cfg:{}, editKey:null, label:null, logF:'all', qtyAction:null };
+const S = { user:"", items:[], cfg:{}, editKey:null, label:null, logF:'all', qtyAction:null, scanItem:null };
+
+// ═══════════════════════════════════════════════════════════════════════
+// AUTO-UPDATE: Beim Start aktuelle Version aus Firebase laden, dann
+// regelmäßig prüfen ob sich was geändert hat. Schreibt initial die
+// eigene Version, wenn noch keine in DB steht.
+// ═══════════════════════════════════════════════════════════════════════
+function setupAutoUpdate() {
+    const versionRef = db.ref('lager_v90_multilager/_appVersion');
+    versionRef.once('value', snap => {
+        const remoteVersion = snap.val();
+        if (!remoteVersion) {
+            // Initial: setze die aktuelle Version
+            versionRef.set(APP_VERSION);
+        } else if (remoteVersion !== APP_VERSION) {
+            // Lokale Version ist älter als die in Firebase → Update-Banner
+            showUpdateBanner();
+        }
+    });
+    // Live-Listener: wenn ein Admin neue Datei hochlädt und Version setzt
+    versionRef.on('value', snap => {
+        const remoteVersion = snap.val();
+        if (remoteVersion && remoteVersion !== APP_VERSION) {
+            showUpdateBanner();
+        }
+    });
+}
+function showUpdateBanner() {
+    document.getElementById('updateBanner').classList.add('show');
+}
 
 document.getElementById('startBtn').addEventListener('click', function() {
     const u = document.getElementById('lName').value.trim();
@@ -345,6 +435,7 @@ document.getElementById('startBtn').addEventListener('click', function() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('ui-wrapper').style.display  = 'flex';
     initApp();
+    setupAutoUpdate();
 });
 document.getElementById('lPass').addEventListener('keyup', e => { if (e.key === 'Enter') document.getElementById('startBtn').click(); });
 
@@ -353,10 +444,8 @@ function initApp() {
         S.cfg   = snap.val() || {};
         S.items = Object.keys(S.cfg.items || {}).map(k => {
             const item = { ...S.cfg.items[k], key:k };
-            // borrowers: { USERNAME: anzahl }
             if (!item.borrowers) {
                 item.borrowers = {};
-                // Migration: alte 'borrowed' / 'ausgeliehen' Status-Werte
                 if (item.borrowed && parseInt(item.borrowed) > 0 && item.lastUser) {
                     item.borrowers[item.lastUser] = parseInt(item.borrowed);
                 } else if (item.status === 'ausgeliehen' && item.lastUser) {
@@ -382,13 +471,11 @@ function fill(id, list, addAll) {
         + (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
 }
 
-// Helper: Total ausgeliehen (Summe aller borrowers)
 function totalBorrowed(item) {
     if (!item.borrowers) return 0;
     return Object.values(item.borrowers).reduce((s,v) => s + (parseInt(v)||0), 0);
 }
 
-// RENDER ITEMS
 function render() {
     const s = (document.getElementById('searchInput').value||'').toLowerCase();
     const f =  document.getElementById('filterCat').value;
@@ -408,33 +495,22 @@ function render() {
         const allOut   = inStock === 0 && borrowed > 0;
 
         let cardCls, badgeCls, badgeText;
-        if (allIn) {
-            cardCls=''; badgeCls='b-in';
-            badgeText = `✔ ${total}× im Lager`;
-        } else if (allOut) {
-            cardCls='out'; badgeCls='b-out';
-            badgeText = `⬆ Alle ausgeliehen`;
-        } else {
-            cardCls='mix'; badgeCls='b-mix';
-            badgeText = `⚡ ${inStock}/${total} im Lager`;
-        }
+        if (allIn)      { cardCls='';    badgeCls='b-in';  badgeText = `✔ ${total}× im Lager`; }
+        else if (allOut){ cardCls='out'; badgeCls='b-out'; badgeText = `⬆ Alle ausgeliehen`; }
+        else            { cardCls='mix'; badgeCls='b-mix'; badgeText = `⚡ ${inStock}/${total} im Lager`; }
 
-        // Borrower-Liste anzeigen
         let borrowerInfo = '';
         if (i.borrowers && Object.keys(i.borrowers).length > 0) {
-            const list = Object.entries(i.borrowers)
+            const lst = Object.entries(i.borrowers)
                 .filter(([u,n]) => parseInt(n) > 0)
                 .map(([u,n]) => `<b>${esc(u)}</b>: ${n}×`)
                 .join(' · ');
-            if (list) borrowerInfo = `<div class="borrowers">📤 ${list}</div>`;
+            if (lst) borrowerInfo = `<div class="borrowers">📤 ${lst}</div>`;
         }
 
         const meta = `${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
         const thumb= i.img || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
         const hasImg = !!i.img;
-
-        // Eigene ausgeliehene Menge des aktuellen Users
-        const myBorrowed = (i.borrowers && i.borrowers[S.user]) ? parseInt(i.borrowers[S.user]) : 0;
 
         return `
         <div class="item-card ${cardCls}">
@@ -474,19 +550,15 @@ function askQty(type, key) {
     if (type === 'aus') {
         max = inStock;
         if (max <= 0) { alert('Alles bereits ausgeliehen.'); return; }
-        // Vorschläge: 1, ggf. inStock
         suggestions.push({ label: '1', value: 1 });
         if (inStock > 1) suggestions.push({ label: `Alle ${inStock}`, value: inStock, cls:'all' });
     } else {
-        // EIN: nur was DU selbst ausgeliehen hast zurückbringen
         max = myBorrowed > 0 ? myBorrowed : borrowed;
         if (max <= 0) { alert('Du hast nichts zum Zurückbringen.'); return; }
-        // Vorschläge: deine eigene Menge zuerst, dann ggf. einzelne Schritte
         if (myBorrowed > 0) {
             suggestions.push({ label: `Meine ${myBorrowed}`, value: myBorrowed, cls:'you' });
             if (myBorrowed > 1) suggestions.push({ label: '1', value: 1 });
         } else {
-            // Falls aktueller User selbst nichts ausgeliehen hat (anderer Admin): fallback
             suggestions.push({ label: '1', value: 1 });
             if (borrowed > 1) suggestions.push({ label: `Alle ${borrowed}`, value: borrowed, cls:'all' });
         }
@@ -501,10 +573,7 @@ function askQty(type, key) {
         infoHtml += `Verfügbar: <b>${inStock}</b> von ${total} Stück`;
     } else {
         infoHtml += `Insgesamt ausgeliehen: <b>${borrowed}</b> Stück`;
-        if (myBorrowed > 0) {
-            infoHtml += `<br>Davon von <b>${esc(S.user)}</b>: <b>${myBorrowed} Stück</b>`;
-        }
-        // Liste aller borrower
+        if (myBorrowed > 0) infoHtml += `<br>Davon von <b>${esc(S.user)}</b>: <b>${myBorrowed} Stück</b>`;
         if (item.borrowers) {
             const others = Object.entries(item.borrowers)
                 .filter(([u,n]) => parseInt(n)>0 && u!==S.user)
@@ -514,13 +583,12 @@ function askQty(type, key) {
     }
     document.getElementById('qtyInfo').innerHTML = infoHtml;
 
-    // Vorschlag-Buttons rendern
     document.getElementById('qtySuggest').innerHTML = suggestions.map(s =>
         `<button class="qty-sbtn ${s.cls||''}" onclick="qtyPick(${s.value})">${s.label}</button>`
     ).join('');
 
     const inp = document.getElementById('qtyInput');
-    inp.value = suggestions[0].value; // Erster Vorschlag als Default
+    inp.value = suggestions[0].value;
     inp.min = 1; inp.max = max;
 
     document.getElementById('qtyOkBtn').style.background = (type==='aus') ? 'var(--danger)' : 'var(--success)';
@@ -529,9 +597,7 @@ function askQty(type, key) {
     setTimeout(()=>inp.focus(), 100);
 }
 
-function qtyPick(n) {
-    document.getElementById('qtyInput').value = n;
-}
+function qtyPick(n) { document.getElementById('qtyInput').value = n; }
 
 function qtyConfirm() {
     if (!S.qtyAction) return;
@@ -544,21 +610,15 @@ function qtyConfirm() {
     const borrowers = { ...(item.borrowers || {}) };
 
     if (S.qtyAction.type === 'aus') {
-        // Aktuellem User n Stück hinzufügen
         borrowers[S.user] = (parseInt(borrowers[S.user])||0) + n;
     } else {
-        // Eintrag des aktuellen Users reduzieren
         const cur = parseInt(borrowers[S.user])||0;
         if (cur >= n) {
             borrowers[S.user] = cur - n;
             if (borrowers[S.user] === 0) delete borrowers[S.user];
         } else {
-            // User hat selbst nichts oder zu wenig → von einem anderen abziehen
-            // (Admin-Funktion: löscht von dem mit der größten Menge)
             let remaining = n;
-            // Erst eigene reduzieren falls vorhanden
             if (cur > 0) { remaining -= cur; delete borrowers[S.user]; }
-            // Dann von anderen
             const sorted = Object.entries(borrowers).sort((a,b) => b[1]-a[1]);
             for (const [u, count] of sorted) {
                 if (remaining <= 0) break;
@@ -576,7 +636,7 @@ function qtyConfirm() {
 
     ref.child('items/' + S.qtyAction.key).update({
         borrowers: borrowers,
-        borrowed: newTotalBorrowed, // für Kompatibilität
+        borrowed: newTotalBorrowed,
         status: newStatus,
         lastUser: S.user
     });
@@ -648,7 +708,6 @@ function saveEdit() {
     let updates = {name:newN, qty:newQ, lastUser:S.user};
     const borrowed = totalBorrowed(item);
     if (newQ < borrowed) {
-        // Reduziere borrowers proportional bzw. einfach abschneiden
         const borrowers = {...(item.borrowers||{})};
         let toRemove = borrowed - newQ;
         const sorted = Object.entries(borrowers).sort((a,b) => b[1]-a[1]);
@@ -660,8 +719,8 @@ function saveEdit() {
             toRemove -= take;
         }
         updates.borrowers = borrowers;
-        updates.borrowed = newQ - (newQ - Object.values(borrowers).reduce((s,v)=>s+v,0));
-        updates.status = Object.values(borrowers).reduce((s,v)=>s+v,0)===0 ? 'im Lager' : 'ausgeliehen';
+        updates.borrowed = Object.values(borrowers).reduce((s,v)=>s+v,0);
+        updates.status = updates.borrowed===0 ? 'im Lager' : 'ausgeliehen';
     }
     ref.child('items/'+S.editKey).update(updates).then(()=>{
         if(ch.length) log('edit',`"${item.name}": ${ch.join(' | ')}`);
@@ -731,23 +790,28 @@ function showPrint(key,meta,name){
     document.getElementById('pvMeta').textContent=meta||'—';
     document.getElementById('pvName').textContent=name;
     document.getElementById('pvKey').textContent=key;
-    setPS('inf','Tippe „BILD SPEICHERN" und folge der Anleitung.');
+    setPS('inf','Tippe "📥 BILD TEILEN" und wähle "In Fotos sichern".');
     document.getElementById('printOverlay').style.display='flex';
 }
 function closePrint(){ document.getElementById('printOverlay').style.display='none'; S.label=null; }
 function setPS(cls,msg){ const el=document.getElementById('pStatus'); el.className=cls; el.style.display='block'; el.textContent=msg; }
 
-// Speichert das Etikett-Bild als PNG ins Foto-Album / Downloads
-function saveLabelImage(){
-    if(!S.label){ setPS('err','Kein Etikett.'); return; }
-    setPS('inf','Etikett wird erstellt…');
+// ═══════════════════════════════════════════════════════════════════════
+// LABEL über iOS Web Share API teilen → User wählt "In Fotos sichern"
+// ═══════════════════════════════════════════════════════════════════════
+async function shareLabel() {
+    if (!S.label) { setPS('err', 'Kein Etikett.'); return; }
+    setPS('inf', 'Etikett wird erstellt...');
+
     const W=1020, H=348;
     const cvs=document.getElementById('cvs');
     cvs.width=W; cvs.height=H;
     const ctx=cvs.getContext('2d');
+
     const qr=new Image(); qr.crossOrigin='anonymous';
     qr.src=`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${enc(S.label.key)}`;
-    qr.onload=()=>{
+
+    qr.onload = async () => {
         ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
         ctx.fillStyle='#06b6d4'; ctx.fillRect(0,0,14,H);
         ctx.drawImage(qr,26,(H-300)/2,300,300);
@@ -763,17 +827,46 @@ function saveLabelImage(){
         ctx.font='300 16px Arial'; ctx.fillStyle='#cbd5e1'; ctx.textAlign='right';
         ctx.fillText(S.label.key,W-10,H-14);
 
-        // PNG als Download
-        const a=document.createElement('a');
-        a.href=cvs.toDataURL('image/png');
-        a.download=`etikett_${(S.label.name||'label').replace(/[^a-z0-9äöüß]/gi,'_')}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Canvas → Blob → File
+        cvs.toBlob(async (blob) => {
+            if (!blob) { setPS('err','Fehler beim Erstellen.'); return; }
+            const fileName = `etikett_${(S.label.name||'label').replace(/[^a-z0-9äöüß]/gi,'_')}.png`;
+            const file = new File([blob], fileName, { type: 'image/png' });
 
-        setPS('ok','✓ Etikett gespeichert! Öffne jetzt die Brother iPrint&Label App.');
+            // iOS Share API → öffnet Teilen-Dialog mit "In Fotos sichern"
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'GR-Lager Etikett'
+                    });
+                    setPS('ok','✓ Geteilt! Wähle "In Fotos sichern".');
+                } catch (err) {
+                    if (err.name !== 'AbortError') {
+                        // Fallback: Download
+                        downloadFallback(blob, fileName);
+                    } else {
+                        setPS('inf','Teilen abgebrochen.');
+                    }
+                }
+            } else {
+                downloadFallback(blob, fileName);
+            }
+        }, 'image/png');
     };
     qr.onerror=()=>setPS('err','QR-Code konnte nicht geladen werden.');
+}
+
+function downloadFallback(blob, fileName){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setPS('ok','✓ Etikett heruntergeladen.');
 }
 
 function goTab(e,id){
@@ -784,7 +877,9 @@ function goTab(e,id){
     if(id==='tab-neu') renderManage();
 }
 
-// SCANNER
+// ═══════════════════════════════════════════════════════════════════════
+// SCANNER mit eigenem Choice-Modal statt confirm()
+// ═══════════════════════════════════════════════════════════════════════
 let scanner=null;
 function startScanner(){
     document.getElementById('scanbox').style.display='flex';
@@ -794,25 +889,7 @@ function startScanner(){
             const item=S.items.find(x=>x.key===txt);
             if(item){
                 stopScan();
-                const total=parseInt(item.qty)||0;
-                const borrowed=totalBorrowed(item);
-                const myBorrowed = (item.borrowers && item.borrowers[S.user]) ? parseInt(item.borrowers[S.user]) : 0;
-                if (borrowed === 0) askQty('aus', item.key);
-                else if (borrowed === total) askQty('ein', item.key);
-                else {
-                    // Wenn User selbst was ausgeliehen hat → wahrscheinlich zurückbringen
-                    if (myBorrowed > 0) {
-                        if (confirm(`"${item.name}"\n\nDu hast ${myBorrowed} ausgeliehen.\n\nOK = ZURÜCKBRINGEN\nAbbrechen = Nochmal AUSLEIHEN`))
-                            askQty('ein', item.key);
-                        else
-                            askQty('aus', item.key);
-                    } else {
-                        if (confirm(`"${item.name}"\n\n${total-borrowed}/${total} im Lager · ${borrowed} ausgeliehen\n\nOK = AUSLEIHEN\nAbbrechen = ZURÜCKBRINGEN`))
-                            askQty('aus', item.key);
-                        else
-                            askQty('ein', item.key);
-                    }
-                }
+                handleScannedItem(item);
             }
             else { alert('Artikel nicht gefunden.'); }
         }
@@ -822,6 +899,42 @@ function stopScan(){
     if(scanner) scanner.stop()
         .then(()=>{document.getElementById('scanbox').style.display='none';scanner=null;})
         .catch(()=>{document.getElementById('scanbox').style.display='none';scanner=null;});
+}
+
+// Scanner Choice: zeigt schönes Modal statt confirm()
+function handleScannedItem(item) {
+    const total = parseInt(item.qty) || 0;
+    const borrowed = totalBorrowed(item);
+    const inStock = total - borrowed;
+    const myBorrowed = (item.borrowers && item.borrowers[S.user]) ? parseInt(item.borrowers[S.user]) : 0;
+
+    // Direkt-Aktionen ohne Nachfrage
+    if (borrowed === 0)            { askQty('aus', item.key); return; } // alles im Lager → ausleihen
+    if (borrowed === total && myBorrowed > 0) { askQty('ein', item.key); return; } // alles ausgeliehen, ich hab welche → zurück
+    if (borrowed === total && myBorrowed === 0) { alert('Alles ausgeliehen — und du hast keine.'); return; }
+
+    // Teilweise → Choice-Modal anzeigen
+    S.scanItem = item;
+    document.getElementById('scTitle').innerHTML = `📦 ${esc(item.name)}`;
+    let info = `<b>${inStock}/${total}</b> im Lager · <b>${borrowed}</b> ausgeliehen`;
+    if (myBorrowed > 0) info += `<br>Du hast davon: <b>${myBorrowed} Stück</b>`;
+    document.getElementById('scInfo').innerHTML = info;
+
+    // Zeige nur die EIN-Option wenn der User selbst was ausgeliehen hat
+    const einBtn = document.querySelector('.choice-ein');
+    einBtn.style.display = (borrowed > 0) ? 'flex' : 'none';
+    const ausBtn = document.querySelector('.choice-aus');
+    ausBtn.style.display = (inStock > 0) ? 'flex' : 'none';
+
+    document.getElementById('scanChoiceModal').style.display = 'flex';
+}
+
+function scanChoice(type) {
+    const item = S.scanItem;
+    closeModal('scanChoiceModal');
+    if (!item) return;
+    askQty(type, item.key);
+    S.scanItem = null;
 }
 
 function previewImg(inp){
