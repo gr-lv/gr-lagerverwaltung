@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V175</title>
+    <title>GR-Lagerverwaltung V176</title>
 
     <!-- Auto-Update Mechanismus -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -29,13 +29,19 @@
         .app-header { background:rgba(0,0,0,0.92); padding:calc(48px + env(safe-area-inset-top)) 14px 13px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); gap:8px; }
         .app-header h2 { margin:0; font-size:.82rem; flex:1; text-align:center; letter-spacing:.04em; display:flex; align-items:center; justify-content:center; gap:8px; }
         .app-logo {
-            width:26px; height:26px; flex-shrink:0;
-            filter: drop-shadow(0 0 6px rgba(6,182,212,0.6));
-            animation: logoGlow 3s ease-in-out infinite;
+            width:30px; height:30px; flex-shrink:0;
+            animation: logoGlow 2s ease-in-out infinite;
+            transform-origin: center center;
         }
         @keyframes logoGlow {
-            0%, 100% { filter: drop-shadow(0 0 4px rgba(6,182,212,0.5)); }
-            50%      { filter: drop-shadow(0 0 10px rgba(6,182,212,0.9)); }
+            0%, 100% {
+                filter: drop-shadow(0 0 2px rgba(6,182,212,0.4));
+                transform: scale(1);
+            }
+            50% {
+                filter: drop-shadow(0 0 14px rgba(6,182,212,1)) drop-shadow(0 0 22px rgba(6,182,212,0.8));
+                transform: scale(1.15);
+            }
         }
         .content-area { flex:1; overflow-y:auto; padding:10px; padding-bottom:calc(88px + env(safe-area-inset-bottom)); background:rgba(0,0,0,0.28); }
 
@@ -208,7 +214,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V175 — Lagerverwaltung</p>
+        <p>V176 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -408,7 +414,7 @@
 
 <script>
 // ── APP-VERSION für Auto-Update ───────────────────────────────────────
-const APP_VERSION = "V175";
+const APP_VERSION = "V176";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
