@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V173</title>
+    <title>GR-Lagerverwaltung V174</title>
 
     <!-- Auto-Update Mechanismus -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -142,9 +142,11 @@
         .lfb { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
         .lfbtn { border:1px solid rgba(255,255,255,0.2); background:rgba(30,41,59,0.8); color:#94a3b8; padding:5px 10px; border-radius:20px; font-size:.68rem; cursor:pointer; font-weight:600; }
         .lfbtn.active { background:var(--accent); color:white; border-color:var(--accent); }
-        .log-item { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:.73rem; color:#94a3b8; display:flex; justify-content:space-between; gap:8px; }
+        .log-item { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:.78rem; color:#cbd5e1; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
         .log-item b { color:var(--accent); }
-        .log-time { font-size:.6rem; color:#475569; white-space:nowrap; flex-shrink:0; }
+        .log-time { font-size:.7rem; color:#06b6d4; white-space:nowrap; flex-shrink:0; font-weight:700; text-align:right; line-height:1.35; background:rgba(6,182,212,0.08); padding:4px 8px; border-radius:6px; border:1px solid rgba(6,182,212,0.2); }
+        .log-time .ld { display:block; font-size:.72rem; color:#7dd3fc; }
+        .log-time .lt { display:block; font-size:.78rem; color:white; font-weight:800; }
         .ltag { display:inline-block; font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px; }
         .lt-aus  { background:#fee2e2; color:#991b1b; }
         .lt-ein  { background:#d1fae5; color:#065f46; }
@@ -159,19 +161,24 @@
 
         /* Update-Banner */
         #updateBanner {
-            display:none; position:fixed;
+            display:none;
+            position:fixed;
             top:calc(env(safe-area-inset-top) + 8px); left:8px; right:8px;
             background:var(--success); color:white;
             padding:12px 16px; border-radius:12px;
             font-size:.85rem; font-weight:700;
             z-index:20000; box-shadow:0 4px 20px rgba(0,0,0,0.4);
-            display:flex; align-items:center; justify-content:space-between; gap:10px;
+            align-items:center; justify-content:space-between; gap:10px;
         }
         #updateBanner.show { display:flex; }
         #updateBanner button {
             background:white; color:var(--success);
             border:none; padding:8px 14px; border-radius:8px;
             font-weight:800; cursor:pointer; font-size:.78rem;
+        }
+        /* Wenn Banner sichtbar → Header weiter nach unten schieben */
+        body.has-banner .app-header {
+            padding-top:calc(70px + env(safe-area-inset-top)) !important;
         }
 
         #cvs { display:none; }
@@ -185,14 +192,14 @@
 <!-- AUTO-UPDATE BANNER -->
 <div id="updateBanner">
     <span>🔄 Neue Version verfügbar!</span>
-    <button onclick="location.reload(true)">Aktualisieren</button>
+    <button onclick="reloadWithCacheBust()">Aktualisieren</button>
 </div>
 
 <!-- LOGIN -->
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V173 — Lagerverwaltung</p>
+        <p>V174 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -379,7 +386,7 @@
 
 <script>
 // ── APP-VERSION für Auto-Update ───────────────────────────────────────
-const APP_VERSION = "V173";
+const APP_VERSION = "V174";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -397,32 +404,69 @@ const ref = db.ref('lager_v90_multilager');
 const S = { user:"", items:[], cfg:{}, editKey:null, label:null, logF:'all', qtyAction:null, scanItem:null };
 
 // ═══════════════════════════════════════════════════════════════════════
-// AUTO-UPDATE: Beim Start aktuelle Version aus Firebase laden, dann
-// regelmäßig prüfen ob sich was geändert hat. Schreibt initial die
-// eigene Version, wenn noch keine in DB steht.
+// AUTO-UPDATE
+// Logik:
+//  - Beim Login: aktuelle Version aus Firebase holen
+//  - Wenn lokale Version >= remote Version: Banner ausblenden + remote
+//    Version auf eigene aktualisieren (falls eigene neuer ist)
+//  - Wenn lokale Version < remote Version: Banner zeigen
+//  - Live-Listener: wenn andere User die Version hochziehen, Banner zeigen
+//
+// "Aktualisieren"-Button macht hartes Reload mit Cache-Bust per ?v=
 // ═══════════════════════════════════════════════════════════════════════
+function versionToNum(v) {
+    // "V174" → 174 ; "V173" → 173 ; ungültig → 0
+    if (!v || typeof v !== 'string') return 0;
+    const m = v.match(/(\d+)/);
+    return m ? parseInt(m[1]) : 0;
+}
+
 function setupAutoUpdate() {
     const versionRef = db.ref('lager_v90_multilager/_appVersion');
+    const localNum = versionToNum(APP_VERSION);
+
+    // Erst einmalig prüfen und ggf. eigene Version setzen
     versionRef.once('value', snap => {
         const remoteVersion = snap.val();
-        if (!remoteVersion) {
-            // Initial: setze die aktuelle Version
+        const remoteNum = versionToNum(remoteVersion);
+
+        if (localNum > remoteNum) {
+            // Wir sind neuer → Firebase aktualisieren
             versionRef.set(APP_VERSION);
-        } else if (remoteVersion !== APP_VERSION) {
-            // Lokale Version ist älter als die in Firebase → Update-Banner
+            hideUpdateBanner();
+        } else if (localNum < remoteNum) {
+            // Wir sind älter → Banner zeigen
             showUpdateBanner();
+        } else {
+            // Gleich → Banner verstecken
+            hideUpdateBanner();
         }
     });
-    // Live-Listener: wenn ein Admin neue Datei hochlädt und Version setzt
+
+    // Live-Listener für nachträgliche Änderungen
     versionRef.on('value', snap => {
         const remoteVersion = snap.val();
-        if (remoteVersion && remoteVersion !== APP_VERSION) {
+        const remoteNum = versionToNum(remoteVersion);
+        if (remoteNum > localNum) {
             showUpdateBanner();
+        } else {
+            hideUpdateBanner();
         }
     });
 }
 function showUpdateBanner() {
     document.getElementById('updateBanner').classList.add('show');
+    document.body.classList.add('has-banner');
+}
+function hideUpdateBanner() {
+    document.getElementById('updateBanner').classList.remove('show');
+    document.body.classList.remove('has-banner');
+}
+function reloadWithCacheBust() {
+    // Hartes Reload mit Cache-Bust-Parameter
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', Date.now());
+    window.location.replace(url.toString());
 }
 
 document.getElementById('startBtn').addEventListener('click', function() {
@@ -705,6 +749,17 @@ function saveEdit() {
     const ch=[];
     if(newN!==item.name) ch.push(`Name: "${item.name}" → "${newN}"`);
     if(newQ!==parseInt(item.qty)) ch.push(`Menge: ${item.qty} → ${newQ}`);
+
+    // Wenn nichts geändert wurde, einfach schließen
+    if (ch.length === 0) {
+        closeModal('editModal');
+        return;
+    }
+
+    // Bestätigungs-Dialog mit Liste der Änderungen
+    const confirmText = `Folgende Änderungen speichern?\n\n${ch.join('\n')}`;
+    if (!confirm(confirmText)) return;
+
     let updates = {name:newN, qty:newQ, lastUser:S.user};
     const borrowed = totalBorrowed(item);
     if (newQ < borrowed) {
@@ -723,7 +778,7 @@ function saveEdit() {
         updates.status = updates.borrowed===0 ? 'im Lager' : 'ausgeliehen';
     }
     ref.child('items/'+S.editKey).update(updates).then(()=>{
-        if(ch.length) log('edit',`"${item.name}": ${ch.join(' | ')}`);
+        log('edit',`"${item.name}": ${ch.join(' | ')}`);
         closeModal('editModal');
     });
 }
@@ -748,8 +803,13 @@ function renderLogs(){
     document.getElementById('logList').innerHTML=logs.length
         ? logs.map(l=>{
             const[cls,lbl]=LT[l.typ]||['lt-edit','•'];
-            const ts=new Date(l.ts).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-            return `<div class="log-item"><span><span class="ltag ${cls}">${lbl}</span><b>${esc(l.user)}</b>: ${esc(l.text)}</span><span class="log-time">${ts}</span></div>`;
+            const d = new Date(l.ts);
+            const datum = d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+            const zeit  = d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            return `<div class="log-item">
+                <span><span class="ltag ${cls}">${lbl}</span><b>${esc(l.user)}</b>: ${esc(l.text)}</span>
+                <span class="log-time"><span class="ld">${datum}</span><span class="lt">${zeit}</span></span>
+            </div>`;
           }).join('')
         : '<div class="empty"><i>📜</i>Keine Einträge.</div>';
 }
