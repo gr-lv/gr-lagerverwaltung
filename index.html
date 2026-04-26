@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V176</title>
+    <title>GR-Lagerverwaltung V177</title>
 
     <!-- Auto-Update Mechanismus -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -214,7 +214,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V176 — Lagerverwaltung</p>
+        <p>V177 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -414,7 +414,7 @@
 
 <script>
 // ── APP-VERSION für Auto-Update ───────────────────────────────────────
-const APP_VERSION = "V176";
+const APP_VERSION = "V177";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -432,58 +432,60 @@ const ref = db.ref('lager_v90_multilager');
 const S = { user:"", items:[], cfg:{}, editKey:null, label:null, logF:'all', qtyAction:null, scanItem:null };
 
 // ═══════════════════════════════════════════════════════════════════════
-// AUTO-UPDATE
-// Logik:
-//  - Beim Login: aktuelle Version aus Firebase holen
-//  - Wenn lokale Version >= remote Version: Banner ausblenden + remote
-//    Version auf eigene aktualisieren (falls eigene neuer ist)
-//  - Wenn lokale Version < remote Version: Banner zeigen
-//  - Live-Listener: wenn andere User die Version hochziehen, Banner zeigen
+// AUTO-UPDATE — robuste Version
 //
-// "Aktualisieren"-Button macht hartes Reload mit Cache-Bust per ?v=
+// Strategie: Wir holen alle 30 Sekunden die index.html selbst frisch
+// vom Server (mit Cache-Bust) und schauen im <title> nach der Version.
+// Wenn die Server-Version höher ist als die lokale → Banner zeigen.
+//
+// Das funktioniert IMMER, egal wer welche Version offen hat.
+// Der "Aktualisieren"-Button macht ein Hard-Reload mit Cache-Bust.
 // ═══════════════════════════════════════════════════════════════════════
 function versionToNum(v) {
-    // "V174" → 174 ; "V173" → 173 ; ungültig → 0
     if (!v || typeof v !== 'string') return 0;
     const m = v.match(/(\d+)/);
     return m ? parseInt(m[1]) : 0;
 }
 
+async function checkServerVersion() {
+    try {
+        // Hole index.html mit Cache-Bust
+        const url = window.location.pathname + '?_v=' + Date.now();
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (!resp.ok) return;
+        const text = await resp.text();
+        // Suche im <title> nach Versionsnummer (z.B. "GR-Lagerverwaltung V177")
+        const m = text.match(/<title>[^<]*?(V\d+)[^<]*<\/title>/i);
+        if (!m) return;
+        const serverVersion = m[1];
+        const serverNum = versionToNum(serverVersion);
+        const localNum  = versionToNum(APP_VERSION);
+        if (serverNum > localNum) {
+            showUpdateBanner(serverVersion);
+        } else {
+            hideUpdateBanner();
+        }
+    } catch (e) {
+        // Netzwerkfehler ignorieren
+    }
+}
+
 function setupAutoUpdate() {
-    const versionRef = db.ref('lager_v90_multilager/_appVersion');
-    const localNum = versionToNum(APP_VERSION);
-
-    // Erst einmalig prüfen und ggf. eigene Version setzen
-    versionRef.once('value', snap => {
-        const remoteVersion = snap.val();
-        const remoteNum = versionToNum(remoteVersion);
-
-        if (localNum > remoteNum) {
-            // Wir sind neuer → Firebase aktualisieren
-            versionRef.set(APP_VERSION);
-            hideUpdateBanner();
-        } else if (localNum < remoteNum) {
-            // Wir sind älter → Banner zeigen
-            showUpdateBanner();
-        } else {
-            // Gleich → Banner verstecken
-            hideUpdateBanner();
-        }
-    });
-
-    // Live-Listener für nachträgliche Änderungen
-    versionRef.on('value', snap => {
-        const remoteVersion = snap.val();
-        const remoteNum = versionToNum(remoteVersion);
-        if (remoteNum > localNum) {
-            showUpdateBanner();
-        } else {
-            hideUpdateBanner();
-        }
+    // Sofort einmal prüfen
+    checkServerVersion();
+    // Alle 30 Sekunden erneut prüfen
+    setInterval(checkServerVersion, 30000);
+    // Auch prüfen wenn die App wieder in den Vordergrund kommt
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) checkServerVersion();
     });
 }
-function showUpdateBanner() {
-    document.getElementById('updateBanner').classList.add('show');
+function showUpdateBanner(serverVersion) {
+    const banner = document.getElementById('updateBanner');
+    if (serverVersion) {
+        banner.querySelector('span').textContent = `🔄 Neue Version ${serverVersion} verfügbar!`;
+    }
+    banner.classList.add('show');
     document.body.classList.add('has-banner');
 }
 function hideUpdateBanner() {
@@ -491,7 +493,6 @@ function hideUpdateBanner() {
     document.body.classList.remove('has-banner');
 }
 function reloadWithCacheBust() {
-    // Hartes Reload mit Cache-Bust-Parameter
     const url = new URL(window.location.href);
     url.searchParams.set('v', Date.now());
     window.location.replace(url.toString());
