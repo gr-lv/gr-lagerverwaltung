@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V178</title>
+    <title>GR-Lagerverwaltung V179</title>
 
-    <!-- Auto-Update Mechanismus -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -15,7 +14,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
 
     <style>
-        :root { --accent:#06b6d4; --danger:#ef4444; --success:#10b981; --warn:#f59e0b; }
+        :root { --accent:#06b6d4; --danger:#ef4444; --success:#10b981; --warn:#f59e0b; --reserved:#8b5cf6; }
         *, *::before, *::after { box-sizing:border-box; }
         body, html { margin:0; padding:0; height:100vh; width:100%; font-family:sans-serif; background:#000; color:white; overflow:hidden; }
         .global-bg { position:fixed; inset:0; background:linear-gradient(rgba(0,0,0,0.72),rgba(0,0,0,0.88)), url('haus_background.jpg') no-repeat center/cover; z-index:1; }
@@ -28,21 +27,8 @@
         #ui-wrapper { position:relative; z-index:10; height:100vh; display:none; flex-direction:column; }
         .app-header { background:rgba(0,0,0,0.92); padding:calc(48px + env(safe-area-inset-top)) 14px 13px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); gap:8px; }
         .app-header h2 { margin:0; font-size:.82rem; flex:1; text-align:center; letter-spacing:.04em; display:flex; align-items:center; justify-content:center; gap:8px; }
-        .app-logo {
-            width:30px; height:30px; flex-shrink:0;
-            animation: logoGlow 2s ease-in-out infinite;
-            transform-origin: center center;
-        }
-        @keyframes logoGlow {
-            0%, 100% {
-                filter: drop-shadow(0 0 2px rgba(6,182,212,0.4));
-                transform: scale(1);
-            }
-            50% {
-                filter: drop-shadow(0 0 14px rgba(6,182,212,1)) drop-shadow(0 0 22px rgba(6,182,212,0.8));
-                transform: scale(1.15);
-            }
-        }
+        .app-logo { width:30px; height:30px; flex-shrink:0; animation: logoGlow 2s ease-in-out infinite; transform-origin: center center; }
+        @keyframes logoGlow { 0%,100%{filter:drop-shadow(0 0 2px rgba(6,182,212,0.4));transform:scale(1);} 50%{filter:drop-shadow(0 0 14px rgba(6,182,212,1)) drop-shadow(0 0 22px rgba(6,182,212,0.8));transform:scale(1.15);} }
         .content-area { flex:1; overflow-y:auto; padding:10px; padding-bottom:calc(88px + env(safe-area-inset-bottom)); background:rgba(0,0,0,0.28); }
 
         .fi { width:100%; padding:11px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); font-size:.95rem; margin-bottom:10px; background:rgba(30,41,59,0.85); color:white; }
@@ -63,31 +49,37 @@
         .item-info  { flex:1; min-width:0; }
         .item-name  { font-weight:900; font-size:.82rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .item-meta  { font-size:.6rem; color:#64748b; margin-top:3px; }
-        .item-badge { display:inline-block; font-size:.55rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-top:4px; }
+        .item-badge { display:inline-block; font-size:.55rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-top:4px; margin-right:3px; }
         .b-in  { background:#d1fae5; color:#065f46; }
         .b-out { background:#fee2e2; color:#991b1b; }
         .b-mix { background:#fef3c7; color:#92400e; }
+        .b-res { background:#ede9fe; color:#5b21b6; }
         .borrowers { font-size:.55rem; color:#64748b; margin-top:3px; line-height:1.3; }
         .borrowers b { color:#dc2626; font-weight:700; }
+        .reservations-mini { font-size:.55rem; color:#5b21b6; margin-top:3px; line-height:1.3; }
+        .reservations-mini b { color:#7c3aed; font-weight:700; }
+
         .qr-side { width:52px; height:52px; background:white; padding:3px; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
         .qr-side span { font-size:.38rem; color:#000; font-weight:700; margin-top:2px; }
 
-        .act { display:grid; grid-template-columns:1fr 1fr; gap:5px; align-items:center; justify-items:center; border-left:1px solid #e2e8f0; padding-left:8px; }
-        .btn-tog { border:none; padding:7px 2px; border-radius:6px; color:white; font-weight:800; font-size:.6rem; cursor:pointer; min-width:34px; letter-spacing:.04em; }
+        /* Action: 3 reihen, 2 spalten */
+        .act { display:grid; grid-template-columns:1fr 1fr; gap:4px; align-items:center; justify-items:center; border-left:1px solid #e2e8f0; padding-left:8px; }
+        .btn-tog { border:none; padding:6px 2px; border-radius:6px; color:white; font-weight:800; font-size:.58rem; cursor:pointer; min-width:34px; letter-spacing:.04em; }
         .btn-tog:disabled { opacity:0.28; cursor:not-allowed; }
         .t-ein { background:var(--success); }
         .t-aus { background:var(--danger); }
+        .t-res { background:var(--reserved); grid-column: span 2; width:100%; padding:6px; }
         .ic { cursor:pointer; font-size:1rem; line-height:1; }
 
         nav { position:fixed; bottom:0; left:0; width:100%; background:rgba(3,7,18,0.96); display:flex; height:calc(64px + env(safe-area-inset-bottom)); border-top:2px solid var(--accent); z-index:100; padding-bottom:env(safe-area-inset-bottom); }
-        .tab-btn { flex:1; border:none; background:none; color:#64748b; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.65rem; font-weight:700; cursor:pointer; }
-        .tab-btn span { font-size:1.2rem; margin-bottom:2px; }
+        .tab-btn { flex:1; border:none; background:none; color:#64748b; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.62rem; font-weight:700; cursor:pointer; padding:0 2px; }
+        .tab-btn span.ti { font-size:1.15rem; margin-bottom:2px; }
         .tab-btn.active { color:white; background:rgba(6,182,212,0.15); border-top:3px solid var(--accent); }
 
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:5000; align-items:center; justify-content:center; padding:20px; }
-        .mbox  { background:white; color:#000; padding:22px; border-radius:16px; width:100%; max-width:360px; }
+        .mbox  { background:white; color:#000; padding:22px; border-radius:16px; width:100%; max-width:360px; max-height:85vh; overflow-y:auto; }
         .mbox h3 { margin:0 0 6px; color:#1e293b; }
-        .mbox .mb-info { font-size:.85rem; color:#475569; margin-bottom:16px; line-height:1.5; }
+        .mbox .mb-info { font-size:.85rem; color:#475569; margin-bottom:14px; line-height:1.5; }
 
         .qty-suggest { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
         .qty-sbtn { background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; border-radius:7px; padding:8px 12px; font-size:.78rem; font-weight:700; cursor:pointer; flex:1 1 auto; min-width:60px; }
@@ -95,21 +87,28 @@
         .qty-sbtn.all { background:#fef3c7; color:#92400e; border-color:#fbbf24; }
         .qty-sbtn:active { transform:scale(0.96); }
 
-        /* Scanner-Choice Modal Buttons */
         .choice-btns { display:flex; flex-direction:column; gap:10px; }
-        .choice-btn {
-            padding:18px 16px; border:none; border-radius:12px;
-            color:white; font-weight:800; font-size:1rem; cursor:pointer;
-            display:flex; align-items:center; gap:14px;
-            text-align:left; line-height:1.2;
-        }
+        .choice-btn { padding:18px 16px; border:none; border-radius:12px; color:white; font-weight:800; font-size:1rem; cursor:pointer; display:flex; align-items:center; gap:14px; text-align:left; line-height:1.2; }
         .choice-btn .ci { font-size:1.6rem; line-height:1; flex-shrink:0; }
         .choice-btn .ct { flex:1; }
         .choice-btn .ct small { display:block; font-size:.7rem; opacity:0.85; font-weight:500; margin-top:2px; }
         .choice-aus { background:var(--danger); }
         .choice-ein { background:var(--success); }
+        .choice-res { background:var(--reserved); }
         .choice-cancel { background:#e2e8f0; color:#1e293b; padding:12px; font-size:.85rem; justify-content:center; }
         .choice-cancel .ci { font-size:1rem; }
+
+        /* Reservierungs-Liste im Modal */
+        .res-list-modal { max-height:200px; overflow-y:auto; margin-bottom:12px; border:1px solid #e2e8f0; border-radius:8px; }
+        .res-line {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:8px 12px; border-bottom:1px solid #f1f5f9;
+            font-size:.78rem;
+        }
+        .res-line:last-child { border-bottom:none; }
+        .res-line.mine { background:#f5f3ff; }
+        .res-line .rl-info b { color:#5b21b6; }
+        .res-line .rl-del { color:var(--danger); cursor:pointer; font-size:.85rem; padding:0 6px; }
 
         #scanbox { display:none; position:fixed; inset:0; background:#000; z-index:6000; flex-direction:column; }
 
@@ -168,16 +167,38 @@
         .lt-neu  { background:#dbeafe; color:#1e40af; }
         .lt-edit { background:#fef3c7; color:#92400e; }
         .lt-del  { background:#f3e8ff; color:#6b21a8; }
+        .lt-res  { background:#ede9fe; color:#5b21b6; }
+        .lt-resd { background:#e0e7ff; color:#3730a3; }
+
+        /* RESERVIERUNGS-TAB */
+        .res-section-title { color:var(--accent); font-size:.85rem; font-weight:700; margin:14px 0 8px; padding:0 2px; display:flex; align-items:center; gap:6px; }
+        .res-card {
+            background:rgba(255,255,255,0.97); border-radius:12px;
+            margin-bottom:8px; padding:12px;
+            color:#000; border-left:5px solid var(--reserved);
+            display:flex; gap:10px; align-items:center;
+        }
+        .res-card.past { border-left-color:#94a3b8; opacity:0.7; }
+        .res-card.active { border-left-color:var(--success); background:#f0fdf4; }
+        .res-card.mine { background:#faf5ff; }
+        .res-card-info { flex:1; min-width:0; }
+        .res-card-title { font-weight:900; font-size:.85rem; color:#1e293b; }
+        .res-card-meta { font-size:.7rem; color:#64748b; margin-top:3px; }
+        .res-card-meta b { color:#5b21b6; }
+        .res-card-dates { font-size:.78rem; color:#1e293b; margin-top:5px; font-weight:700; background:#ede9fe; padding:4px 8px; border-radius:6px; display:inline-block; }
+        .res-card.active .res-card-dates { background:#bbf7d0; color:#065f46; }
+        .res-card.past .res-card-dates { background:#e2e8f0; color:#475569; }
+        .res-del-btn { background:none; border:none; cursor:pointer; font-size:1.2rem; color:var(--danger); padding:6px; }
 
         .empty { text-align:center; padding:40px 20px; color:#64748b; font-size:.85rem; }
         .empty i { font-size:2.5rem; display:block; margin-bottom:10px; }
         .btn-p { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
         .btn-d { width:100%; padding:13px; background:#1e293b; color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; margin-bottom:10px; }
+        .btn-res { width:100%; padding:14px; background:var(--reserved); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
 
         /* Update-Banner */
         #updateBanner {
-            display:none;
-            position:fixed;
+            display:none; position:fixed;
             top:calc(env(safe-area-inset-top) + 8px); left:8px; right:8px;
             background:var(--success); color:white;
             padding:12px 16px; border-radius:12px;
@@ -191,7 +212,6 @@
             border:none; padding:8px 14px; border-radius:8px;
             font-weight:800; cursor:pointer; font-size:.78rem;
         }
-        /* Wenn Banner sichtbar → Header weiter nach unten schieben */
         body.has-banner .app-header {
             padding-top:calc(70px + env(safe-area-inset-top)) !important;
         }
@@ -204,7 +224,6 @@
 <canvas id="cvs"></canvas>
 <div class="global-bg"></div>
 
-<!-- AUTO-UPDATE BANNER -->
 <div id="updateBanner">
     <span>🔄 Neue Version verfügbar!</span>
     <button onclick="reloadWithCacheBust()">Aktualisieren</button>
@@ -214,7 +233,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V178 — Lagerverwaltung</p>
+        <p>V179 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -247,6 +266,11 @@
             <select id="filterCat" class="fi" onchange="render()"></select>
             <div id="itemList"></div>
         </div>
+
+        <div id="tab-res" class="tab-c" style="display:none;">
+            <div id="resList"></div>
+        </div>
+
         <div id="tab-neu" class="tab-c" style="display:none;">
             <div class="ac">
                 <h4>➕ Neuer Artikel</h4>
@@ -278,12 +302,14 @@
                 <div id="manList" style="max-height:220px;overflow-y:auto;border-radius:8px;"></div>
             </div>
         </div>
+
         <div id="tab-log" class="tab-c" style="display:none;">
             <div class="lfb">
                 <button class="lfbtn active" onclick="setLF('all',this)">Alles</button>
                 <button class="lfbtn" onclick="setLF('aus',this)">Ausgelagert</button>
                 <button class="lfbtn" onclick="setLF('ein',this)">Eingelagert</button>
-                <button class="lfbtn" onclick="setLF('neu',this)">Neu angelegt</button>
+                <button class="lfbtn" onclick="setLF('res',this)">Reservierung</button>
+                <button class="lfbtn" onclick="setLF('neu',this)">Neu</button>
                 <button class="lfbtn" onclick="setLF('edit',this)">Geändert</button>
                 <button class="lfbtn" onclick="setLF('del',this)">Gelöscht</button>
             </div>
@@ -291,9 +317,10 @@
         </div>
     </div>
     <nav>
-        <button class="tab-btn active" onclick="goTab(event,'tab-lager')"><span>📦</span>LAGER</button>
-        <button class="tab-btn"        onclick="goTab(event,'tab-neu')"  ><span>⚙️</span>ADMIN</button>
-        <button class="tab-btn"        onclick="goTab(event,'tab-log')"  ><span>📜</span>LOGS</button>
+        <button class="tab-btn active" onclick="goTab(event,'tab-lager')"><span class="ti">📦</span>LAGER</button>
+        <button class="tab-btn"        onclick="goTab(event,'tab-res')"  ><span class="ti">📅</span>RESERV.</button>
+        <button class="tab-btn"        onclick="goTab(event,'tab-neu')"  ><span class="ti">⚙️</span>ADMIN</button>
+        <button class="tab-btn"        onclick="goTab(event,'tab-log')"  ><span class="ti">📜</span>LOGS</button>
     </nav>
 </div>
 
@@ -324,7 +351,33 @@
     </div>
 </div>
 
-<!-- SCANNER-CHOICE MODAL (statt confirm() Dialog) -->
+<!-- RESERVIERUNGS MODAL -->
+<div id="resModal" class="modal">
+    <div class="mbox">
+        <h3>📅 Reservieren</h3>
+        <div id="resInfo" class="mb-info"></div>
+
+        <div id="resExisting" style="margin-bottom:14px;"></div>
+
+        <label style="display:block;font-size:.78rem;color:#475569;margin-bottom:4px;font-weight:700;">Stückzahl</label>
+        <input type="number" id="resQty" class="fi-light" min="1" value="1">
+
+        <label style="display:block;font-size:.78rem;color:#475569;margin-bottom:4px;font-weight:700;">Von (Datum)</label>
+        <input type="date" id="resFrom" class="fi-light">
+
+        <label style="display:block;font-size:.78rem;color:#475569;margin-bottom:4px;font-weight:700;">Bis (Datum)</label>
+        <input type="date" id="resTo" class="fi-light">
+
+        <div id="resWarn" style="font-size:.75rem;color:#dc2626;margin-bottom:10px;display:none;"></div>
+
+        <div style="display:flex;gap:10px;margin-top:4px;">
+            <button onclick="saveReservation()" style="flex:1;padding:12px;background:var(--reserved);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">📅 RESERVIEREN</button>
+            <button onclick="closeModal('resModal')" style="flex:0 0 60px;padding:12px;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
+        </div>
+    </div>
+</div>
+
+<!-- SCANNER-CHOICE MODAL -->
 <div id="scanChoiceModal" class="modal">
     <div class="mbox">
         <h3 id="scTitle">📦 Was möchtest du tun?</h3>
@@ -337,6 +390,10 @@
             <button class="choice-btn choice-ein" onclick="scanChoice('ein')">
                 <span class="ci">📥</span>
                 <span class="ct">ZURÜCKBRINGEN<small>Artikel ins Lager zurück</small></span>
+            </button>
+            <button class="choice-btn choice-res" onclick="scanChoice('res')">
+                <span class="ci">📅</span>
+                <span class="ct">RESERVIEREN<small>Für späteren Zeitpunkt vormerken</small></span>
             </button>
             <button class="choice-btn choice-cancel" onclick="closeModal('scanChoiceModal')">
                 <span class="ci">✕</span>
@@ -368,7 +425,7 @@
 <!-- PRINT OVERLAY -->
 <div id="printOverlay">
     <div id="printOverlay-inner">
-        <p style="color:#94a3b8;font-size:.72rem;margin:0;">Vorschau — 85 × 29 mm Endlosband</p>
+        <p style="color:#94a3b8;font-size:.72rem;margin:0;">Vorschau — 85 × 29 mm</p>
         <div id="pvBox">
             <div id="pvInner">
                 <div class="pv-bar"></div>
@@ -383,26 +440,11 @@
         </div>
         <div class="pguide">
             <h4>🖨️ Drucken über Brother iPrint&Label</h4>
-            <div class="pstep">
-                <div class="pstep-num">1</div>
-                <div class="pstep-txt">Tippe <b>"📥 BILD TEILEN"</b> → wähle <b>"In Fotos sichern"</b></div>
-            </div>
-            <div class="pstep">
-                <div class="pstep-num">2</div>
-                <div class="pstep-txt">Öffne die <b>Brother iPrint&Label</b> App</div>
-            </div>
-            <div class="pstep">
-                <div class="pstep-num">3</div>
-                <div class="pstep-txt"><b>"Erstellen"</b> → <b>"Fotos"</b> → wähle das gespeicherte Etikett</div>
-            </div>
-            <div class="pstep">
-                <div class="pstep-num">4</div>
-                <div class="pstep-txt">Format: <code>62 × 29 mm</code> oder <code>Endlos 29 mm</code> mit Länge <code>85 mm</code></div>
-            </div>
-            <div class="pstep">
-                <div class="pstep-num">5</div>
-                <div class="pstep-txt"><b>Drucken</b> ✓</div>
-            </div>
+            <div class="pstep"><div class="pstep-num">1</div><div class="pstep-txt">Tippe <b>"📥 BILD TEILEN"</b> → wähle <b>"In Fotos sichern"</b></div></div>
+            <div class="pstep"><div class="pstep-num">2</div><div class="pstep-txt">Öffne die <b>Brother iPrint&Label</b> App</div></div>
+            <div class="pstep"><div class="pstep-num">3</div><div class="pstep-txt"><b>"Erstellen"</b> → <b>"Fotos"</b> → wähle das Etikett</div></div>
+            <div class="pstep"><div class="pstep-num">4</div><div class="pstep-txt">Format: <code>62 × 29 mm</code> oder <code>Endlos 29 mm</code> mit <code>85 mm</code></div></div>
+            <div class="pstep"><div class="pstep-num">5</div><div class="pstep-txt"><b>Drucken</b> ✓</div></div>
         </div>
         <div id="pStatus" class="inf"></div>
         <div class="pbtns">
@@ -413,8 +455,7 @@
 </div>
 
 <script>
-// ── APP-VERSION für Auto-Update ───────────────────────────────────────
-const APP_VERSION = "V178";
+const APP_VERSION = "V179";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -429,75 +470,38 @@ firebase.initializeApp(FB);
 const db  = firebase.database();
 const ref = db.ref('lager_v90_multilager');
 
-const S = { user:"", items:[], cfg:{}, editKey:null, label:null, logF:'all', qtyAction:null, scanItem:null };
+const S = { user:"", items:[], cfg:{}, editKey:null, label:null, logF:'all', qtyAction:null, scanItem:null, resItem:null };
 
-// ═══════════════════════════════════════════════════════════════════════
-// AUTO-UPDATE — robuste Version
-//
-// Strategie: Wir holen alle 30 Sekunden die index.html selbst frisch
-// vom Server (mit Cache-Bust) und schauen im <title> nach der Version.
-// Wenn die Server-Version höher ist als die lokale → Banner zeigen.
-//
-// Das funktioniert IMMER, egal wer welche Version offen hat.
-// Der "Aktualisieren"-Button macht ein Hard-Reload mit Cache-Bust.
-// ═══════════════════════════════════════════════════════════════════════
-function versionToNum(v) {
-    if (!v || typeof v !== 'string') return 0;
-    const m = v.match(/(\d+)/);
-    return m ? parseInt(m[1]) : 0;
-}
-
+// ── AUTO UPDATE ───────────────────────────────────────────────────────
+function versionToNum(v) { if(!v||typeof v!=='string') return 0; const m=v.match(/(\d+)/); return m?parseInt(m[1]):0; }
 async function checkServerVersion() {
     try {
-        // Hole index.html mit Cache-Bust
         const url = window.location.pathname + '?_v=' + Date.now();
-        const resp = await fetch(url, { cache: 'no-store' });
+        const resp = await fetch(url, { cache:'no-store' });
         if (!resp.ok) return;
         const text = await resp.text();
-        // Suche im <title> nach Versionsnummer (z.B. "GR-Lagerverwaltung V177")
         const m = text.match(/<title>[^<]*?(V\d+)[^<]*<\/title>/i);
         if (!m) return;
-        const serverVersion = m[1];
-        const serverNum = versionToNum(serverVersion);
+        const serverNum = versionToNum(m[1]);
         const localNum  = versionToNum(APP_VERSION);
-        if (serverNum > localNum) {
-            showUpdateBanner(serverVersion);
-        } else {
-            hideUpdateBanner();
-        }
-    } catch (e) {
-        // Netzwerkfehler ignorieren
-    }
+        if (serverNum > localNum) showUpdateBanner(m[1]);
+        else hideUpdateBanner();
+    } catch(e) {}
 }
-
 function setupAutoUpdate() {
-    // Sofort einmal prüfen
     checkServerVersion();
-    // Alle 30 Sekunden erneut prüfen
     setInterval(checkServerVersion, 30000);
-    // Auch prüfen wenn die App wieder in den Vordergrund kommt
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) checkServerVersion();
-    });
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) checkServerVersion(); });
 }
-function showUpdateBanner(serverVersion) {
-    const banner = document.getElementById('updateBanner');
-    if (serverVersion) {
-        banner.querySelector('span').textContent = `🔄 Neue Version ${serverVersion} verfügbar!`;
-    }
-    banner.classList.add('show');
-    document.body.classList.add('has-banner');
+function showUpdateBanner(v) {
+    const b = document.getElementById('updateBanner');
+    if(v) b.querySelector('span').textContent = `🔄 Neue Version ${v} verfügbar!`;
+    b.classList.add('show'); document.body.classList.add('has-banner');
 }
-function hideUpdateBanner() {
-    document.getElementById('updateBanner').classList.remove('show');
-    document.body.classList.remove('has-banner');
-}
-function reloadWithCacheBust() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('v', Date.now());
-    window.location.replace(url.toString());
-}
+function hideUpdateBanner() { document.getElementById('updateBanner').classList.remove('show'); document.body.classList.remove('has-banner'); }
+function reloadWithCacheBust() { const url=new URL(window.location.href); url.searchParams.set('v',Date.now()); window.location.replace(url.toString()); }
 
+// ── LOGIN ─────────────────────────────────────────────────────────────
 document.getElementById('startBtn').addEventListener('click', function() {
     const u = document.getElementById('lName').value.trim();
     const p = document.getElementById('lPass').value;
@@ -527,7 +531,7 @@ function initApp() {
             }
             return item;
         });
-        render(); renderLogs(); renderManage(); fillSelects();
+        render(); renderLogs(); renderManage(); fillSelects(); renderReservations();
     });
 }
 
@@ -549,6 +553,82 @@ function totalBorrowed(item) {
     return Object.values(item.borrowers).reduce((s,v) => s + (parseInt(v)||0), 0);
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// RESERVIERUNGS-LOGIK
+// Datenstruktur: items[k].reservations = [
+//   { id, user, qty, from: 'YYYY-MM-DD', to: 'YYYY-MM-DD', ts }
+// ]
+// ═══════════════════════════════════════════════════════════════════════
+function todayStr() {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+}
+function formatDate(yyyymmdd) {
+    if (!yyyymmdd) return '—';
+    const [y,m,d] = yyyymmdd.split('-');
+    return `${d}.${m}.${y}`;
+}
+function dateRangesOverlap(from1, to1, from2, to2) {
+    return from1 <= to2 && from2 <= to1;
+}
+
+// Wieviel ist im Zeitraum [from,to] reserviert (Summe der Reservierungen die überlappen)
+function reservedInRange(item, from, to) {
+    const res = item.reservations || [];
+    let max = 0;
+    // Wir prüfen tagesweise: für jeden Tag im Bereich, wieviel ist reserviert
+    // Wir nehmen den maximalen Tag
+    const startD = new Date(from), endD = new Date(to);
+    for (let d = new Date(startD); d <= endD; d.setDate(d.getDate()+1)) {
+        const dayStr = d.toISOString().split('T')[0];
+        let sum = 0;
+        for (const r of res) {
+            if (dayStr >= r.from && dayStr <= r.to) sum += parseInt(r.qty)||0;
+        }
+        if (sum > max) max = sum;
+    }
+    return max;
+}
+
+// Wieviel verfügbar zur Reservierung in [from,to]?
+function availableForReservation(item, from, to, excludeResId) {
+    const total = parseInt(item.qty) || 0;
+    const reservedNow = reservedInRangeExcluding(item, from, to, excludeResId);
+    // Aktuell ausgeliehen MUSS auch berücksichtigt werden
+    const currentlyBorrowed = totalBorrowed(item);
+    return Math.max(0, total - Math.max(reservedNow, currentlyBorrowed));
+}
+
+function reservedInRangeExcluding(item, from, to, excludeId) {
+    const res = (item.reservations || []).filter(r => r.id !== excludeId);
+    let max = 0;
+    const startD = new Date(from), endD = new Date(to);
+    for (let d = new Date(startD); d <= endD; d.setDate(d.getDate()+1)) {
+        const dayStr = d.toISOString().split('T')[0];
+        let sum = 0;
+        for (const r of res) {
+            if (dayStr >= r.from && dayStr <= r.to) sum += parseInt(r.qty)||0;
+        }
+        if (sum > max) max = sum;
+    }
+    return max;
+}
+
+// Status einer Reservierung: future / active / past
+function reservationStatus(r) {
+    const today = todayStr();
+    if (today < r.from) return 'future';
+    if (today > r.to)   return 'past';
+    return 'active';
+}
+
+// Anzahl aktiver/zukünftiger Reservierungen für Display
+function upcomingReservationsSummary(item) {
+    const today = todayStr();
+    return (item.reservations||[]).filter(r => r.to >= today);
+}
+
+// RENDER ITEMS
 function render() {
     const s = (document.getElementById('searchInput').value||'').toLowerCase();
     const f =  document.getElementById('filterCat').value;
@@ -581,6 +661,16 @@ function render() {
             if (lst) borrowerInfo = `<div class="borrowers">📤 ${lst}</div>`;
         }
 
+        // Reservierungs-Übersicht
+        const upcoming = upcomingReservationsSummary(i);
+        let resInfo = '';
+        let resBadge = '';
+        if (upcoming.length > 0) {
+            resBadge = `<span class="item-badge b-res">📅 ${upcoming.length} Reserv.</span>`;
+            const next = upcoming.sort((a,b) => a.from.localeCompare(b.from))[0];
+            resInfo = `<div class="reservations-mini">📅 Nächste: <b>${esc(next.user)}</b> · ${formatDate(next.from)}–${formatDate(next.to)} (${next.qty}×)</div>`;
+        }
+
         const meta = `${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
         const thumb= i.img || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
         const hasImg = !!i.img;
@@ -594,7 +684,9 @@ function render() {
                 <div class="item-name">${esc(i.name)}</div>
                 <div class="item-meta">${esc(meta)}</div>
                 <span class="item-badge ${badgeCls}">${badgeText}</span>
+                ${resBadge}
                 ${borrowerInfo}
+                ${resInfo}
             </div>
             <div class="qr-side" onclick="showPrint('${i.key}','${ea(meta)}','${ea(i.name)}')">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${enc(i.key)}" style="width:38px;" alt="QR">
@@ -603,6 +695,7 @@ function render() {
             <div class="act">
                 <button onclick="askQty('aus','${i.key}')" class="btn-tog t-aus" ${inStock===0?'disabled':''}>AUS</button>
                 <button onclick="askQty('ein','${i.key}')" class="btn-tog t-ein" ${borrowed===0?'disabled':''}>EIN</button>
+                <button onclick="openReservation('${i.key}')" class="btn-tog t-res">📅 RES</button>
                 <span onclick="openEdit('${i.key}')" class="ic">✏️</span>
                 <span onclick="delItem('${i.key}','${ea(i.name)}')" class="ic" style="color:var(--danger);">🗑️</span>
             </div>
@@ -610,7 +703,172 @@ function render() {
     }).join('');
 }
 
-// ── ASK QTY MODAL ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// RESERVIERUNGS-MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function openReservation(key) {
+    const item = S.items.find(x => x.key === key);
+    if (!item) return;
+    S.resItem = item;
+
+    document.getElementById('resInfo').innerHTML =
+        `<b>${esc(item.name)}</b><br>Insgesamt vorhanden: <b>${item.qty}</b> Stück`;
+
+    // Vorhandene Reservierungen anzeigen
+    const upcoming = upcomingReservationsSummary(item);
+    let existHtml = '';
+    if (upcoming.length > 0) {
+        existHtml = '<label style="display:block;font-size:.78rem;color:#475569;margin-bottom:6px;font-weight:700;">Bestehende Reservierungen:</label><div class="res-list-modal">' +
+            upcoming.sort((a,b) => a.from.localeCompare(b.from)).map(r => {
+                const isMine = r.user === S.user;
+                return `<div class="res-line ${isMine?'mine':''}">
+                    <span class="rl-info"><b>${esc(r.user)}</b>: ${r.qty}× · ${formatDate(r.from)} – ${formatDate(r.to)}</span>
+                    ${isMine ? `<span class="rl-del" onclick="deleteReservation('${item.key}','${r.id}')">🗑️</span>` : ''}
+                </div>`;
+            }).join('') + '</div>';
+    }
+    document.getElementById('resExisting').innerHTML = existHtml;
+
+    document.getElementById('resQty').value  = 1;
+    document.getElementById('resQty').max    = item.qty;
+    document.getElementById('resFrom').value = todayStr();
+    document.getElementById('resFrom').min   = todayStr();
+    document.getElementById('resTo').value   = todayStr();
+    document.getElementById('resTo').min     = todayStr();
+    document.getElementById('resWarn').style.display = 'none';
+
+    document.getElementById('resModal').style.display = 'flex';
+    // Live-Validierung
+    setTimeout(()=>validateReservation(), 100);
+
+    document.getElementById('resQty').oninput  = validateReservation;
+    document.getElementById('resFrom').oninput = validateReservation;
+    document.getElementById('resTo').oninput   = validateReservation;
+}
+
+function validateReservation() {
+    if (!S.resItem) return;
+    const qty = parseInt(document.getElementById('resQty').value) || 0;
+    const from = document.getElementById('resFrom').value;
+    const to   = document.getElementById('resTo').value;
+    const w = document.getElementById('resWarn');
+
+    if (!from || !to) { w.style.display='none'; return; }
+    if (from > to) { w.textContent='⚠️ "Bis"-Datum muss nach "Von"-Datum liegen.'; w.style.display='block'; return; }
+    if (qty < 1) { w.style.display='none'; return; }
+
+    const available = availableForReservation(S.resItem, from, to);
+    if (qty > available) {
+        w.textContent = `⚠️ Im gewählten Zeitraum sind nur ${available} Stück verfügbar (${S.resItem.qty} insgesamt − bereits ausgeliehene/reservierte).`;
+        w.style.display = 'block';
+    } else {
+        w.textContent = `✓ ${available} Stück im gewählten Zeitraum verfügbar.`;
+        w.style.color = '#059669';
+        w.style.display = 'block';
+        setTimeout(()=>{ w.style.color = '#dc2626'; }, 0);
+    }
+}
+
+function saveReservation() {
+    if (!S.resItem) return;
+    const qty = parseInt(document.getElementById('resQty').value) || 0;
+    const from = document.getElementById('resFrom').value;
+    const to   = document.getElementById('resTo').value;
+
+    if (qty < 1) { alert('Bitte gültige Stückzahl eingeben.'); return; }
+    if (!from || !to) { alert('Bitte Datum auswählen.'); return; }
+    if (from > to) { alert('"Bis" muss nach "Von" liegen.'); return; }
+
+    const available = availableForReservation(S.resItem, from, to);
+    if (qty > available) { alert(`Nur ${available} Stück verfügbar.`); return; }
+
+    const newRes = {
+        id: 'res_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+        user: S.user,
+        qty: qty,
+        from: from,
+        to: to,
+        ts: Date.now()
+    };
+
+    const updated = [...(S.resItem.reservations || []), newRes];
+    ref.child('items/' + S.resItem.key + '/reservations').set(updated);
+
+    log('res', `${qty}× "${S.resItem.name}" reserviert von ${S.user} (${formatDate(from)}–${formatDate(to)})`);
+
+    closeModal('resModal');
+    S.resItem = null;
+}
+
+function deleteReservation(itemKey, resId) {
+    const item = S.items.find(x => x.key === itemKey);
+    if (!item) return;
+    const r = (item.reservations||[]).find(x => x.id === resId);
+    if (!r) return;
+    if (r.user !== S.user) { alert('Du kannst nur deine eigenen Reservierungen löschen.'); return; }
+    if (!confirm(`Reservierung "${r.qty}× ${item.name}" (${formatDate(r.from)}–${formatDate(r.to)}) wirklich löschen?`)) return;
+
+    const updated = (item.reservations||[]).filter(x => x.id !== resId);
+    ref.child('items/' + itemKey + '/reservations').set(updated);
+    log('resd', `Reservierung gelöscht: ${r.qty}× "${item.name}" (${formatDate(r.from)}–${formatDate(r.to)}) von ${S.user}`);
+
+    // Wenn aus dem Modal aufgerufen → Modal aktualisieren
+    if (document.getElementById('resModal').style.display === 'flex' && S.resItem && S.resItem.key === itemKey) {
+        setTimeout(() => openReservation(itemKey), 100);
+    }
+}
+
+// RESERVIERUNGS-TAB
+function renderReservations() {
+    const all = [];
+    for (const item of S.items) {
+        for (const r of (item.reservations || [])) {
+            all.push({ ...r, itemName: item.name, itemKey: item.key, itemQty: item.qty });
+        }
+    }
+
+    const today = todayStr();
+    const active   = all.filter(r => r.from <= today && r.to >= today).sort((a,b) => a.to.localeCompare(b.to));
+    const future   = all.filter(r => r.from > today).sort((a,b) => a.from.localeCompare(b.from));
+    const past     = all.filter(r => r.to < today).sort((a,b) => b.to.localeCompare(a.to)).slice(0, 20);
+
+    let html = '';
+    if (active.length === 0 && future.length === 0 && past.length === 0) {
+        html = '<div class="empty"><i>📅</i>Noch keine Reservierungen.<br><span style="font-size:.75rem;">Tippe auf einen Artikel und dann auf "📅 RES" um eine Reservierung anzulegen.</span></div>';
+    } else {
+        if (active.length) {
+            html += `<div class="res-section-title">🟢 Heute aktiv (${active.length})</div>`;
+            html += active.map(r => renderResCard(r, 'active')).join('');
+        }
+        if (future.length) {
+            html += `<div class="res-section-title">🔵 Kommend (${future.length})</div>`;
+            html += future.map(r => renderResCard(r, 'future')).join('');
+        }
+        if (past.length) {
+            html += `<div class="res-section-title">⚪ Vergangen (${past.length})</div>`;
+            html += past.map(r => renderResCard(r, 'past')).join('');
+        }
+    }
+    document.getElementById('resList').innerHTML = html;
+}
+
+function renderResCard(r, status) {
+    const isMine = r.user === S.user;
+    const cls = `res-card ${status} ${isMine?'mine':''}`;
+    const dateStr = (r.from === r.to) ? formatDate(r.from) : `${formatDate(r.from)} – ${formatDate(r.to)}`;
+    const canDelete = isMine && status !== 'past';
+    return `
+        <div class="${cls}">
+            <div class="res-card-info">
+                <div class="res-card-title">${esc(r.itemName)}</div>
+                <div class="res-card-meta">Reserviert von <b>${esc(r.user)}</b> · ${r.qty}× von ${r.itemQty}</div>
+                <div class="res-card-dates">📅 ${dateStr}</div>
+            </div>
+            ${canDelete ? `<button class="res-del-btn" onclick="deleteReservation('${r.itemKey}','${r.id}')">🗑️</button>` : ''}
+        </div>`;
+}
+
+// ── ASK QTY ───────────────────────────────────────────────────────────
 function askQty(type, key) {
     const item = S.items.find(x => x.key === key);
     if (!item) return;
@@ -644,6 +902,10 @@ function askQty(type, key) {
     let infoHtml = `<b>${esc(item.name)}</b><br>`;
     if (type === 'aus') {
         infoHtml += `Verfügbar: <b>${inStock}</b> von ${total} Stück`;
+        const upcoming = upcomingReservationsSummary(item);
+        if (upcoming.length > 0) {
+            infoHtml += `<br><span style="font-size:.7rem;color:#7c3aed;">📅 ${upcoming.length} Reservierung(en) vorhanden</span>`;
+        }
     } else {
         infoHtml += `Insgesamt ausgeliehen: <b>${borrowed}</b> Stück`;
         if (myBorrowed > 0) infoHtml += `<br>Davon von <b>${esc(S.user)}</b>: <b>${myBorrowed} Stück</b>`;
@@ -655,21 +917,17 @@ function askQty(type, key) {
         }
     }
     document.getElementById('qtyInfo').innerHTML = infoHtml;
-
     document.getElementById('qtySuggest').innerHTML = suggestions.map(s =>
         `<button class="qty-sbtn ${s.cls||''}" onclick="qtyPick(${s.value})">${s.label}</button>`
     ).join('');
-
     const inp = document.getElementById('qtyInput');
     inp.value = suggestions[0].value;
     inp.min = 1; inp.max = max;
-
     document.getElementById('qtyOkBtn').style.background = (type==='aus') ? 'var(--danger)' : 'var(--success)';
     document.getElementById('qtyOkBtn').textContent = (type==='aus') ? '📤 AUSLEIHEN' : '📥 ZURÜCK';
     document.getElementById('qtyModal').style.display = 'flex';
     setTimeout(()=>inp.focus(), 100);
 }
-
 function qtyPick(n) { document.getElementById('qtyInput').value = n; }
 
 function qtyConfirm() {
@@ -702,23 +960,17 @@ function qtyConfirm() {
             }
         }
     }
-
     const newTotalBorrowed = Object.values(borrowers).reduce((s,v) => s+(parseInt(v)||0), 0);
     const inStockAfter = total - newTotalBorrowed;
     const newStatus = newTotalBorrowed === 0 ? 'im Lager' : 'ausgeliehen';
-
     ref.child('items/' + S.qtyAction.key).update({
-        borrowers: borrowers,
-        borrowed: newTotalBorrowed,
-        status: newStatus,
-        lastUser: S.user
+        borrowers: borrowers, borrowed: newTotalBorrowed,
+        status: newStatus, lastUser: S.user
     });
-
     const logTxt = (S.qtyAction.type === 'aus')
         ? `${n}× "${S.qtyAction.name}" ausgeliehen von ${S.user} (${inStockAfter}/${total} im Lager)`
         : `${n}× "${S.qtyAction.name}" zurückgebracht von ${S.user} (${inStockAfter}/${total} im Lager)`;
     log(S.qtyAction.type, logTxt);
-
     closeModal('qtyModal');
     S.qtyAction = null;
 }
@@ -745,7 +997,7 @@ function saveItem() {
     const nr=ref.child('items').push();
     const d={
         name:n, qty:parseInt(document.getElementById('iQty').value)||1,
-        borrowers:{}, borrowed:0,
+        borrowers:{}, borrowed:0, reservations:[],
         location:document.getElementById('iLager').value,
         cat:document.getElementById('iCat').value,
         regal:document.getElementById('iRegal').value,
@@ -778,16 +1030,8 @@ function saveEdit() {
     const ch=[];
     if(newN!==item.name) ch.push(`Name: "${item.name}" → "${newN}"`);
     if(newQ!==parseInt(item.qty)) ch.push(`Menge: ${item.qty} → ${newQ}`);
-
-    // Wenn nichts geändert wurde, einfach schließen
-    if (ch.length === 0) {
-        closeModal('editModal');
-        return;
-    }
-
-    // Bestätigungs-Dialog mit Liste der Änderungen
-    const confirmText = `Folgende Änderungen speichern?\n\n${ch.join('\n')}`;
-    if (!confirm(confirmText)) return;
+    if (ch.length === 0) { closeModal('editModal'); return; }
+    if (!confirm(`Folgende Änderungen speichern?\n\n${ch.join('\n')}`)) return;
 
     let updates = {name:newN, qty:newQ, lastUser:S.user};
     const borrowed = totalBorrowed(item);
@@ -824,10 +1068,13 @@ function setLF(f,btn){
     document.querySelectorAll('.lfbtn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active'); renderLogs();
 }
-const LT={aus:['lt-aus','⬆ AUS'],ein:['lt-ein','⬇ EIN'],neu:['lt-neu','✚ NEU'],edit:['lt-edit','✏ EDIT'],del:['lt-del','🗑 DEL']};
+const LT={aus:['lt-aus','⬆ AUS'],ein:['lt-ein','⬇ EIN'],neu:['lt-neu','✚ NEU'],edit:['lt-edit','✏ EDIT'],del:['lt-del','🗑 DEL'],res:['lt-res','📅 RES'],resd:['lt-resd','📅 DEL']};
 function renderLogs(){
     let logs=Object.values(S.cfg.logs||{}).sort((a,b)=>b.ts-a.ts);
-    if(S.logF!=='all') logs=logs.filter(l=>l.typ===S.logF);
+    if(S.logF!=='all') {
+        if (S.logF === 'res') logs = logs.filter(l => l.typ === 'res' || l.typ === 'resd');
+        else logs = logs.filter(l => l.typ === S.logF);
+    }
     logs=logs.slice(0,80);
     document.getElementById('logList').innerHTML=logs.length
         ? logs.map(l=>{
@@ -851,14 +1098,12 @@ function openPhotoZoom(src){
     document.getElementById('photoZoomImg').style.transform='translate(0,0) scale(1)';
     document.getElementById('photoZoom').style.display='flex';
     const h=document.getElementById('photoZoomHint');
-    h.style.opacity='1';
-    setTimeout(()=>{h.style.opacity='0';},2500);
+    h.style.opacity='1'; setTimeout(()=>{h.style.opacity='0';},2500);
 }
 function closePhotoZoom(){ document.getElementById('photoZoom').style.display='none'; }
 function applyZoom(){ document.getElementById('photoZoomImg').style.transform=`translate(${Z.panX}px, ${Z.panY}px) scale(${Z.scale})`; }
 function zoomImg(d){ Z.scale=Math.max(1,Math.min(6,Z.scale+d)); if(Z.scale===1){Z.panX=0;Z.panY=0;} applyZoom(); }
 function zoomReset(){ Z.scale=1; Z.panX=0; Z.panY=0; applyZoom(); }
-
 const zw = document.getElementById('photoZoomImgWrap');
 zw.addEventListener('touchstart', e => {
     if(e.touches.length===2){ const dx=e.touches[0].clientX-e.touches[1].clientX, dy=e.touches[0].clientY-e.touches[1].clientY; Z.startDist=Math.hypot(dx,dy); Z.startScale=Z.scale; }
@@ -879,27 +1124,21 @@ function showPrint(key,meta,name){
     document.getElementById('pvMeta').textContent=meta||'—';
     document.getElementById('pvName').textContent=name;
     document.getElementById('pvKey').textContent=key;
-    setPS('inf','Tippe "📥 BILD TEILEN" und wähle "In Fotos sichern".');
+    setPS('inf','Tippe "📥 BILD TEILEN".');
     document.getElementById('printOverlay').style.display='flex';
 }
 function closePrint(){ document.getElementById('printOverlay').style.display='none'; S.label=null; }
 function setPS(cls,msg){ const el=document.getElementById('pStatus'); el.className=cls; el.style.display='block'; el.textContent=msg; }
 
-// ═══════════════════════════════════════════════════════════════════════
-// LABEL über iOS Web Share API teilen → User wählt "In Fotos sichern"
-// ═══════════════════════════════════════════════════════════════════════
 async function shareLabel() {
     if (!S.label) { setPS('err', 'Kein Etikett.'); return; }
     setPS('inf', 'Etikett wird erstellt...');
-
     const W=1020, H=348;
     const cvs=document.getElementById('cvs');
     cvs.width=W; cvs.height=H;
     const ctx=cvs.getContext('2d');
-
     const qr=new Image(); qr.crossOrigin='anonymous';
     qr.src=`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${enc(S.label.key)}`;
-
     qr.onload = async () => {
         ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
         ctx.fillStyle='#06b6d4'; ctx.fillRect(0,0,14,H);
@@ -915,47 +1154,25 @@ async function shareLabel() {
         ctx.fillText(S.label.name,tX,100+(H-110)/2+fz*0.36,mW);
         ctx.font='300 16px Arial'; ctx.fillStyle='#cbd5e1'; ctx.textAlign='right';
         ctx.fillText(S.label.key,W-10,H-14);
-
-        // Canvas → Blob → File
         cvs.toBlob(async (blob) => {
-            if (!blob) { setPS('err','Fehler beim Erstellen.'); return; }
+            if (!blob) { setPS('err','Fehler.'); return; }
             const fileName = `etikett_${(S.label.name||'label').replace(/[^a-z0-9äöüß]/gi,'_')}.png`;
             const file = new File([blob], fileName, { type: 'image/png' });
-
-            // iOS Share API → öffnet Teilen-Dialog mit "In Fotos sichern"
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'GR-Lager Etikett'
-                    });
-                    setPS('ok','✓ Geteilt! Wähle "In Fotos sichern".');
-                } catch (err) {
-                    if (err.name !== 'AbortError') {
-                        // Fallback: Download
-                        downloadFallback(blob, fileName);
-                    } else {
-                        setPS('inf','Teilen abgebrochen.');
-                    }
-                }
-            } else {
-                downloadFallback(blob, fileName);
-            }
+                try { await navigator.share({ files: [file], title: 'GR-Lager Etikett' }); setPS('ok','✓ Geteilt!'); }
+                catch (err) { if (err.name !== 'AbortError') downloadFallback(blob, fileName); else setPS('inf','Abgebrochen.'); }
+            } else { downloadFallback(blob, fileName); }
         }, 'image/png');
     };
-    qr.onerror=()=>setPS('err','QR-Code konnte nicht geladen werden.');
+    qr.onerror=()=>setPS('err','QR-Code Fehler.');
 }
-
 function downloadFallback(blob, fileName){
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setPS('ok','✓ Etikett heruntergeladen.');
+    setPS('ok','✓ Heruntergeladen.');
 }
 
 function goTab(e,id){
@@ -964,11 +1181,10 @@ function goTab(e,id){
     if(e){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); e.currentTarget.classList.add('active'); }
     if(id==='tab-log') renderLogs();
     if(id==='tab-neu') renderManage();
+    if(id==='tab-res') renderReservations();
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// SCANNER mit eigenem Choice-Modal statt confirm()
-// ═══════════════════════════════════════════════════════════════════════
+// SCANNER mit erweitertem Choice-Modal (auch Reservierung möglich)
 let scanner=null;
 function startScanner(){
     document.getElementById('scanbox').style.display='flex';
@@ -976,10 +1192,7 @@ function startScanner(){
     scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}},
         txt=>{
             const item=S.items.find(x=>x.key===txt);
-            if(item){
-                stopScan();
-                handleScannedItem(item);
-            }
+            if(item){ stopScan(); handleScannedItem(item); }
             else { alert('Artikel nicht gefunden.'); }
         }
     ).catch(()=>stopScan());
@@ -989,40 +1202,30 @@ function stopScan(){
         .then(()=>{document.getElementById('scanbox').style.display='none';scanner=null;})
         .catch(()=>{document.getElementById('scanbox').style.display='none';scanner=null;});
 }
-
-// Scanner Choice: zeigt schönes Modal statt confirm()
 function handleScannedItem(item) {
     const total = parseInt(item.qty) || 0;
     const borrowed = totalBorrowed(item);
     const inStock = total - borrowed;
-    const myBorrowed = (item.borrowers && item.borrowers[S.user]) ? parseInt(item.borrowers[S.user]) : 0;
 
-    // Direkt-Aktionen ohne Nachfrage
-    if (borrowed === 0)            { askQty('aus', item.key); return; } // alles im Lager → ausleihen
-    if (borrowed === total && myBorrowed > 0) { askQty('ein', item.key); return; } // alles ausgeliehen, ich hab welche → zurück
-    if (borrowed === total && myBorrowed === 0) { alert('Alles ausgeliehen — und du hast keine.'); return; }
-
-    // Teilweise → Choice-Modal anzeigen
     S.scanItem = item;
     document.getElementById('scTitle').innerHTML = `📦 ${esc(item.name)}`;
     let info = `<b>${inStock}/${total}</b> im Lager · <b>${borrowed}</b> ausgeliehen`;
-    if (myBorrowed > 0) info += `<br>Du hast davon: <b>${myBorrowed} Stück</b>`;
+    const upcoming = upcomingReservationsSummary(item);
+    if (upcoming.length > 0) info += `<br>📅 ${upcoming.length} Reservierung(en)`;
     document.getElementById('scInfo').innerHTML = info;
 
-    // Zeige nur die EIN-Option wenn der User selbst was ausgeliehen hat
-    const einBtn = document.querySelector('.choice-ein');
-    einBtn.style.display = (borrowed > 0) ? 'flex' : 'none';
-    const ausBtn = document.querySelector('.choice-aus');
-    ausBtn.style.display = (inStock > 0) ? 'flex' : 'none';
+    const myBorrowed = (item.borrowers && item.borrowers[S.user]) ? parseInt(item.borrowers[S.user]) : 0;
+    document.querySelector('.choice-aus').style.display = (inStock > 0) ? 'flex' : 'none';
+    document.querySelector('.choice-ein').style.display = (myBorrowed > 0 || borrowed > 0) ? 'flex' : 'none';
 
     document.getElementById('scanChoiceModal').style.display = 'flex';
 }
-
 function scanChoice(type) {
     const item = S.scanItem;
     closeModal('scanChoiceModal');
     if (!item) return;
-    askQty(type, item.key);
+    if (type === 'res') openReservation(item.key);
+    else                askQty(type, item.key);
     S.scanItem = null;
 }
 
