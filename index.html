@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V180</title>
+    <title>GR-Lagerverwaltung V181</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -24,8 +24,64 @@
         .login-box p  { color:#64748b; font-size:.72rem; margin:0 0 20px; }
 
         #ui-wrapper { position:relative; z-index:10; height:100vh; display:none; flex-direction:column; }
-        .app-header { background:rgba(0,0,0,0.92); padding:calc(48px + env(safe-area-inset-top)) 14px 13px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--accent); gap:8px; }
-        .app-header h2 { margin:0; font-size:.82rem; flex:1; text-align:center; letter-spacing:.04em; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .app-header {
+            background: linear-gradient(180deg, rgba(3,7,18,0.96) 0%, rgba(15,23,42,0.92) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: calc(40px + env(safe-area-inset-top)) 14px 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 10px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        /* Gradient-Linie unten am Header — passt zum Footer */
+        .app-header::after {
+            content: '';
+            position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent 0%, var(--accent) 20%, var(--accent) 80%, transparent 100%);
+            box-shadow: 0 0 8px rgba(6,182,212,0.6);
+        }
+        .app-header h2 {
+            margin: 0; font-size: .92rem;
+            flex: 1;
+            display: flex; align-items: center; justify-content: center;
+            gap: 9px;
+            letter-spacing: .03em;
+            font-weight: 800;
+        }
+        .app-header h2 span {
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        /* Header-Buttons (Kamera + Logout) modern */
+        .header-btn {
+            background: rgba(6,182,212,0.12);
+            border: 1px solid rgba(6,182,212,0.25);
+            border-radius: 10px;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .header-btn:active {
+            background: rgba(6,182,212,0.25);
+            transform: scale(0.94);
+        }
+        .header-btn svg { width: 22px; height: 22px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .header-cam { font-size: 1.3rem; }
+        /* User-Info Pille rechts neben Logout */
+        .user-pill {
+            display: flex; flex-direction: column; align-items: flex-end;
+            font-size: .65rem; color: #64748b; line-height: 1.1;
+        }
+        .user-pill b {
+            color: var(--accent); font-size: .72rem; font-weight: 800;
+            max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
         .app-logo { width:30px; height:30px; flex-shrink:0; animation: logoGlow 2s ease-in-out infinite; transform-origin:center; }
         @keyframes logoGlow {
             0%, 100% { filter: drop-shadow(0 0 2px rgba(6,182,212,0.4)); transform:scale(1); }
@@ -73,10 +129,30 @@
         .t-resv{ background:var(--purple); }
         .ic { cursor:pointer; font-size:1rem; line-height:1; }
 
-        nav { position:fixed; bottom:0; left:0; width:100%; background:rgba(3,7,18,0.96); display:flex; height:calc(64px + env(safe-area-inset-bottom)); border-top:2px solid var(--accent); z-index:100; padding-bottom:env(safe-area-inset-bottom); overflow-x:auto; }
-        .tab-btn { flex:1; min-width:60px; border:none; background:none; color:#64748b; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.6rem; font-weight:700; cursor:pointer; padding:0 4px; }
+        nav {
+            position:fixed; bottom:0; left:0; width:100%;
+            background: linear-gradient(0deg, rgba(3,7,18,0.96) 0%, rgba(15,23,42,0.92) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display:flex;
+            height:calc(64px + env(safe-area-inset-bottom));
+            z-index:100; padding-bottom:env(safe-area-inset-bottom); overflow-x:auto;
+            position:fixed;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+        }
+        nav::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:2px;
+            background: linear-gradient(90deg, transparent 0%, var(--accent) 20%, var(--accent) 80%, transparent 100%);
+            box-shadow: 0 0 8px rgba(6,182,212,0.6);
+        }
+        .tab-btn { flex:1; min-width:60px; border:none; background:none; color:#64748b; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.6rem; font-weight:700; cursor:pointer; padding:0 4px; transition:all 0.2s; }
         .tab-btn span { font-size:1.1rem; margin-bottom:2px; }
-        .tab-btn.active { color:white; background:rgba(6,182,212,0.15); border-top:3px solid var(--accent); }
+        .tab-btn.active { color:white; background:rgba(6,182,212,0.18); position:relative; }
+        .tab-btn.active::before {
+            content:''; position:absolute; top:0; left:20%; right:20%; height:3px;
+            background:var(--accent); border-radius:0 0 3px 3px;
+            box-shadow: 0 0 8px rgba(6,182,212,0.8);
+        }
 
         .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:5000; align-items:center; justify-content:center; padding:20px; }
         .mbox  { background:white; color:#000; padding:22px; border-radius:16px; width:100%; max-width:360px; max-height:90vh; overflow-y:auto; }
@@ -222,7 +298,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V180 — Lagerverwaltung</p>
+        <p>V181 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Name" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -232,7 +308,9 @@
 <!-- MAIN -->
 <div id="ui-wrapper">
     <div class="app-header">
-        <button onclick="startScanner()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;">📷</button>
+        <button class="header-btn" onclick="startScanner()" title="QR-Scanner">
+            <span class="header-cam">📷</span>
+        </button>
         <h2>
             <svg class="app-logo" viewBox="0 0 64 64">
                 <path d="M8 22 L32 10 L56 22 L56 50 L32 62 L8 50 Z" fill="none" stroke="#06b6d4" stroke-width="3" stroke-linejoin="round"/>
@@ -244,7 +322,18 @@
             </svg>
             <span>GR-Lagerverwaltung</span>
         </h2>
-        <div id="uName" style="font-size:.72rem;color:var(--accent);font-weight:700;"></div>
+        <div class="user-pill">
+            <span>angemeldet</span>
+            <b id="uName"></b>
+        </div>
+        <button class="header-btn" onclick="doLogout()" title="Abmelden">
+            <!-- Open-Door Icon (offene Tür mit Pfeil nach außen) -->
+            <svg viewBox="0 0 24 24">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+        </button>
     </div>
 
     <div class="content-area">
@@ -324,11 +413,12 @@
             <div class="help-box">
                 <h3>🔐 Anmelden</h3>
                 <ol>
-                    <li>Gib deinen <b>Namen</b> ein (zum Beispiel "Thomas")</li>
+                    <li>Gib deinen <b>vollständigen Namen</b> ein — also <b>Vor- und Nachname</b> (zum Beispiel "Thomas Müller")</li>
                     <li>Gib das <b>Passwort</b> ein</li>
                     <li>Tippe auf <b>LOGIN</b></li>
                 </ol>
-                <div class="tip">💡 Dein Name wird oben rechts angezeigt — wenn du Artikel ausleihst, wird das mit deinem Namen vermerkt.</div>
+                <div class="tip">💡 Wichtig: Bitte <b>immer den vollen Namen</b> verwenden, damit klar ist, wer welchen Artikel ausgeliehen oder reserviert hat — vor allem wenn mehrere Personen denselben Vornamen haben.</div>
+                <div class="tip">💡 Dein Name wird oben in der Kopfzeile angezeigt. Über das <b>Tür-Symbol</b> kannst du dich jederzeit wieder abmelden.</div>
             </div>
 
             <div class="help-box">
@@ -397,22 +487,23 @@
             </div>
 
             <div class="help-box">
-                <h3>✏️ Artikel bearbeiten</h3>
+                <h3>✏️ Stammdaten ändern</h3>
+                <p>Wenn du den <b>Namen</b>, die <b>Stückzahl</b> oder das <b>Foto</b> eines Artikels nachträglich ändern möchtest:</p>
                 <ol>
-                    <li>Tippe auf das <b>Stift-Symbol ✏️</b> rechts beim Artikel</li>
-                    <li>Ändere Name oder Stückzahl</li>
-                    <li>Tippe auf <b>"✓ OK"</b></li>
-                    <li>Bestätige die Änderungen</li>
+                    <li>Tippe auf den <b>grauen Stift-Button ✏️</b> auf der Karte des Artikels</li>
+                    <li>Es öffnet sich das Fenster <b>"Stammdaten ändern"</b></li>
+                    <li>Ändere was du möchtest:
+                        <ul>
+                            <li><b>Name</b> — z.B. wenn der Name falsch geschrieben war</li>
+                            <li><b>Stückzahl</b> — z.B. wenn neue Stücke nachgekauft wurden</li>
+                            <li><b>Foto</b> — neues Foto aufnehmen oder ein altes austauschen / entfernen</li>
+                        </ul>
+                    </li>
+                    <li>Tippe auf <b>"✓ Speichern"</b></li>
+                    <li>Bestätige die Änderungen — sie werden im Verlauf gespeichert</li>
                 </ol>
-            </div>
-
-            <div class="help-box">
-                <h3>🗑️ Artikel löschen</h3>
-                <ol>
-                    <li>Tippe auf das <b>Mülleimer-Symbol 🗑️</b></li>
-                    <li>Bestätige mit "OK"</li>
-                </ol>
-                <div class="warn">⚠️ Gelöschte Artikel können <b>nicht wiederhergestellt</b> werden!</div>
+                <div class="warn">⚠️ Stammdaten = die Grundinformationen des Artikels. Das ist <b>NICHT</b> für Aus-/Einlagern gedacht! Dafür sind die roten/grünen Buttons da.</div>
+                <div class="tip">💡 Im selben Fenster ganz unten kannst du den Artikel auch <b>komplett löschen</b>.</div>
             </div>
 
             <div class="help-box">
@@ -486,12 +577,25 @@
 <!-- EDIT MODAL -->
 <div id="editModal" class="modal">
     <div class="mbox">
-        <h3>✏️ Bearbeiten</h3>
-        <input type="text"   id="eName" class="fi-light">
-        <input type="number" id="eQty"  class="fi-light">
+        <h3>✏️ Stammdaten ändern</h3>
+        <p style="font-size:.78rem;color:#64748b;margin:0 0 14px;line-height:1.4;">Hier kannst du die Grunddaten des Artikels ändern: Name, Stückzahl und Foto.</p>
+        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Name:</label>
+        <input type="text"   id="eName" class="fi-light" placeholder="Artikelname">
+        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Stückzahl:</label>
+        <input type="number" id="eQty"  class="fi-light" min="1" placeholder="Stückzahl">
+        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Foto:</label>
+        <button onclick="document.getElementById('eImgInput').click()" style="width:100%;padding:11px;background:#1e293b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:10px;">📷 Foto ändern / hinzufügen</button>
+        <input type="file" id="eImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewEditImg(this)">
+        <img id="eImgPrev" style="width:100%;height:120px;object-fit:contain;display:none;margin-bottom:10px;border-radius:8px;background:#f1f5f9;border:1px solid #cbd5e1;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <button onclick="removeEditImg()" id="eImgRemoveBtn" style="display:none;flex:1;padding:9px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;font-weight:700;cursor:pointer;font-size:.78rem;">🗑️ Foto entfernen</button>
+        </div>
         <div style="display:flex;gap:10px;margin-top:4px;">
-            <button onclick="saveEdit()" style="flex:1;padding:12px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✓ OK</button>
-            <button onclick="closeModal('editModal')" style="flex:1;padding:12px;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
+            <button onclick="saveEdit()" style="flex:1;padding:12px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✓ Speichern</button>
+            <button onclick="closeModal('editModal')" style="flex:1;padding:12px;background:#94a3b8;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Abbrechen</button>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;">
+            <button onclick="delItemFromEdit()" style="width:100%;padding:10px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;font-weight:700;cursor:pointer;font-size:.82rem;">🗑️ Diesen Artikel komplett löschen</button>
         </div>
     </div>
 </div>
@@ -603,7 +707,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V180";
+const APP_VERSION = "V181";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -661,6 +765,23 @@ document.getElementById('startBtn').addEventListener('click', () => {
     setupAutoUpdate();
 });
 document.getElementById('lPass').addEventListener('keyup', e => { if (e.key === 'Enter') document.getElementById('startBtn').click(); });
+
+// ───────── LOGOUT ─────────
+function doLogout() {
+    if (!confirm(`Möchtest du dich wirklich abmelden, ${S.user}?`)) return;
+    // Firebase listener trennen
+    try { ref.off(); } catch(e) {}
+    // State zurücksetzen
+    S.user = ""; S.items = []; S.cfg = {}; S.reservations = [];
+    // UI zurück zum Login
+    document.getElementById('uName').textContent = '';
+    document.getElementById('lName').value = '';
+    document.getElementById('lPass').value = '';
+    document.getElementById('ui-wrapper').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    // Update-Banner ggf. ausblenden
+    hideUpdateBanner();
+}
 
 // ───────── APP INIT ─────────
 function initApp() {
@@ -768,7 +889,7 @@ function render() {
                 <button onclick="askQty('aus','${i.key}')" class="btn-tog t-aus" ${inStock===0?'disabled':''}>AUS</button>
                 <button onclick="askQty('ein','${i.key}')" class="btn-tog t-ein" ${borrowed===0?'disabled':''}>EIN</button>
                 <button onclick="openReservation('${i.key}')" class="btn-tog t-resv">RES</button>
-                <span onclick="openEdit('${i.key}')" class="ic">✏️</span>
+                <button onclick="openEdit('${i.key}')" class="btn-tog" style="background:#475569;" title="Stammdaten ändern">✏️</button>
             </div>
         </div>`;
     }).join('');
@@ -1033,20 +1154,75 @@ function openEdit(key) {
     const i = S.items.find(x => x.key === key);
     document.getElementById('eName').value = i.name;
     document.getElementById('eQty').value = i.qty;
+    // Foto laden falls vorhanden
+    const prev = document.getElementById('eImgPrev');
+    const removeBtn = document.getElementById('eImgRemoveBtn');
+    if (i.img) {
+        prev.src = i.img;
+        prev.style.display = 'block';
+        removeBtn.style.display = 'block';
+    } else {
+        prev.src = '';
+        prev.style.display = 'none';
+        removeBtn.style.display = 'none';
+    }
+    // Reset file input damit erneutes Auswählen desselben Bilds funktioniert
+    document.getElementById('eImgInput').value = '';
     document.getElementById('editModal').style.display = 'flex';
+}
+function previewEditImg(input) {
+    if (input.files && input.files[0]) {
+        const r = new FileReader();
+        r.onload = e => {
+            const el = document.getElementById('eImgPrev');
+            el.src = e.target.result;
+            el.style.display = 'block';
+            document.getElementById('eImgRemoveBtn').style.display = 'block';
+        };
+        r.readAsDataURL(input.files[0]);
+    }
+}
+function removeEditImg() {
+    if (!confirm('Foto entfernen?')) return;
+    const el = document.getElementById('eImgPrev');
+    el.src = ''; el.style.display = 'none';
+    document.getElementById('eImgInput').value = '';
+    document.getElementById('eImgRemoveBtn').style.display = 'none';
+}
+function delItemFromEdit() {
+    const item = S.items.find(x => x.key === S.editKey);
+    if (!item) return;
+    if (!confirm(`"${item.name}" wirklich komplett löschen?\n\nDas kann nicht rückgängig gemacht werden!`)) return;
+    ref.child('items/'+S.editKey).remove();
+    log('del', `"${item.name}" gelöscht`);
+    closeModal('editModal');
 }
 function saveEdit() {
     const item = S.items.find(x => x.key === S.editKey);
     const newN = document.getElementById('eName').value.trim();
     const newQ = parseInt(document.getElementById('eQty').value)||1;
-    if (!newN) return;
+    if (!newN) { alert('Bitte Namen eingeben.'); return; }
+
+    // Foto-Stand erkennen
+    const prevEl = document.getElementById('eImgPrev');
+    const newImg = (prevEl.style.display !== 'none' && prevEl.src) ? prevEl.src : '';
+    const oldImg = item.img || '';
+    const imgChanged = (newImg !== oldImg);
+
     const ch = [];
     if (newN !== item.name) ch.push(`Name: "${item.name}" → "${newN}"`);
     if (newQ !== parseInt(item.qty)) ch.push(`Menge: ${item.qty} → ${newQ}`);
+    if (imgChanged) {
+        if (!oldImg && newImg)      ch.push(`Foto hinzugefügt`);
+        else if (oldImg && !newImg) ch.push(`Foto entfernt`);
+        else                        ch.push(`Foto geändert`);
+    }
     if (ch.length === 0) { closeModal('editModal'); return; }
     if (!confirm(`Folgende Änderungen speichern?\n\n${ch.join('\n')}`)) return;
 
     let updates = { name:newN, qty:newQ, lastUser:S.user };
+    if (imgChanged) updates.img = newImg;
+
     const borrowed = totalBorrowed(item);
     if (newQ < borrowed) {
         const borrowers = {...(item.borrowers||{})};
