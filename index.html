@@ -1,1595 +1,1180 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V183</title>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fuhrpark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0d0e;
+    --bg-2: #15171a;
+    --bg-3: #1d2024;
+    --bg-4: #262a2f;
+    --line: #2c3036;
+    --line-2: #383d44;
+    --txt: #e8eaed;
+    --txt-2: #a8adb4;
+    --txt-3: #6b7079;
+    --accent: #ff8a3d;
+    --accent-2: #ffb47a;
+    --green: #4ade80;
+    --green-bg: rgba(74, 222, 128, 0.12);
+    --yellow: #fbbf24;
+    --yellow-bg: rgba(251, 191, 36, 0.13);
+    --red: #f87171;
+    --red-bg: rgba(248, 113, 113, 0.13);
+    --blue: #60a5fa;
+    --chain: #94a3b8;
+    --chain-bg: rgba(148, 163, 184, 0.13);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--txt);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(255, 138, 61, 0.06) 0%, transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(96, 165, 250, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+  .app {
+    max-width: 460px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding-bottom: 80px;
+    position: relative;
+  }
 
-    <style>
-        :root { --accent:#06b6d4; --danger:#ef4444; --success:#10b981; --warn:#f59e0b; --purple:#a855f7; }
-        *, *::before, *::after { box-sizing:border-box; }
-        body, html { margin:0; padding:0; height:100vh; width:100%; font-family:sans-serif; background:#000; color:white; overflow:hidden; }
-        .global-bg { position:fixed; inset:0; background:linear-gradient(rgba(0,0,0,0.72),rgba(0,0,0,0.88)), url('haus_background.jpg') no-repeat center/cover; z-index:1; }
+  /* Header */
+  .header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(12, 13, 14, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+    padding: 16px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .header h1 .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+  }
+  .header .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--txt-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
 
-        #loginScreen { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
-        .login-box { background:rgba(15,23,42,0.96); padding:32px 28px; border-radius:20px; border:1.5px solid var(--accent); text-align:center; width:88%; max-width:320px; }
-        .login-box h2 { color:var(--accent); font-size:1.6rem; margin:0 0 4px; }
-        .login-box p  { color:#64748b; font-size:.72rem; margin:0 0 20px; }
+  /* Page transitions */
+  .page { display: none; padding: 20px 16px 24px; }
+  .page.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-        #ui-wrapper { position:relative; z-index:10; height:100vh; display:none; flex-direction:column; }
-        .app-header {
-            background: linear-gradient(180deg, rgba(3,7,18,0.96) 0%, rgba(15,23,42,0.92) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: calc(40px + env(safe-area-inset-top)) 14px 12px;
-            display: flex; justify-content: space-between; align-items: center;
-            gap: 10px;
-            position: relative;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-        }
-        /* Gradient-Linie unten am Header — passt zum Footer */
-        .app-header::after {
-            content: '';
-            position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
-            background: linear-gradient(90deg, transparent 0%, var(--accent) 20%, var(--accent) 80%, transparent 100%);
-            box-shadow: 0 0 8px rgba(6,182,212,0.6);
-        }
-        .app-header h2 {
-            margin: 0; font-size: .92rem;
-            flex: 1;
-            display: flex; align-items: center; justify-content: center;
-            gap: 9px;
-            letter-spacing: .03em;
-            font-weight: 800;
-        }
-        .app-header h2 span {
-            background: linear-gradient(135deg, #ffffff 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        /* Header-Buttons (Kamera + Logout) modern */
-        .header-btn {
-            background: rgba(6,182,212,0.12);
-            border: 1px solid rgba(6,182,212,0.25);
-            border-radius: 10px;
-            width: 40px; height: 40px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--accent);
-            flex-shrink: 0;
-        }
-        .header-btn:active {
-            background: rgba(6,182,212,0.25);
-            transform: scale(0.94);
-        }
-        .header-btn svg { width: 22px; height: 22px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .header-cam { font-size: 1.3rem; }
-        /* User-Info Pille rechts neben Logout */
-        .user-pill {
-            display: flex; flex-direction: column; align-items: flex-end;
-            font-size: .65rem; color: #64748b; line-height: 1.1;
-        }
-        .user-pill b {
-            color: var(--accent); font-size: .72rem; font-weight: 800;
-            max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-        .app-logo { width:30px; height:30px; flex-shrink:0; animation: logoGlow 2s ease-in-out infinite; transform-origin:center; }
-        @keyframes logoGlow {
-            0%, 100% { filter: drop-shadow(0 0 2px rgba(6,182,212,0.4)); transform:scale(1); }
-            50%      { filter: drop-shadow(0 0 14px rgba(6,182,212,1)) drop-shadow(0 0 22px rgba(6,182,212,0.8)); transform:scale(1.15); }
-        }
-        body.has-banner .app-header { padding-top:calc(70px + env(safe-area-inset-top)) !important; }
-        .content-area { flex:1; overflow-y:auto; padding:10px; padding-bottom:calc(88px + env(safe-area-inset-bottom)); background:rgba(0,0,0,0.28); }
+  /* Stats hero */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .stat-card {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-card .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--txt-3);
+  }
+  .stat-card.red .num { color: var(--red); }
+  .stat-card.yellow .num { color: var(--yellow); }
+  .stat-card.green .num { color: var(--green); }
 
-        .fi { width:100%; padding:11px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); font-size:.95rem; margin-bottom:10px; background:rgba(30,41,59,0.85); color:white; }
-        .fi::placeholder { color:#64748b; }
-        .fi:focus { outline:none; border-color:var(--accent); }
-        select.fi option { background:#1e293b; color:white; }
-        .fi-light { width:100%; padding:11px 14px; border-radius:8px; border:1px solid #cbd5e1; font-size:.95rem; margin-bottom:10px; background:#f8fafc; color:#1e293b; }
-        .fi-light::placeholder { color:#94a3b8; }
-        .fi-light:focus { outline:none; border-color:var(--accent); background:#fff; }
-        select.fi-light option { background:#fff; color:#1e293b; padding:8px; }
+  /* Section title */
+  .section-title {
+    display: flex; align-items: center; gap: 10px;
+    margin: 24px 0 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--txt-3);
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--line);
+  }
+  .section-title .count {
+    background: var(--bg-3);
+    color: var(--txt-2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    letter-spacing: 0;
+  }
 
-        .item-card { background:rgba(255,255,255,0.97); border-radius:12px; margin-bottom:10px; padding:10px; color:#000; display:flex; gap:9px; align-items:center; border-left:5px solid var(--accent); }
-        .item-card.out  { border-left-color:var(--danger);  background:#fff1f1; }
-        .item-card.mix  { border-left-color:var(--warn);    background:#fffbeb; }
-        .item-card.has-resv { box-shadow: 0 0 0 2px rgba(168,85,247,0.4); }
-        .item-thumb { width:62px; height:62px; object-fit:cover; border-radius:8px; flex-shrink:0; cursor:pointer; transition:transform .15s; }
-        .item-thumb:active { transform:scale(0.95); }
-        .item-info  { flex:1; min-width:0; }
-        .item-name  { font-weight:900; font-size:.82rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .item-meta  { font-size:.6rem; color:#64748b; margin-top:3px; }
-        .item-badge { display:inline-block; font-size:.55rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-top:4px; }
-        .b-in { background:#d1fae5; color:#065f46; }
-        .b-out{ background:#fee2e2; color:#991b1b; }
-        .b-mix{ background:#fef3c7; color:#92400e; }
-        .b-resv{ background:#f3e8ff; color:#6b21a8; margin-left:4px; }
-        .borrowers { font-size:.55rem; color:#64748b; margin-top:3px; line-height:1.3; }
-        .borrowers b { color:#dc2626; font-weight:700; }
-        .resv-info { font-size:.55rem; color:#7e22ce; margin-top:3px; line-height:1.3; }
-        .resv-info b { color:#581c87; font-weight:800; }
+  /* Auto card */
+  .auto {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .auto:active { transform: scale(0.99); }
+  .auto.has-warn { border-color: rgba(248, 113, 113, 0.35); }
+  .auto-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 12px; gap: 10px;
+  }
+  .auto-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+  }
+  .auto-modell {
+    font-size: 11px;
+    color: var(--txt-3);
+    font-weight: 500;
+  }
+  .auto-km {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .auto-km .unit {
+    font-size: 10px;
+    color: var(--txt-3);
+    font-weight: 500;
+  }
+  .auto-status {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 9px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid transparent;
+  }
+  .pill.green { background: var(--green-bg); color: var(--green); border-color: rgba(74, 222, 128, 0.25); }
+  .pill.yellow { background: var(--yellow-bg); color: var(--yellow); border-color: rgba(251, 191, 36, 0.3); }
+  .pill.red { background: var(--red-bg); color: var(--red); border-color: rgba(248, 113, 113, 0.3); }
+  .pill.chain { background: var(--chain-bg); color: var(--chain); border-color: rgba(148, 163, 184, 0.25); }
+  .pill.neutral { background: var(--bg-3); color: var(--txt-3); }
 
-        .qr-side { width:52px; height:52px; background:white; padding:3px; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
-        .qr-side span { font-size:.38rem; color:#000; font-weight:700; margin-top:2px; }
+  /* Auto detail */
+  .auto-hero {
+    background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .back-btn {
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    color: var(--txt-2);
+    padding: 8px 14px 8px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-bottom: 14px;
+  }
+  .auto-hero h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+  }
+  .auto-hero .sub {
+    font-size: 12px;
+    color: var(--txt-3);
+    margin-bottom: 14px;
+  }
+  .specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .spec {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .spec .lbl {
+    font-size: 10px;
+    color: var(--txt-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .spec .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+  }
 
-        .act { display:grid; grid-template-columns:1fr 1fr; gap:5px; align-items:center; justify-items:center; border-left:1px solid #e2e8f0; padding-left:8px; }
-        .btn-tog { border:none; padding:7px 2px; border-radius:6px; color:white; font-weight:800; font-size:.6rem; cursor:pointer; min-width:34px; letter-spacing:.04em; }
-        .btn-tog:disabled { opacity:0.28; cursor:not-allowed; }
-        .t-ein { background:var(--success); }
-        .t-aus { background:var(--danger); }
-        .t-resv{ background:var(--purple); }
-        .ic { cursor:pointer; font-size:1rem; line-height:1; }
+  /* Service grid in auto detail */
+  .service-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .svc {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+  }
+  .svc.full { grid-column: 1 / -1; }
+  .svc .lbl {
+    font-size: 10px;
+    color: var(--txt-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .svc .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .svc .extra {
+    font-size: 11px;
+    color: var(--txt-3);
+    margin-top: 2px;
+  }
 
-        nav {
-            position:fixed; bottom:0; left:0; width:100%;
-            background: linear-gradient(0deg, rgba(3,7,18,0.96) 0%, rgba(15,23,42,0.92) 100%);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display:flex;
-            height:calc(64px + env(safe-area-inset-bottom));
-            z-index:100; padding-bottom:env(safe-area-inset-bottom); overflow-x:auto;
-            position:fixed;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
-        }
-        nav::before {
-            content:''; position:absolute; top:0; left:0; right:0; height:2px;
-            background: linear-gradient(90deg, transparent 0%, var(--accent) 20%, var(--accent) 80%, transparent 100%);
-            box-shadow: 0 0 8px rgba(6,182,212,0.6);
-        }
-        .tab-btn { flex:1; min-width:60px; border:none; background:none; color:#64748b; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.6rem; font-weight:700; cursor:pointer; padding:0 4px; transition:all 0.2s; }
-        .tab-btn span { font-size:1.1rem; margin-bottom:2px; }
-        .tab-btn.active { color:white; background:rgba(6,182,212,0.18); position:relative; }
-        .tab-btn.active::before {
-            content:''; position:absolute; top:0; left:20%; right:20%; height:3px;
-            background:var(--accent); border-radius:0 0 3px 3px;
-            box-shadow: 0 0 8px rgba(6,182,212,0.8);
-        }
+  /* Reparatur Liste */
+  .rep-item {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .rep-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+    gap: 10px;
+  }
+  .rep-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .rep-cost {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .rep-text {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--txt);
+  }
+  .rep-meta {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--txt-3);
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .rep-meta span { display: inline-flex; align-items: center; gap: 4px; }
 
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:5000; align-items:center; justify-content:center; padding:20px; }
-        .mbox  { background:white; color:#000; padding:22px; border-radius:16px; width:100%; max-width:360px; max-height:90vh; overflow-y:auto; }
-        .mbox h3 { margin:0 0 6px; color:#1e293b; }
-        .mbox .mb-info { font-size:.85rem; color:#475569; margin-bottom:14px; line-height:1.5; }
+  /* Eingabe-Form */
+  .form {
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .field {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .field label {
+    font-size: 11px;
+    color: var(--txt-3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .field input, .field select, .field textarea {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--txt);
+    padding: 13px 14px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 15px;
+    transition: border-color 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field textarea { resize: vertical; min-height: 70px; }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .photo-btn {
+    background: var(--bg-2);
+    border: 1px dashed var(--line-2);
+    color: var(--txt-2);
+    padding: 24px 14px;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .photo-btn.has-photo {
+    background: rgba(74, 222, 128, 0.06);
+    border-color: rgba(74, 222, 128, 0.4);
+    color: var(--green);
+    border-style: solid;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #1a0e00;
+    border: none;
+    padding: 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    box-shadow: 0 4px 20px rgba(255, 138, 61, 0.25);
+  }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-secondary {
+    background: var(--bg-3);
+    color: var(--txt);
+    border: 1px solid var(--line);
+    padding: 14px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
 
-        .qty-suggest { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-        .qty-sbtn { background:#e0f2fe; color:#0369a1; border:1px solid #7dd3fc; border-radius:7px; padding:8px 12px; font-size:.78rem; font-weight:700; cursor:pointer; flex:1 1 auto; min-width:60px; }
-        .qty-sbtn.you { background:#dbeafe; color:#1e40af; border-color:#3b82f6; }
-        .qty-sbtn.all { background:#fef3c7; color:#92400e; border-color:#fbbf24; }
-        .qty-sbtn:active { transform:scale(0.96); }
+  /* Bottom Nav */
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(12, 13, 14, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line);
+    display: flex;
+    z-index: 100;
+    padding: 6px 0 max(6px, env(safe-area-inset-bottom));
+    max-width: 460px;
+    margin: 0 auto;
+  }
+  .nav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 0;
+    color: var(--txt-3);
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.add {
+    position: relative;
+  }
+  .nav-btn.add .icon-wrap {
+    background: var(--accent);
+    color: #1a0e00;
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: -22px;
+    box-shadow: 0 6px 20px rgba(255, 138, 61, 0.4);
+  }
+  .nav-btn.add { color: var(--txt); }
 
-        .choice-btns { display:flex; flex-direction:column; gap:10px; }
-        .choice-btn { padding:18px 16px; border:none; border-radius:12px; color:white; font-weight:800; font-size:1rem; cursor:pointer; display:flex; align-items:center; gap:14px; text-align:left; line-height:1.2; }
-        .choice-btn .ci { font-size:1.6rem; line-height:1; flex-shrink:0; }
-        .choice-btn .ct { flex:1; }
-        .choice-btn .ct small { display:block; font-size:.7rem; opacity:0.85; font-weight:500; margin-top:2px; }
-        .choice-aus { background:var(--danger); }
-        .choice-ein { background:var(--success); }
-        .choice-resv{ background:var(--purple); }
-        .choice-cancel { background:#e2e8f0; color:#1e293b; padding:12px; font-size:.85rem; justify-content:center; }
-        .choice-cancel .ci { font-size:1rem; }
+  /* Toast/Notification */
+  .toast {
+    position: fixed;
+    top: 70px; left: 16px; right: 16px;
+    max-width: 430px; margin: 0 auto;
+    background: var(--bg-3);
+    border: 1px solid var(--line-2);
+    border-left: 3px solid var(--accent);
+    padding: 14px 16px;
+    border-radius: 12px;
+    z-index: 200;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    transform: translateY(-120%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .toast.show { transform: translateY(0); }
+  .toast.success { border-left-color: var(--green); }
+  .toast.warn { border-left-color: var(--yellow); }
+  .toast .ico {
+    background: var(--accent);
+    color: #1a0e00;
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-weight: 800;
+  }
+  .toast.success .ico { background: var(--green); }
+  .toast.warn .ico { background: var(--yellow); }
+  .toast .body { flex: 1; }
+  .toast .title { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+  .toast .msg { font-size: 12px; color: var(--txt-2); }
 
-        /* Reservation-Warning Box */
-        .resv-warning { background:#fef3c7; border:2px solid #f59e0b; border-radius:10px; padding:12px 14px; margin-bottom:14px; }
-        .resv-warning h4 { margin:0 0 8px; color:#92400e; font-size:.95rem; display:flex; align-items:center; gap:8px; }
-        .resv-warning ul { margin:0; padding-left:20px; font-size:.82rem; color:#78350f; line-height:1.5; }
-        .resv-warning ul li b { color:#451a03; }
+  /* Reminders */
+  .reminder {
+    background: linear-gradient(135deg, rgba(248,113,113,0.12), rgba(248,113,113,0.04));
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 8px;
+  }
+  .reminder.yellow {
+    background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(251,191,36,0.03));
+    border-color: rgba(251,191,36,0.25);
+  }
+  .reminder-top {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .reminder-top .what { font-weight: 700; }
+  .reminder-top .what.red { color: var(--red); }
+  .reminder-top .what.yellow { color: var(--yellow); }
+  .reminder-top .auto-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--txt-3);
+    background: var(--bg-3);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .reminder-detail {
+    font-size: 12px;
+    color: var(--txt-2);
+  }
 
-        #scanbox { display:none; position:fixed; inset:0; background:#000; z-index:6000; flex-direction:column; }
+  /* Demo banner */
+  .demo-banner {
+    background: linear-gradient(135deg, rgba(96,165,250,0.12), rgba(96,165,250,0.04));
+    border: 1px solid rgba(96,165,250,0.3);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    font-size: 12px;
+    color: var(--blue);
+    line-height: 1.4;
+  }
+  .demo-banner strong { color: var(--txt); font-weight: 700; }
 
-        #photoZoom { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.97); z-index:11000; align-items:center; justify-content:center; overflow:hidden; touch-action:none; }
-        #photoZoomImgWrap { width:100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-        #photoZoomImg { max-width:100%; max-height:100%; transform-origin:center center; transition:transform .05s ease-out; user-select:none; -webkit-user-drag:none; }
-        #photoZoomClose { position:absolute; top:calc(20px + env(safe-area-inset-top)); right:20px; width:44px; height:44px; border-radius:50%; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.3); color:white; font-size:1.4rem; cursor:pointer; z-index:11100; }
-        #photoZoomHint { position:absolute; bottom:calc(20px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#94a3b8; padding:8px 16px; border-radius:20px; font-size:.7rem; transition:opacity .4s; z-index:11100; }
-        #photoZoomCtrls { position:absolute; bottom:calc(70px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:11100; }
-        #photoZoomCtrls button { width:42px; height:42px; border-radius:50%; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.25); color:white; font-size:1rem; font-weight:800; cursor:pointer; }
-
-        #printOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.97); z-index:10000; flex-direction:column; align-items:center; justify-content:flex-start; padding:20px; gap:12px; overflow-y:auto; }
-        #printOverlay-inner { width:100%; max-width:510px; display:flex; flex-direction:column; gap:12px; padding-top:20px; padding-bottom:30px; }
-        #pvBox { width:100%; aspect-ratio:85/29; background:white; border-radius:6px; border:2px solid rgba(255,255,255,0.15); overflow:hidden; flex-shrink:0; }
-        #pvInner { width:100%; height:100%; display:flex; align-items:center; background:white; }
-        .pv-bar  { height:100%; background:#06b6d4; width:14%; flex-shrink:0; }
-        .pv-qr   { width:28%; padding:2%; flex-shrink:0; }
-        .pv-qr img { width:100%; display:block; }
-        .pv-txt  { flex:1; padding:3% 2% 3% 0; display:flex; flex-direction:column; justify-content:center; overflow:hidden; }
-        .pv-meta { font-size:clamp(6px,1.5vw,10px); color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3%; }
-        .pv-div  { height:2px; background:#06b6d4; margin-bottom:4%; }
-        .pv-name { font-weight:900; color:#000; line-height:1.05; overflow:hidden; font-size:clamp(13px,3.5vw,26px); word-wrap:break-word; }
-        .pv-key  { font-size:clamp(5px,1vw,8px); color:#cbd5e1; margin-top:4%; overflow:hidden; white-space:nowrap; }
-
-        .pguide { background:rgba(15,23,42,0.92); border:1px solid rgba(6,182,212,0.4); border-radius:12px; padding:14px 16px; }
-        .pguide h4 { color:var(--accent); font-size:.82rem; margin:0 0 12px; display:flex; align-items:center; gap:6px; }
-        .pstep { display:flex; gap:10px; margin-bottom:10px; align-items:flex-start; }
-        .pstep:last-child { margin-bottom:0; }
-        .pstep-num { background:var(--accent); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.72rem; flex-shrink:0; }
-        .pstep-txt { flex:1; font-size:.78rem; color:#cbd5e1; line-height:1.4; }
-        .pstep-txt b { color:white; }
-        .pstep-txt code { background:rgba(6,182,212,0.15); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:.75rem; }
-
-        #pStatus { width:100%; border-radius:10px; padding:10px 14px; font-size:.75rem; display:none; }
-        #pStatus.ok  { background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); color:#6ee7b7; }
-        #pStatus.err { background:rgba(239,68,68,0.12);  border:1px solid rgba(239,68,68,0.3);  color:#fca5a5; }
-        #pStatus.inf { background:rgba(6,182,212,0.12);  border:1px solid rgba(6,182,212,0.3);  color:#94a3b8; }
-        .pbtns { display:flex; gap:10px; width:100%; }
-
-        .ac  { background:rgba(255,255,255,0.97); padding:16px; border-radius:14px; color:#000; margin-bottom:14px; }
-        .ac h4 { margin:0 0 12px; font-size:.9rem; color:#1e293b; }
-        .mc  { background:rgba(15,23,42,0.7); padding:14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); margin-bottom:14px; }
-        .mc h4 { color:var(--accent); margin:0 0 12px; font-size:.88rem; }
-
-        .lfb { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
-        .lfbtn { border:1px solid rgba(255,255,255,0.2); background:rgba(30,41,59,0.8); color:#94a3b8; padding:5px 10px; border-radius:20px; font-size:.68rem; cursor:pointer; font-weight:600; }
-        .lfbtn.active { background:var(--accent); color:white; border-color:var(--accent); }
-        .log-item { padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:.78rem; color:#cbd5e1; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
-        .log-item b { color:var(--accent); }
-        .log-time { font-size:.7rem; color:#06b6d4; white-space:nowrap; flex-shrink:0; font-weight:700; text-align:right; line-height:1.35; background:rgba(6,182,212,0.08); padding:4px 8px; border-radius:6px; border:1px solid rgba(6,182,212,0.2); }
-        .log-time .ld { display:block; font-size:.72rem; color:#7dd3fc; }
-        .log-time .lt { display:block; font-size:.78rem; color:white; font-weight:800; }
-        .ltag { display:inline-block; font-size:.55rem; font-weight:700; padding:1px 5px; border-radius:3px; margin-right:4px; }
-        .lt-aus { background:#fee2e2; color:#991b1b; }
-        .lt-ein { background:#d1fae5; color:#065f46; }
-        .lt-neu { background:#dbeafe; color:#1e40af; }
-        .lt-edit{ background:#fef3c7; color:#92400e; }
-        .lt-del { background:#f3e8ff; color:#6b21a8; }
-        .lt-resv{ background:#f3e8ff; color:#6b21a8; }
-
-        .empty { text-align:center; padding:40px 20px; color:#64748b; font-size:.85rem; }
-        .empty i { font-size:2.5rem; display:block; margin-bottom:10px; }
-        .btn-p { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
-        .btn-d { width:100%; padding:13px; background:#1e293b; color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; margin-bottom:10px; }
-
-        /* Reservation-Tab */
-        .resv-card { background:rgba(255,255,255,0.97); border-radius:12px; padding:12px 14px; margin-bottom:10px; color:#000; border-left:5px solid var(--purple); }
-        .resv-card.past { opacity:0.5; border-left-color:#94a3b8; }
-        .resv-card.soon { box-shadow:0 0 0 2px var(--warn); }
-        .resv-h { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:8px; }
-        .resv-name { font-weight:900; font-size:.95rem; color:#1e293b; flex:1; }
-        .resv-qty { background:var(--purple); color:white; font-size:.7rem; font-weight:800; padding:3px 8px; border-radius:6px; flex-shrink:0; }
-        .resv-meta { font-size:.78rem; color:#475569; line-height:1.5; }
-        .resv-meta b { color:#1e293b; }
-        .resv-actions { display:flex; gap:8px; margin-top:10px; }
-        .resv-btn { flex:1; padding:8px; border:none; border-radius:6px; font-weight:700; font-size:.78rem; cursor:pointer; color:white; }
-        .resv-btn-del  { background:var(--danger); }
-        .resv-time-tag { display:inline-block; font-size:.7rem; font-weight:800; padding:2px 8px; border-radius:6px; margin-bottom:6px; }
-        .rt-soon   { background:#fef3c7; color:#92400e; }
-        .rt-active { background:#fee2e2; color:#991b1b; }
-        .rt-future { background:#dbeafe; color:#1e40af; }
-        .rt-past   { background:#e2e8f0; color:#475569; }
-
-        /* ANLEITUNGS-TAB */
-        .help-box { background:rgba(255,255,255,0.97); border-radius:14px; padding:18px; color:#000; margin-bottom:14px; }
-        .help-box h3 { margin:0 0 14px; font-size:1.05rem; color:#06b6d4; display:flex; align-items:center; gap:8px; }
-        .help-box h4 { margin:14px 0 8px; font-size:.92rem; color:#1e293b; display:flex; align-items:center; gap:6px; }
-        .help-box p { font-size:.85rem; line-height:1.55; color:#334155; margin:0 0 10px; }
-        .help-box ol, .help-box ul { font-size:.85rem; line-height:1.6; color:#334155; padding-left:24px; margin:0 0 10px; }
-        .help-box ol li, .help-box ul li { margin-bottom:5px; }
-        .help-box b { color:#0f172a; }
-        .help-box .hl { background:#fef3c7; padding:1px 5px; border-radius:3px; font-weight:600; }
-        .help-box .tip { background:#e0f2fe; border-left:4px solid var(--accent); padding:10px 12px; border-radius:6px; margin:10px 0; font-size:.82rem; color:#075985; line-height:1.5; }
-        .help-box .tip b { color:#0c4a6e; }
-        .help-box .warn { background:#fef3c7; border-left:4px solid var(--warn); padding:10px 12px; border-radius:6px; margin:10px 0; font-size:.82rem; color:#78350f; line-height:1.5; }
-
-        #updateBanner { display:none; position:fixed; top:calc(env(safe-area-inset-top) + 8px); left:8px; right:8px; background:var(--success); color:white; padding:12px 16px; border-radius:12px; font-size:.85rem; font-weight:700; z-index:20000; box-shadow:0 4px 20px rgba(0,0,0,0.4); align-items:center; justify-content:space-between; gap:10px; }
-        #updateBanner.show { display:flex; }
-        #updateBanner button { background:white; color:var(--success); border:none; padding:8px 14px; border-radius:8px; font-weight:800; cursor:pointer; font-size:.78rem; }
-
-        #cvs { display:none; }
-    </style>
+  .empty {
+    text-align: center;
+    color: var(--txt-3);
+    padding: 40px 20px;
+    font-size: 13px;
+  }
+</style>
 </head>
 <body>
+<div class="app">
 
-<canvas id="cvs"></canvas>
-<div class="global-bg"></div>
+  <header class="header">
+    <h1><span class="dot"></span>Fuhrpark</h1>
+    <div class="date" id="header-date">—</div>
+  </header>
 
-<div id="updateBanner">
-    <span>🔄 Neue Version verfügbar!</span>
-    <button onclick="reloadWithCacheBust()">Aktualisieren</button>
-</div>
-
-<!-- LOGIN -->
-<div id="loginScreen">
-    <div class="login-box">
-        <h2>GR-LAGER</h2>
-        <p>V183 — Lagerverwaltung</p>
-        <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
-        <input type="password" id="lPass" class="fi" placeholder="Passwort">
-        <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
-    </div>
-</div>
-
-<!-- MAIN -->
-<div id="ui-wrapper">
-    <div class="app-header">
-        <button class="header-btn" onclick="startScanner()" title="QR-Scanner">
-            <span class="header-cam">📷</span>
-        </button>
-        <h2>
-            <svg class="app-logo" viewBox="0 0 64 64">
-                <path d="M8 22 L32 10 L56 22 L56 50 L32 62 L8 50 Z" fill="none" stroke="#06b6d4" stroke-width="3" stroke-linejoin="round"/>
-                <path d="M8 22 L32 34 L56 22" fill="none" stroke="#06b6d4" stroke-width="3" stroke-linejoin="round"/>
-                <path d="M32 34 L32 62" fill="none" stroke="#06b6d4" stroke-width="3"/>
-                <rect x="20" y="40" width="3" height="3" fill="#06b6d4"/><rect x="25" y="40" width="3" height="3" fill="#06b6d4"/>
-                <rect x="20" y="45" width="3" height="3" fill="#06b6d4"/><rect x="36" y="40" width="3" height="3" fill="#06b6d4"/>
-                <rect x="41" y="40" width="3" height="3" fill="#06b6d4"/><rect x="41" y="45" width="3" height="3" fill="#06b6d4"/>
-            </svg>
-            <span>GR-Lagerverwaltung</span>
-        </h2>
-        <div class="user-pill">
-            <span>angemeldet</span>
-            <b id="uName"></b>
-        </div>
-        <button class="header-btn" onclick="doLogout()" title="Abmelden">
-            <!-- Open-Door Icon (offene Tür mit Pfeil nach außen) -->
-            <svg viewBox="0 0 24 24">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                <polyline points="16 17 21 12 16 7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-        </button>
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="demo-banner">
+      <strong>📱 Prototyp-Demo</strong> · Deine Eingaben werden gespeichert. Tippe auf ein Auto für Details, oder unten auf <strong>+</strong> für eine neue Reparatur.
     </div>
 
-    <div class="content-area">
-        <!-- LAGER -->
-        <div id="tab-lager" class="tab-c">
-            <input type="search" id="searchInput" placeholder="🔍 Suche..." onkeyup="render()" class="fi">
-            <select id="filterCat" class="fi" onchange="render()"></select>
-            <div id="itemList"></div>
+    <div class="stats" id="stats"></div>
+
+    <div id="reminders-block"></div>
+
+    <div class="section-title">
+      🏠 Eigene Fahrzeuge <span class="count" id="cnt-eigen">0</span>
+    </div>
+    <div id="list-eigen"></div>
+
+    <div class="section-title">
+      🤝 Betreute Fahrzeuge <span class="count" id="cnt-betreut">0</span>
+    </div>
+    <div id="list-betreut"></div>
+  </div>
+
+  <!-- AUTO DETAIL -->
+  <div class="page" id="page-detail"></div>
+
+  <!-- REPARATUR EINTRAGEN -->
+  <div class="page" id="page-add">
+    <button class="back-btn" onclick="showPage('dashboard')">← Zurück</button>
+    <h2 style="margin: 8px 0 16px; font-size: 22px; letter-spacing: -0.02em;">Neue Reparatur</h2>
+
+    <form class="form" id="rep-form" onsubmit="saveRep(event)">
+      <div class="field">
+        <label for="r-auto">Auto</label>
+        <select id="r-auto" required></select>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="r-date">Datum</label>
+          <input type="date" id="r-date" required>
         </div>
-
-        <!-- RESERVIERUNGEN -->
-        <div id="tab-resv" class="tab-c" style="display:none;">
-            <div class="lfb">
-                <button class="lfbtn active" onclick="setRF('all',this)">Alle</button>
-                <button class="lfbtn" onclick="setRF('mine',this)">Meine</button>
-                <button class="lfbtn" onclick="setRF('soon',this)">Nächste 7 Tage</button>
-                <button class="lfbtn" onclick="setRF('active',this)">Jetzt</button>
-                <button class="lfbtn" onclick="setRF('future',this)">Später</button>
-            </div>
-            <div id="resvList"></div>
+        <div class="field">
+          <label for="r-km">km-Stand</label>
+          <input type="number" id="r-km" inputmode="numeric" placeholder="z.B. 234500">
         </div>
+      </div>
 
-        <!-- ADMIN -->
-        <div id="tab-neu" class="tab-c" style="display:none;">
-            <div class="ac">
-                <h4>➕ Neuer Artikel</h4>
-                <input type="text"   id="iName" class="fi-light" placeholder="Artikelname">
-                <input type="number" id="iQty"  class="fi-light" value="1" min="1" placeholder="Stückzahl">
-                <select id="iLager"  class="fi-light"></select>
-                <select id="iCat"    class="fi-light"></select>
-                <div style="display:flex;gap:8px;">
-                    <select id="iRegal" class="fi-light" style="flex:1;"></select>
-                    <select id="iFach"  class="fi-light" style="flex:1;"></select>
-                </div>
-                <button onclick="document.getElementById('imgInput').click()" class="btn-d">📷 FOTO</button>
-                <input type="file" id="imgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewImg(this)">
-                <img id="imgPrev" style="width:100%;height:110px;object-fit:contain;display:none;margin-bottom:10px;border-radius:8px;background:#f1f5f9;">
-                <button onclick="saveItem()" class="btn-p">💾 SPEICHERN & ETIKETT</button>
-            </div>
-            <div class="mc">
-                <h4>⚙️ Listenpflege</h4>
-                <div style="display:flex;gap:8px;margin-bottom:10px;">
-                    <input type="text" id="addIn" class="fi" placeholder="Neuer Eintrag..." style="margin:0;flex:1;">
-                    <button onclick="quickAdd()" style="background:var(--success);color:white;border:none;border-radius:8px;padding:0 16px;font-weight:700;font-size:1.1rem;cursor:pointer;">+</button>
-                </div>
-                <select id="manType" class="fi" onchange="renderManage()" style="background:#0f172a;color:white;">
-                    <option value="locations">Lagerorte</option>
-                    <option value="cats">Kategorien</option>
-                    <option value="regale">Regale</option>
-                    <option value="faecher">Fächer</option>
-                </select>
-                <div id="manList" style="max-height:220px;overflow-y:auto;border-radius:8px;"></div>
-            </div>
+      <div class="field">
+        <label for="r-work">Was wurde gemacht?</label>
+        <textarea id="r-work" required placeholder="z.B. Ölwechsel mit Filter"></textarea>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="r-cost">Kosten (€)</label>
+          <input type="number" id="r-cost" inputmode="decimal" step="0.01" placeholder="0,00">
         </div>
-
-        <!-- LOGS -->
-        <div id="tab-log" class="tab-c" style="display:none;">
-            <div class="lfb">
-                <button class="lfbtn active" onclick="setLF('all',this)">Alles</button>
-                <button class="lfbtn" onclick="setLF('aus',this)">Ausgelagert</button>
-                <button class="lfbtn" onclick="setLF('ein',this)">Eingelagert</button>
-                <button class="lfbtn" onclick="setLF('neu',this)">Neu angelegt</button>
-                <button class="lfbtn" onclick="setLF('edit',this)">Geändert</button>
-                <button class="lfbtn" onclick="setLF('del',this)">Gelöscht</button>
-                <button class="lfbtn" onclick="setLF('resv',this)">Reserviert</button>
-            </div>
-            <div id="logList"></div>
+        <div class="field">
+          <label for="r-time">Zeit (h)</label>
+          <input type="number" id="r-time" inputmode="decimal" step="0.5" placeholder="2,5">
         </div>
+      </div>
 
-        <!-- HILFE -->
-        <div id="tab-help" class="tab-c" style="display:none;">
-            <div class="help-box">
-                <h3>📖 Anleitung</h3>
-                <p>Willkommen bei der <b>GR-Lagerverwaltung</b>! Hier erfährst du alles, was du wissen musst.</p>
-            </div>
+      <div class="field">
+        <label for="r-who">Erledigt von</label>
+        <input type="text" id="r-who" list="who-list" placeholder="z.B. Andreas, Werkstatt XY">
+        <datalist id="who-list">
+          <option value="Andreas">
+          <option value="David">
+          <option value="Werkstatt">
+          <option value="Selbst">
+        </datalist>
+      </div>
 
-            <div class="help-box">
-                <h3>🔐 Richtig angemeldet?</h3>
-                <p>Bitte melde dich <b>immer mit deinem vollständigen Namen</b> (Vorname und Nachname) an — z.B. <span class="hl">Thomas Müller</span>.</p>
-                <p>So ist eindeutig, wer welchen Artikel ausgeliehen oder reserviert hat. Vor allem wenn mehrere Personen denselben Vornamen haben.</p>
-                <div class="warn">⚠️ <b>Falsch angemeldet?</b><br>Wenn du z.B. nur deinen Vornamen oder einen Spitznamen eingegeben hast, melde dich bitte ab und neu mit dem vollen Namen an.<br><br>👉 Tippe oben rechts auf das <b>Tür-Symbol 🚪</b>, um dich abzumelden, und logge dich dann mit Vor- und Nachnamen neu ein.</div>
-            </div>
-
-            <div class="help-box">
-                <h3>📦 Lager-Übersicht</h3>
-                <p>Im Tab <b>"📦 LAGER"</b> siehst du alle Artikel auf einen Blick:</p>
-                <h4>🟢 Grüne Karte</h4>
-                <p>Alles im Lager — niemand hat etwas ausgeliehen.</p>
-                <h4>🟡 Gelbe Karte</h4>
-                <p>Teilweise ausgeliehen — z.B. von 5 Stück sind noch 2 da.</p>
-                <h4>🔴 Rote Karte</h4>
-                <p>Alles ausgeliehen — niemand kann gerade etwas mitnehmen.</p>
-                <h4>🟣 Lila Rahmen</h4>
-                <p>Es gibt eine <b>Reservierung</b> für diesen Artikel.</p>
-
-                <div class="tip">💡 <b>Suche</b>: Tippe oben in die Suchleiste, um schnell einen Artikel zu finden.<br>
-                <b>Filter</b>: Wähle eine Kategorie, um nur bestimmte Artikel zu sehen.<br>
-                <b>Fotos ansehen</b>: Tippe auf das Bild eines Artikels, um es groß zu sehen. Bei mehreren Fotos kannst du mit den Pfeilen ‹ › durchblättern.</div>
-            </div>
-
-            <div class="help-box">
-                <h3>📤 Artikel ausleihen (AUS)</h3>
-                <p>Wenn du etwas aus dem Lager nehmen möchtest:</p>
-                <ol>
-                    <li>Suche den Artikel in der Liste</li>
-                    <li>Tippe auf den <b>roten "AUS"-Button</b> rechts neben dem Artikel</li>
-                    <li>Wähle die Stückzahl, die du ausleihen möchtest</li>
-                    <li>Tippe auf <b>"📤 AUSLEIHEN"</b></li>
-                </ol>
-                <div class="warn">⚠️ Wenn jemand anderes für die nächsten 7 Tage eine Reservierung gemacht hat, bekommst du eine <b>Warnung</b> — bitte berücksichtige das, damit der andere seinen Termin halten kann!</div>
-            </div>
-
-            <div class="help-box">
-                <h3>📥 Artikel zurückbringen (EIN)</h3>
-                <p>Wenn du einen Artikel zurückbringst:</p>
-                <ol>
-                    <li>Suche den Artikel in der Liste</li>
-                    <li>Tippe auf den <b>grünen "EIN"-Button</b></li>
-                    <li>Es wird automatisch deine ausgeliehene Anzahl vorgeschlagen — z.B. "Meine 3"</li>
-                    <li>Tippe auf <b>"📥 ZURÜCK"</b></li>
-                </ol>
-                <div class="tip">💡 Du kannst sehen wer welche Anzahl ausgeliehen hat, direkt unter dem Artikelnamen (z.B. <span class="hl">📤 THOMAS: 3× · ANNA: 2×</span>)</div>
-            </div>
-
-            <div class="help-box">
-                <h3>📷 QR-Code scannen</h3>
-                <p>Schneller geht es mit der Kamera:</p>
-                <ol>
-                    <li>Tippe oben links auf das <b>📷 Kamera-Symbol</b></li>
-                    <li>Halte den QR-Code des Etiketts in den Rahmen</li>
-                    <li>Die App erkennt den Artikel automatisch</li>
-                    <li>Wähle <b>AUSLEIHEN</b>, <b>ZURÜCKBRINGEN</b> oder <b>RESERVIEREN</b></li>
-                </ol>
-            </div>
-
-            <div class="help-box">
-                <h3>🟣 Artikel reservieren</h3>
-                <p>Du brauchst etwas <b>später</b>, willst es aber jetzt nicht ausleihen? Dann reserviere es!</p>
-                <ol>
-                    <li>Scanne den QR-Code oder finde den Artikel in der Liste</li>
-                    <li>Tippe auf den <b>lilafarbenen "RES"-Button</b></li>
-                    <li>Wähle <b>Datum und Uhrzeit</b> für Anfang und Ende</li>
-                    <li>Wähle die <b>Stückzahl</b></li>
-                    <li>Tippe auf <b>"🟣 RESERVIEREN"</b></li>
-                </ol>
-                <div class="tip">💡 Im Tab <b>"🟣 RESERV."</b> siehst du alle Reservierungen. Du kannst dort filtern: deine eigenen, bald anstehende, gerade aktive oder zukünftige.</div>
-                <div class="warn">⚠️ Reservierungen sind <b>Ankündigungen</b> — sie sperren den Artikel nicht automatisch. Andere Nutzer bekommen aber eine Warnung, wenn sie etwas ausleihen wollen, was du in den nächsten 7 Tagen reserviert hast.</div>
-            </div>
-
-            <div class="help-box">
-                <h3>✏️ Stammdaten ändern</h3>
-                <p>Wenn du den <b>Namen</b>, die <b>Stückzahl</b> oder das <b>Foto</b> eines Artikels nachträglich ändern möchtest:</p>
-                <ol>
-                    <li>Tippe auf den <b>grauen Stift-Button ✏️</b> auf der Karte des Artikels</li>
-                    <li>Es öffnet sich das Fenster <b>"Stammdaten ändern"</b></li>
-                    <li>Ändere was du möchtest:
-                        <ul>
-                            <li><b>Name</b> — z.B. wenn der Name falsch geschrieben war</li>
-                            <li><b>Stückzahl</b> — z.B. wenn neue Stücke nachgekauft wurden</li>
-                            <li><b>Fotos</b> — du kannst <b>mehrere Fotos</b> hinzufügen (z.B. von verschiedenen Seiten oder Zustand des Artikels). Tippe auf das ✕ neben einem Foto, um es zu entfernen. Das erste Foto ist das <b>Hauptbild</b>, das in der Liste angezeigt wird.</li>
-                        </ul>
-                    </li>
-                    <li>Tippe auf <b>"✓ Speichern"</b></li>
-                    <li>Bestätige die Änderungen — sie werden im Verlauf gespeichert</li>
-                </ol>
-                <div class="warn">⚠️ Stammdaten = die Grundinformationen des Artikels. Das ist <b>NICHT</b> für Aus-/Einlagern gedacht! Dafür sind die roten/grünen Buttons da.</div>
-                <div class="tip">💡 Im selben Fenster ganz unten kannst du den Artikel auch <b>komplett löschen</b>.</div>
-            </div>
-
-            <div class="help-box">
-                <h3>🖨️ Etikett drucken</h3>
-                <p>Für jeden Artikel kannst du ein QR-Code-Etikett ausdrucken:</p>
-                <ol>
-                    <li>Tippe auf das <b>QR-Symbol</b> (mittig auf der Karte mit Schrift "PRINT")</li>
-                    <li>Tippe auf <b>"📥 BILD TEILEN"</b></li>
-                    <li>Wähle <b>"In Fotos sichern"</b></li>
-                    <li>Öffne die <b>Brother iPrint&Label</b> App</li>
-                    <li>Wähle das gespeicherte Etikett aus deinen Fotos</li>
-                    <li>Stelle ein: <b>Endlos 29 mm</b>, Länge <b>85 mm</b></li>
-                    <li>Drucke das Etikett aus</li>
-                </ol>
-            </div>
-
-            <div class="help-box">
-                <h3>⚙️ Neue Artikel anlegen (Admin)</h3>
-                <ol>
-                    <li>Tippe unten auf <b>"⚙️ ADMIN"</b></li>
-                    <li>Trage den <b>Artikelnamen</b> ein</li>
-                    <li>Trage die <b>Stückzahl</b> ein</li>
-                    <li>Wähle Lagerort, Kategorie, Regal und Fach</li>
-                    <li>Optional: Mach ein <b>Foto 📷</b></li>
-                    <li>Tippe auf <b>"💾 SPEICHERN & ETIKETT"</b></li>
-                    <li>Drucke direkt das Etikett aus (siehe Abschnitt oben)</li>
-                </ol>
-                <div class="tip">💡 Im Admin-Tab kannst du auch unter <b>Listenpflege</b> neue Lagerorte, Kategorien, Regale und Fächer anlegen.</div>
-            </div>
-
-            <div class="help-box">
-                <h3>📜 Verlauf (Logs)</h3>
-                <p>Im Tab <b>"📜 LOGS"</b> siehst du alles, was im Lager passiert ist:</p>
-                <ul>
-                    <li><b>⬆ AUS</b> — Artikel ausgeliehen</li>
-                    <li><b>⬇ EIN</b> — Artikel zurückgebracht</li>
-                    <li><b>✚ NEU</b> — Neuer Artikel angelegt</li>
-                    <li><b>✏ EDIT</b> — Artikel bearbeitet</li>
-                    <li><b>🗑 DEL</b> — Artikel gelöscht</li>
-                    <li><b>🟣 RES</b> — Reservierung gemacht</li>
-                </ul>
-                <p>Du kannst oben filtern, um nur bestimmte Aktionen zu sehen.</p>
-            </div>
-
-            <div class="help-box">
-                <h3>🔄 App aktualisieren</h3>
-                <p>Wenn eine neue Version verfügbar ist, erscheint oben ein <b>grünes Banner</b>. Tippe auf <b>"Aktualisieren"</b>, um die neueste Version zu laden.</p>
-            </div>
-
-            <div class="help-box">
-                <h3>🆘 Probleme?</h3>
-                <ul>
-                    <li><b>Keine Verbindung?</b> Prüfe das WLAN.</li>
-                    <li><b>QR-Code wird nicht erkannt?</b> Stelle sicher, dass genug Licht da ist.</li>
-                    <li><b>Etikett wird abgeschnitten?</b> Der Name ist zu lang — bei Bedarf kürzen.</li>
-                    <li><b>App funktioniert nicht richtig?</b> App schließen und neu öffnen.</li>
-                </ul>
-            </div>
+      <div class="field">
+        <label>📷 Rechnung / Foto</label>
+        <div class="photo-btn" id="photo-btn" onclick="fakePhoto()">
+          📸 Foto aufnehmen oder Datei wählen
         </div>
+      </div>
+
+      <div class="field">
+        <label for="r-note">Notiz</label>
+        <textarea id="r-note" placeholder="optional"></textarea>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 2fr; gap:10px; margin-top: 4px;">
+        <button type="button" class="btn-secondary" onclick="showPage('dashboard')">Abbrechen</button>
+        <button type="submit" class="btn-primary">Eintragen</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- LISTE/HISTORY -->
+  <div class="page" id="page-list">
+    <h2 style="margin: 4px 0 16px; font-size: 22px; letter-spacing: -0.02em;">Alle Reparaturen</h2>
+    <div id="all-reps"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <h2 style="margin: 4px 0 16px; font-size: 22px; letter-spacing: -0.02em;">Einstellungen</h2>
+
+    <div class="auto" style="cursor:default; padding: 16px;">
+      <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">🔔 Push-Benachrichtigungen</div>
+      <div style="font-size: 12px; color: var(--txt-2); line-height: 1.5; margin-bottom: 12px;">
+        In der echten Webapp landen Service-Erinnerungen direkt auf deinem Handy. Demo:
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="demoPush()">Test-Benachrichtigung senden</button>
     </div>
 
-    <nav>
-        <button class="tab-btn active" onclick="goTab(event,'tab-lager')"><span>📦</span>LAGER</button>
-        <button class="tab-btn" onclick="goTab(event,'tab-resv')"><span>🟣</span>RESERV.</button>
-        <button class="tab-btn" onclick="goTab(event,'tab-neu')"><span>⚙️</span>ADMIN</button>
-        <button class="tab-btn" onclick="goTab(event,'tab-log')"><span>📜</span>LOGS</button>
-        <button class="tab-btn" onclick="goTab(event,'tab-help')"><span>📖</span>HILFE</button>
-    </nav>
-</div>
-
-<!-- EDIT MODAL -->
-<div id="editModal" class="modal">
-    <div class="mbox">
-        <h3>✏️ Stammdaten ändern</h3>
-        <p style="font-size:.78rem;color:#64748b;margin:0 0 14px;line-height:1.4;">Hier kannst du die Grunddaten des Artikels ändern: Name, Stückzahl und Fotos.</p>
-        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Name:</label>
-        <input type="text"   id="eName" class="fi-light" placeholder="Artikelname">
-        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Stückzahl:</label>
-        <input type="number" id="eQty"  class="fi-light" min="1" placeholder="Stückzahl">
-        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Fotos:</label>
-        <div id="eImgGallery" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:10px;"></div>
-        <button onclick="document.getElementById('eImgInput').click()" style="width:100%;padding:11px;background:#1e293b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:10px;">📷 Foto hinzufügen</button>
-        <input type="file" id="eImgInput" accept="image/*" capture="environment" style="display:none;" onchange="addEditImg(this)">
-        <div style="display:flex;gap:10px;margin-top:4px;">
-            <button onclick="saveEdit()" style="flex:1;padding:12px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✓ Speichern</button>
-            <button onclick="closeModal('editModal')" style="flex:1;padding:12px;background:#94a3b8;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Abbrechen</button>
-        </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e2e8f0;">
-            <button onclick="delItemFromEdit()" style="width:100%;padding:10px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;font-weight:700;cursor:pointer;font-size:.82rem;">🗑️ Diesen Artikel komplett löschen</button>
-        </div>
+    <div class="auto" style="cursor:default; padding: 16px; margin-top: 12px;">
+      <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">📊 Daten</div>
+      <div style="font-size: 12px; color: var(--txt-2); line-height: 1.5; margin-bottom: 12px;">
+        <span id="data-count">—</span> Reparatur-Einträge gespeichert (lokal in deinem Browser).
+      </div>
+      <button class="btn-secondary" style="width:100%" onclick="resetData()">Demo-Daten zurücksetzen</button>
     </div>
-</div>
 
-<!-- QTY MODAL -->
-<div id="qtyModal" class="modal">
-    <div class="mbox">
-        <h3 id="qtyTitle">📤 Ausleihen</h3>
-        <div id="qtyInfo" class="mb-info"></div>
-        <div id="qtyResvWarn"></div>
-        <div id="qtySuggest" class="qty-suggest"></div>
-        <input type="number" id="qtyInput" class="fi-light" min="1" value="1" placeholder="Stückzahl">
-        <div style="display:flex;gap:10px;">
-            <button id="qtyOkBtn" onclick="qtyConfirm()" style="flex:1;padding:12px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✓ OK</button>
-            <button onclick="closeModal('qtyModal')" style="flex:1;padding:12px;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
-        </div>
+    <div class="auto" style="cursor:default; padding: 16px; margin-top: 12px;">
+      <div style="font-weight: 700; margin-bottom: 8px; font-size: 14px;">ℹ️ Über</div>
+      <div style="font-size: 12px; color: var(--txt-2); line-height: 1.6;">
+        Dies ist ein <strong style="color:var(--txt)">Prototyp</strong> der mobilen Fuhrpark-App. Die echten Daten kommen aus deiner Excel.
+        Eine Produktiv-Version würde mit einer Cloud-Datenbank (Supabase) laufen, mehrere Nutzer unterstützen, echte Foto-Uploads erlauben und richtige Push-Notifications senden.
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- RESERVATION MODAL -->
-<div id="resvModal" class="modal">
-    <div class="mbox">
-        <h3>🟣 Reservieren</h3>
-        <div id="resvInfo" class="mb-info"></div>
-        <label style="font-size:.78rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">📅 Von:</label>
-        <input type="datetime-local" id="resvFrom" class="fi-light">
-        <label style="font-size:.78rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">📅 Bis:</label>
-        <input type="datetime-local" id="resvTo" class="fi-light">
-        <label style="font-size:.78rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">📦 Stückzahl:</label>
-        <input type="number" id="resvQty" class="fi-light" min="1" value="1">
-        <div style="display:flex;gap:10px;margin-top:4px;">
-            <button onclick="saveReservation()" style="flex:1;padding:12px;background:var(--purple);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">🟣 RESERVIEREN</button>
-            <button onclick="closeModal('resvModal')" style="flex:1;padding:12px;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✕</button>
-        </div>
+  <!-- BOTTOM NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" data-page="dashboard" onclick="showPage('dashboard')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-btn" data-page="list" onclick="showPage('list')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      Historie
+    </button>
+    <button class="nav-btn add" onclick="showPage('add')">
+      <span class="icon-wrap">
+        <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
+      </span>
+      Neu
+    </button>
+    <button class="nav-btn" data-page="settings" onclick="showPage('settings')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path stroke-linecap="round" d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Mehr
+    </button>
+  </nav>
+
+  <div class="toast" id="toast">
+    <div class="ico" id="toast-ico">!</div>
+    <div class="body">
+      <div class="title" id="toast-title"></div>
+      <div class="msg" id="toast-msg"></div>
     </div>
-</div>
+  </div>
 
-<!-- SCAN CHOICE MODAL -->
-<div id="scanChoiceModal" class="modal">
-    <div class="mbox">
-        <h3 id="scTitle">📦 Was möchtest du tun?</h3>
-        <div id="scInfo" class="mb-info"></div>
-        <div class="choice-btns">
-            <button class="choice-btn choice-aus" onclick="scanChoice('aus')">
-                <span class="ci">📤</span><span class="ct">AUSLEIHEN<small>Artikel jetzt mitnehmen</small></span>
-            </button>
-            <button class="choice-btn choice-ein" onclick="scanChoice('ein')">
-                <span class="ci">📥</span><span class="ct">ZURÜCKBRINGEN<small>Artikel ins Lager zurück</small></span>
-            </button>
-            <button class="choice-btn choice-resv" onclick="scanChoice('resv')">
-                <span class="ci">🟣</span><span class="ct">RESERVIEREN<small>Für später vormerken</small></span>
-            </button>
-            <button class="choice-btn choice-cancel" onclick="closeModal('scanChoiceModal')">
-                <span class="ci">✕</span><span class="ct" style="text-align:center;">Schließen</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- SCANNER -->
-<div id="scanbox">
-    <div id="qr-reader" style="width:100%;"></div>
-    <div style="text-align:center;padding:14px;color:#94a3b8;font-size:.8rem;">QR-Code in den Rahmen halten</div>
-    <button onclick="stopScan()" style="margin:10px 16px;padding:14px;background:var(--danger);color:white;border-radius:10px;border:none;font-weight:700;cursor:pointer;">✕ ABBRECHEN</button>
-</div>
-
-<!-- PHOTO ZOOM -->
-<div id="photoZoom">
-    <button id="photoZoomClose" onclick="closePhotoZoom()">✕</button>
-    <button id="photoNavPrev" onclick="galleryPrev()" style="display:none;position:absolute;left:14px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:white;font-size:1.6rem;cursor:pointer;z-index:11100;">‹</button>
-    <button id="photoNavNext" onclick="galleryNext()" style="display:none;position:absolute;right:14px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:white;font-size:1.6rem;cursor:pointer;z-index:11100;">›</button>
-    <div id="photoGalleryCounter" style="display:none;position:absolute;top:calc(20px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:6px 14px;border-radius:20px;font-size:.78rem;font-weight:700;z-index:11100;"></div>
-    <div id="photoZoomImgWrap"><img id="photoZoomImg" src="" alt=""></div>
-    <div id="photoZoomCtrls">
-        <button onclick="zoomImg(-0.4)">−</button>
-        <button onclick="zoomReset()">⟲</button>
-        <button onclick="zoomImg(0.4)">+</button>
-    </div>
-    <div id="photoZoomHint">Pinch zum Zoomen · Doppeltipp resetten</div>
-</div>
-
-<!-- PRINT OVERLAY -->
-<div id="printOverlay">
-    <div id="printOverlay-inner">
-        <p style="color:#94a3b8;font-size:.72rem;margin:0;">Vorschau — 85 × 29 mm</p>
-        <div id="pvBox">
-            <div id="pvInner">
-                <div class="pv-bar"></div>
-                <div class="pv-qr"><img id="pvQR" src="" alt="QR"></div>
-                <div class="pv-txt">
-                    <div class="pv-meta" id="pvMeta"></div>
-                    <div class="pv-div"></div>
-                    <div class="pv-name" id="pvName"></div>
-                    <div class="pv-key"  id="pvKey"></div>
-                </div>
-            </div>
-        </div>
-        <div class="pguide">
-            <h4>🖨️ Drucken über Brother iPrint&Label</h4>
-            <div class="pstep"><div class="pstep-num">1</div><div class="pstep-txt">Tippe <b>"📥 BILD TEILEN"</b> → wähle <b>"In Fotos sichern"</b></div></div>
-            <div class="pstep"><div class="pstep-num">2</div><div class="pstep-txt">Öffne die <b>Brother iPrint&Label</b> App</div></div>
-            <div class="pstep"><div class="pstep-num">3</div><div class="pstep-txt"><b>"Erstellen"</b> → <b>"Fotos"</b> → wähle das gespeicherte Etikett</div></div>
-            <div class="pstep"><div class="pstep-num">4</div><div class="pstep-txt">Format: <code>62 × 29 mm</code> oder <code>Endlos 29 mm</code> mit Länge <code>85 mm</code></div></div>
-            <div class="pstep"><div class="pstep-num">5</div><div class="pstep-txt"><b>Drucken</b> ✓</div></div>
-        </div>
-        <div id="pStatus" class="inf"></div>
-        <div class="pbtns">
-            <button onclick="shareLabel()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:.95rem;cursor:pointer;">📥 BILD TEILEN</button>
-            <button onclick="closePrint()" style="flex:0 0 56px;padding:16px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">✕</button>
-        </div>
-    </div>
 </div>
 
 <script>
-const APP_VERSION = "V183";
+// ============= DATEN =============
+const AUTOS = [
+  // Eigen
+  {id:'b7', name:'Audi A4 B7', kat:'Eigen', halter:'Andreas', modell:'Audi A4 B7 – Benziner', kraft:'Benzin', ez:'2007-03-01', hub:1984, kw:96, hsn:'', tsn:'',
+   km:331000, kmDate:'2025-08-01', versKm:6000, oelInt:15000, oelLetzt:318500, oelSpec:'10W-40 ACEA A3/B4',
+   zrInt:null, zrLetzt:null, hu:'2027-08-01', bremsfl:null, ordner:'',
+   notiz:'F-Schein nicht vorhanden – Werte sind Schätzungen'},
 
-const FB = {
-    apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
-    authDomain:"gr-lagerverwaltung.firebaseapp.com",
-    databaseURL:"https://gr-lagerverwaltung-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId:"gr-lagerverwaltung",
-    storageBucket:"gr-lagerverwaltung.firebasestorage.app",
-    messagingSenderId:"561219570576",
-    appId:"1:561219570576:web:65824b199a12933fd88115"
-};
-firebase.initializeApp(FB);
-const db  = firebase.database();
-const ref = db.ref('lager_v90_multilager');
+  {id:'b8', name:'Audi A4 B8', kat:'Eigen', halter:'Andreas', modell:'Audi A4 B8 2.0 TDI 170PS (CAGA/CAHA)', kraft:'Diesel', ez:'2009-12-08', hub:1968, kw:125, hsn:'0588', tsn:'AHC00038',
+   km:277600, kmDate:'2025-08-01', versKm:12000, oelInt:15000, oelLetzt:245000, oelSpec:'5W-30 VW 507.00',
+   zrInt:210000, zrLetzt:null, hu:'2026-01-01', bremsfl:null, ordner:'',
+   notiz:'Zahnriemen wurde gewechselt – km-Stand bitte eintragen'},
 
-const S = { user:"", items:[], reservations:[], cfg:{}, editKey:null, editImages:[], label:null, logF:'all', resvF:'all', qtyAction:null, scanItem:null, resvItem:null };
+  {id:'golf', name:'Golf', kat:'Eigen', halter:'Andreas', modell:'VW Golf 7 2.0 TDI 150PS (AUV/CRBC)', kraft:'Diesel', ez:'2014-03-04', hub:1968, kw:110, hsn:'0603', tsn:'BOD00006',
+   km:236100, kmDate:'2025-11-01', versKm:9000, oelInt:15000, oelLetzt:234000, oelSpec:'5W-30 VW 507.00',
+   zrInt:210000, zrLetzt:null, hu:'2027-10-01', bremsfl:null, ordner:'',
+   notiz:'TÜV bestanden 10.10.2025'},
 
-// ───────── AUTO-UPDATE ─────────
-function versionToNum(v) { if (!v||typeof v!=='string') return 0; const m=v.match(/(\d+)/); return m?parseInt(m[1]):0; }
-async function checkServerVersion() {
-    try {
-        const url = window.location.pathname + '?_v=' + Date.now();
-        const resp = await fetch(url, { cache: 'no-store' });
-        if (!resp.ok) return;
-        const text = await resp.text();
-        const m = text.match(/<title>[^<]*?(V\d+)[^<]*<\/title>/i);
-        if (!m) return;
-        if (versionToNum(m[1]) > versionToNum(APP_VERSION)) showUpdateBanner(m[1]);
-        else hideUpdateBanner();
-    } catch(e) {}
-}
-function setupAutoUpdate() {
-    checkServerVersion();
-    setInterval(checkServerVersion, 30000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkServerVersion(); });
-}
-function showUpdateBanner(v) {
-    const b = document.getElementById('updateBanner');
-    if (v) b.querySelector('span').textContent = `🔄 Neue Version ${v} verfügbar!`;
-    b.classList.add('show'); document.body.classList.add('has-banner');
-}
-function hideUpdateBanner() { document.getElementById('updateBanner').classList.remove('show'); document.body.classList.remove('has-banner'); }
-function reloadWithCacheBust() { const u=new URL(window.location.href); u.searchParams.set('v',Date.now()); window.location.replace(u.toString()); }
+  {id:'passat', name:'Passat 2.0', kat:'Eigen', halter:'Andreas', modell:'VW Passat B7 2.0 TDI 140PS', kraft:'Diesel', ez:'2011-01-03', hub:1968, kw:103, hsn:'0603', tsn:'AYJ00022',
+   km:310200, kmDate:'2025-11-01', versKm:12000, oelInt:15000, oelLetzt:297000, oelSpec:'5W-30 VW 507.00',
+   zrInt:210000, zrLetzt:null, hu:'2026-03-01', bremsfl:null, ordner:'',
+   notiz:'Zahnriemen-Wechsel klären'},
 
-// ───────── LOGIN ─────────
-document.getElementById('startBtn').addEventListener('click', () => {
-    const u = document.getElementById('lName').value.trim();
-    const p = document.getElementById('lPass').value;
-    if (!u) { alert('Bitte Namen eingeben.'); return; }
-    if (p !== '1234') { alert('Falsches Passwort.'); return; }
-    S.user = u.toUpperCase();
-    document.getElementById('uName').textContent = S.user;
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('ui-wrapper').style.display  = 'flex';
-    initApp();
-    setupAutoUpdate();
-});
-document.getElementById('lPass').addEventListener('keyup', e => { if (e.key === 'Enter') document.getElementById('startBtn').click(); });
+  {id:'touran', name:'Touran', kat:'Eigen', halter:'Andreas', modell:'VW Touran 2.0 TDI 177PS (CFJB)', kraft:'Diesel', ez:'2013-09-27', hub:1968, kw:130, hsn:'0603', tsn:'BKF00022',
+   km:278000, kmDate:'2025-11-01', versKm:12000, oelInt:15000, oelLetzt:278000, oelSpec:'5W-30 VW 507.00',
+   zrInt:210000, zrLetzt:230000, hu:'2027-10-01', bremsfl:null, ordner:'',
+   notiz:'Zahnriemen erstmalig 12.2021 gewechselt'},
 
-// ───────── LOGOUT ─────────
-function doLogout() {
-    if (!confirm(`Möchtest du dich wirklich abmelden, ${S.user}?`)) return;
-    // Firebase listener trennen
-    try { ref.off(); } catch(e) {}
-    // State zurücksetzen
-    S.user = ""; S.items = []; S.cfg = {}; S.reservations = [];
-    // UI zurück zum Login
-    document.getElementById('uName').textContent = '';
-    document.getElementById('lName').value = '';
-    document.getElementById('lPass').value = '';
-    document.getElementById('ui-wrapper').style.display = 'none';
-    document.getElementById('loginScreen').style.display = 'flex';
-    // Update-Banner ggf. ausblenden
-    hideUpdateBanner();
-}
+  {id:'okt', name:'Oktavia', kat:'Eigen', halter:'David', modell:'Skoda Octavia II 2.0 TDI 140PS (CFHC)', kraft:'Diesel', ez:'2012-07-23', hub:1968, kw:103, hsn:'8004', tsn:'ADX00168',
+   km:288700, kmDate:'2025-11-01', versKm:15000, oelInt:15000, oelLetzt:288500, oelSpec:'5W-30 VW 507.00',
+   zrInt:210000, zrLetzt:null, hu:'2026-08-01', bremsfl:null, ordner:'',
+   notiz:'TÜV bestanden 09.08.2024'},
 
-// ───────── APP INIT ─────────
-function initApp() {
-    ref.on('value', snap => {
-        S.cfg = snap.val() || {};
-        S.items = Object.keys(S.cfg.items || {}).map(k => {
-            const item = { ...S.cfg.items[k], key:k };
-            if (!item.borrowers) {
-                item.borrowers = {};
-                if (item.borrowed && parseInt(item.borrowed) > 0 && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.borrowed);
-                else if (item.status === 'ausgeliehen' && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.qty)||0;
-            }
-            // Migration: einzelnes img-Feld → images-Array
-            if (!item.images) {
-                item.images = item.img ? [item.img] : [];
-            }
-            return item;
-        });
-        S.reservations = Object.keys(S.cfg.reservations || {}).map(k => ({ ...S.cfg.reservations[k], key:k }));
-        const now = Date.now();
-        const cutoff = now - 7*24*60*60*1000;
-        S.reservations.forEach(r => { if (r.toTs && r.toTs < cutoff) ref.child('reservations/'+r.key).remove(); });
-        render(); renderReservations(); renderLogs(); renderManage(); fillSelects();
-    });
-}
+  {id:'mb', name:'Mercedes E220', kat:'Eigen', halter:'Andreas', modell:'Mercedes E220 CDI W212 (OM651, 170PS)', kraft:'Diesel', ez:'2011-06-14', hub:2143, kw:125, hsn:'1313', tsn:'BHK00368',
+   km:198300, kmDate:'2025-11-01', versKm:9000, oelInt:20000, oelLetzt:198400, oelSpec:'5W-30 MB 229.51/229.52',
+   zrInt:'Steuerkette', zrLetzt:null, hu:'2027-11-01', bremsfl:null, ordner:'',
+   notiz:'STEUERKETTE statt Zahnriemen – Längung ab 200.000 km prüfen'},
 
-function fillSelects() {
-    fill('iLager',S.cfg.locations,false); fill('iCat',S.cfg.cats,false);
-    fill('filterCat',S.cfg.cats,true); fill('iRegal',S.cfg.regale,false); fill('iFach',S.cfg.faecher,false);
-}
-function fill(id, list, addAll) {
-    const el = document.getElementById(id); if (!el) return;
-    el.innerHTML = (addAll?'<option value="">Alle Kategorien</option>':'') + (list||[]).map(v=>`<option value="${v}">${v}</option>`).join('');
-}
+  // Betreut
+  {id:'tel', name:'Touran E&L', kat:'Betreut', halter:'Edwin W.', modell:'VW Touran 1.9 TDI BLS (PD!)', kraft:'Diesel', ez:'2009-04-20', hub:1896, kw:77, hsn:'0603', tsn:'ABJ00159',
+   km:null, kmDate:null, versKm:12000, oelInt:15000, oelLetzt:null, oelSpec:'5W-30 VW 507.00',
+   zrInt:180000, zrLetzt:null, hu:'2026-06-01', bremsfl:null, ordner:'',
+   notiz:'PUMPE-DÜSE Motor – andere Wartung als CR'},
 
-function totalBorrowed(item) { if (!item.borrowers) return 0; return Object.values(item.borrowers).reduce((s,v)=>s+(parseInt(v)||0),0); }
-function getReservationsForItem(itemKey) { return S.reservations.filter(r => r.itemKey === itemKey); }
+  {id:'astra', name:'Opel Astra M&I', kat:'Betreut', halter:'Maxim', modell:'Opel Astra J Sports Tourer 1.4 Turbo', kraft:'Benzin', ez:'2014-04-08', hub:1364, kw:88, hsn:'0035', tsn:'AND015132',
+   km:null, kmDate:null, versKm:null, oelInt:15000, oelLetzt:null, oelSpec:'5W-30 Dexos 2',
+   zrInt:'Steuerkette', zrLetzt:null, hu:'2026-01-01', bremsfl:null, ordner:'',
+   notiz:'STEUERKETTE – beim 1.4 Turbo bekanntes Problem'},
 
-// Prüft ob in den nächsten X Tagen Reservierungen für diesen Artikel vorliegen
-function getUpcomingReservations(itemKey, days=7, excludeUser=null) {
-    const now = Date.now();
-    const future = now + days*24*60*60*1000;
-    return S.reservations.filter(r => {
-        if (r.itemKey !== itemKey) return false;
-        if (excludeUser && r.user === excludeUser) return false;
-        const from = new Date(r.fromTs).getTime();
-        return from >= now && from <= future;
-    }).sort((a,b) => a.fromTs - b.fromTs);
-}
+  {id:'zaf', name:'Opel Zafira M&I', kat:'Betreut', halter:'Maxim', modell:'Opel Zafira B 1.9 CDTI (Z19DT)', kraft:'Diesel', ez:'2006-12-01', hub:1910, kw:88, hsn:'0035', tsn:'AEM00030X',
+   km:296000, kmDate:'2026-03-01', versKm:null, oelInt:15000, oelLetzt:296000, oelSpec:'5W-30 Dexos 2',
+   zrInt:150000, zrLetzt:296000, hu:'2027-07-01', bremsfl:null, ordner:'',
+   notiz:'Zahnriemen 04.2025 gewechselt'},
+];
 
-// ───────── RENDER ITEMS ─────────
-function render() {
-    const s = (document.getElementById('searchInput').value||'').toLowerCase();
-    const f = document.getElementById('filterCat').value;
-    const list = S.items.filter(i => i.name.toLowerCase().includes(s) && (!f || i.cat===f)).sort((a,b)=>b.ts-a.ts);
-    if (!list.length) { document.getElementById('itemList').innerHTML = '<div class="empty"><i>📦</i>Keine Artikel.</div>'; return; }
+// Demo-Reparaturen (Auswahl aus deiner Excel)
+const DEMO_REPS = [
+  {auto:'b8', date:'2025-08-15', km:277600, work:'Ölwechsel + Inspektion', cost:285.50, time:1.5, who:'Werkstatt', note:'5W-30 507.00, 6L'},
+  {auto:'b8', date:'2025-04-10', km:265200, work:'Bremsbeläge + Scheiben hinten', cost:340.00, time:2.5, who:'Andreas', note:''},
+  {auto:'golf', date:'2025-10-10', km:235800, work:'TÜV/HU bestanden', cost:140.00, time:1, who:'TÜV', note:'Nächste HU 10.2027'},
+  {auto:'golf', date:'2025-11-15', km:236100, work:'Ölwechsel mit Filter', cost:95.00, time:1, who:'Andreas', note:''},
+  {auto:'okt', date:'2025-11-20', km:288500, work:'Ölwechsel', cost:88.00, time:0.8, who:'David', note:''},
+  {auto:'touran', date:'2025-09-05', km:276200, work:'Klimaanlage befüllen + Filter', cost:120.00, time:1, who:'Werkstatt', note:''},
+  {auto:'mb', date:'2025-11-08', km:198400, work:'Großer Service inkl. Bremsflüssigkeit', cost:520.00, time:3, who:'Mercedes-Werkstatt', note:'Bremsfl. neu'},
+  {auto:'zaf', date:'2025-04-12', km:296000, work:'Zahnriemenwechsel + Wasserpumpe + Spannrolle', cost:680.00, time:5, who:'Werkstatt', note:'150k-Intervall Z19DT'},
+  {auto:'passat', date:'2025-08-22', km:308400, work:'AGR-Ventil gereinigt', cost:180.00, time:2.5, who:'Andreas', note:''},
+  {auto:'b7', date:'2025-08-01', km:331000, work:'Ölwechsel', cost:75.00, time:0.8, who:'Andreas', note:'10W-40'},
+];
 
-    document.getElementById('itemList').innerHTML = list.map(i => {
-        const total = parseInt(i.qty)||0;
-        const borrowed = totalBorrowed(i);
-        const inStock = total - borrowed;
-        const allIn = borrowed === 0;
-        const allOut = inStock === 0 && borrowed > 0;
+// ============= STATE =============
+let reps = [];
 
-        let cardCls, badgeCls, badgeText;
-        if (allIn)      { cardCls=''; badgeCls='b-in'; badgeText = `✔ ${total}× im Lager`; }
-        else if (allOut){ cardCls='out'; badgeCls='b-out'; badgeText = `⬆ Alle ausgeliehen`; }
-        else            { cardCls='mix'; badgeCls='b-mix'; badgeText = `⚡ ${inStock}/${total} im Lager`; }
-
-        const itemResvs = getReservationsForItem(i.key);
-        const hasResv = itemResvs.length > 0;
-        if (hasResv) cardCls += ' has-resv';
-
-        let borrowerInfo = '';
-        if (i.borrowers && Object.keys(i.borrowers).length > 0) {
-            const lst = Object.entries(i.borrowers).filter(([u,n])=>parseInt(n)>0).map(([u,n])=>`<b>${esc(u)}</b>: ${n}×`).join(' · ');
-            if (lst) borrowerInfo = `<div class="borrowers">📤 ${lst}</div>`;
-        }
-
-        let resvInfo = '';
-        if (hasResv) {
-            const upcoming = itemResvs.filter(r => r.toTs >= Date.now()).sort((a,b)=>a.fromTs-b.fromTs).slice(0,2);
-            if (upcoming.length) {
-                const lst = upcoming.map(r => `<b>${esc(r.user)}</b> ${formatShortDate(r.fromTs)}`).join(' · ');
-                resvInfo = `<div class="resv-info">🟣 ${lst}</div>`;
-            }
-        }
-
-        const meta = `${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
-        const images = i.images || (i.img ? [i.img] : []);
-        const firstImg = images.length > 0 ? images[0] : null;
-        const thumb = firstImg || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
-        const hasImg = images.length > 0;
-        const imgCountBadge = images.length > 1
-            ? `<span style="position:absolute;bottom:-3px;right:-3px;background:var(--accent);color:white;font-size:.55rem;font-weight:800;padding:2px 5px;border-radius:8px;border:2px solid white;line-height:1;">+${images.length-1}</span>`
-            : '';
-
-        return `
-        <div class="item-card ${cardCls}">
-            <div style="position:relative;flex-shrink:0;">
-                <img src="${thumb}" class="item-thumb" ${hasImg?`onclick="openGallery('${i.key}')"`:''} onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
-                ${imgCountBadge}
-            </div>
-            <div class="item-info">
-                <div class="item-name">${esc(i.name)}</div>
-                <div class="item-meta">${esc(meta)}</div>
-                <span class="item-badge ${badgeCls}">${badgeText}</span>${hasResv?'<span class="item-badge b-resv">🟣 RES</span>':''}
-                ${borrowerInfo}
-                ${resvInfo}
-            </div>
-            <div class="qr-side" onclick="showPrint('${i.key}','${ea(meta)}','${ea(i.name)}')">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${enc(i.key)}" style="width:38px;" alt="QR">
-                <span>PRINT</span>
-            </div>
-            <div class="act">
-                <button onclick="askQty('aus','${i.key}')" class="btn-tog t-aus" ${inStock===0?'disabled':''}>AUS</button>
-                <button onclick="askQty('ein','${i.key}')" class="btn-tog t-ein" ${borrowed===0?'disabled':''}>EIN</button>
-                <button onclick="openReservation('${i.key}')" class="btn-tog t-resv">RES</button>
-                <button onclick="openEdit('${i.key}')" class="btn-tog" style="background:#475569;" title="Stammdaten ändern">✏️</button>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-// ───────── ASK QTY MODAL mit Reservierungs-Warnung ─────────
-function askQty(type, key) {
-    const item = S.items.find(x => x.key === key);
-    if (!item) return;
-    const total = parseInt(item.qty)||0;
-    const borrowed = totalBorrowed(item);
-    const inStock = total - borrowed;
-    const myBorrowed = (item.borrowers && item.borrowers[S.user]) ? parseInt(item.borrowers[S.user]) : 0;
-
-    let max, suggestions = [];
-    if (type === 'aus') {
-        max = inStock;
-        if (max <= 0) { alert('Alles bereits ausgeliehen.'); return; }
-        suggestions.push({ label:'1', value:1 });
-        if (inStock > 1) suggestions.push({ label:`Alle ${inStock}`, value:inStock, cls:'all' });
+async function loadReps() {
+  try {
+    const result = await window.storage.get('reps');
+    if (result && result.value) {
+      reps = JSON.parse(result.value);
     } else {
-        max = myBorrowed > 0 ? myBorrowed : borrowed;
-        if (max <= 0) { alert('Du hast nichts zum Zurückbringen.'); return; }
-        if (myBorrowed > 0) {
-            suggestions.push({ label:`Meine ${myBorrowed}`, value:myBorrowed, cls:'you' });
-            if (myBorrowed > 1) suggestions.push({ label:'1', value:1 });
-        } else {
-            suggestions.push({ label:'1', value:1 });
-            if (borrowed > 1) suggestions.push({ label:`Alle ${borrowed}`, value:borrowed, cls:'all' });
-        }
+      reps = [...DEMO_REPS];
+      await saveReps();
     }
-
-    S.qtyAction = { type, key, name:item.name, max, total, myBorrowed };
-    document.getElementById('qtyTitle').textContent = (type==='aus')?'📤 Ausleihen':'📥 Zurückbringen';
-
-    let infoHtml = `<b>${esc(item.name)}</b><br>`;
-    if (type === 'aus') infoHtml += `Verfügbar: <b>${inStock}</b> von ${total} Stück`;
-    else {
-        infoHtml += `Insgesamt ausgeliehen: <b>${borrowed}</b> Stück`;
-        if (myBorrowed > 0) infoHtml += `<br>Davon von <b>${esc(S.user)}</b>: <b>${myBorrowed} Stück</b>`;
-        if (item.borrowers) {
-            const others = Object.entries(item.borrowers).filter(([u,n])=>parseInt(n)>0&&u!==S.user).map(([u,n])=>`${esc(u)}: ${n}`).join(', ');
-            if (others) infoHtml += `<br><span style="font-size:.7rem;color:#64748b;">Andere: ${others}</span>`;
-        }
-    }
-    document.getElementById('qtyInfo').innerHTML = infoHtml;
-
-    // Reservierungs-Warnung beim Ausleihen
-    let warnHtml = '';
-    if (type === 'aus') {
-        const upcoming = getUpcomingReservations(key, 3, S.user);
-        if (upcoming.length > 0) {
-            warnHtml = `<div class="resv-warning"><h4>⚠️ Achtung — Reservierungen!</h4><ul>${
-                upcoming.map(r => `<li><b>${esc(r.user)}</b> hat <b>${r.qty}× </b>für <b>${formatFullDate(r.fromTs)}</b> reserviert${r.toTs?` (bis ${formatFullDate(r.toTs)})`:''}</li>`).join('')
-            }</ul></div>`;
-        }
-    }
-    document.getElementById('qtyResvWarn').innerHTML = warnHtml;
-
-    document.getElementById('qtySuggest').innerHTML = suggestions.map(s => `<button class="qty-sbtn ${s.cls||''}" onclick="qtyPick(${s.value})">${s.label}</button>`).join('');
-
-    const inp = document.getElementById('qtyInput');
-    inp.value = suggestions[0].value; inp.min = 1; inp.max = max;
-    document.getElementById('qtyOkBtn').style.background = (type==='aus')?'var(--danger)':'var(--success)';
-    document.getElementById('qtyOkBtn').textContent = (type==='aus')?'📤 AUSLEIHEN':'📥 ZURÜCK';
-    document.getElementById('qtyModal').style.display = 'flex';
-    setTimeout(()=>inp.focus(), 100);
+  } catch (e) {
+    reps = [...DEMO_REPS];
+    try { await saveReps(); } catch {}
+  }
 }
 
-function qtyPick(n) { document.getElementById('qtyInput').value = n; }
+async function saveReps() {
+  try {
+    await window.storage.set('reps', JSON.stringify(reps));
+  } catch (e) { console.error('Save failed', e); }
+}
 
-function qtyConfirm() {
-    if (!S.qtyAction) return;
-    const n = parseInt(document.getElementById('qtyInput').value)||0;
-    if (n < 1) { alert('Bitte gültige Anzahl eingeben.'); return; }
-    if (n > S.qtyAction.max) { alert(`Maximal ${S.qtyAction.max} möglich.`); return; }
+// ============= STATUS BERECHNUNG =============
+function statusOel(a) {
+  if (!a.km || !a.oelLetzt || !a.oelInt) return {pill:'-', cls:'neutral', text:'-'};
+  const naechst = a.oelLetzt + a.oelInt;
+  if (a.km >= naechst) return {pill:'🔴 Öl fällig', cls:'red', text:'Öl fällig', sortKey: 1};
+  if (a.km >= naechst - 2000) return {pill:'🟡 Öl bald', cls:'yellow', text:'Öl bald', sortKey: 2};
+  return {pill:'🟢 Öl ok', cls:'green', text:'Öl ok', sortKey: 4};
+}
 
-    const item = S.items.find(x => x.key === S.qtyAction.key);
-    const total = parseInt(item.qty)||0;
-    const borrowers = { ...(item.borrowers || {}) };
+function statusZr(a) {
+  if (a.zrInt === 'Steuerkette') return {pill:'🔗 Steuerkette', cls:'chain', text:'Steuerkette', sortKey: 5};
+  if (!a.zrInt || !a.km) return {pill:'-', cls:'neutral', text:'-'};
+  const grenze = a.zrLetzt ? (a.zrLetzt + a.zrInt) : a.zrInt;
+  if (a.km >= grenze) return {pill:'🔴 Zahnriemen fällig', cls:'red', text:'Zahnriemen fällig', sortKey: 1};
+  if (a.km >= grenze - 10000) return {pill:'🟡 Zahnriemen bald', cls:'yellow', text:'Zahnriemen bald', sortKey: 2};
+  return {pill:'🟢 Zahnriemen ok', cls:'green', text:'Zahnriemen ok', sortKey: 4};
+}
 
-    if (S.qtyAction.type === 'aus') {
-        borrowers[S.user] = (parseInt(borrowers[S.user])||0) + n;
-    } else {
-        const cur = parseInt(borrowers[S.user])||0;
-        if (cur >= n) { borrowers[S.user] = cur - n; if (borrowers[S.user]===0) delete borrowers[S.user]; }
-        else {
-            let remaining = n;
-            if (cur > 0) { remaining -= cur; delete borrowers[S.user]; }
-            const sorted = Object.entries(borrowers).sort((a,b)=>b[1]-a[1]);
-            for (const [u, count] of sorted) {
-                if (remaining <= 0) break;
-                const take = Math.min(remaining, count);
-                borrowers[u] = count - take;
-                if (borrowers[u]===0) delete borrowers[u];
-                remaining -= take;
-            }
-        }
+function statusHu(a) {
+  if (!a.hu) return {pill:'-', cls:'neutral', text:'-'};
+  const huDate = new Date(a.hu);
+  const today = new Date();
+  const diff = (huDate - today) / 86400000;
+  if (diff < 0) return {pill:'🔴 HU überfällig', cls:'red', text:'HU überfällig', sortKey: 1};
+  if (diff < 60) return {pill:'🟡 HU bald', cls:'yellow', text:'HU bald', sortKey: 2};
+  return {pill:'🟢 HU ok', cls:'green', text:'HU ok', sortKey: 4};
+}
+
+function kmJahr(a) {
+  if (!a.km || !a.kmDate || !a.ez) return null;
+  const yrs = (new Date(a.kmDate) - new Date(a.ez)) / (365.25 * 86400000);
+  if (yrs < 0.5) return null;
+  return Math.round(a.km / yrs);
+}
+
+function statusVers(a) {
+  if (!a.versKm) return null;
+  // simplere Annahme: aktuelles km/Jahr aus letzten ~12 Monaten Reparaturen ableiten
+  const autoReps = reps.filter(r => r.auto === a.id && r.km).sort((x,y) => x.date.localeCompare(y.date));
+  if (autoReps.length >= 2) {
+    const first = autoReps[0]; const last = autoReps[autoReps.length-1];
+    const days = (new Date(last.date) - new Date(first.date)) / 86400000;
+    if (days > 30) {
+      const perYear = Math.round((last.km - first.km) / days * 365);
+      if (perYear > a.versKm * 1.1) return {text:'⚠ Erhöhen', cls:'red', detail:perYear+' km/Jahr'};
+      if (perYear < a.versKm * 0.85) return {text:'💡 Senken möglich', cls:'yellow', detail:perYear+' km/Jahr'};
+      return {text:'✓ Versich. ok', cls:'green', detail:perYear+' km/Jahr'};
     }
-
-    const newTotalBorrowed = Object.values(borrowers).reduce((s,v)=>s+(parseInt(v)||0),0);
-    const inStockAfter = total - newTotalBorrowed;
-    ref.child('items/'+S.qtyAction.key).update({ borrowers, borrowed:newTotalBorrowed, status:newTotalBorrowed===0?'im Lager':'ausgeliehen', lastUser:S.user });
-
-    const logTxt = (S.qtyAction.type==='aus')
-        ? `${n}× "${S.qtyAction.name}" ausgeliehen von ${S.user} (${inStockAfter}/${total} im Lager)`
-        : `${n}× "${S.qtyAction.name}" zurückgebracht von ${S.user} (${inStockAfter}/${total} im Lager)`;
-    log(S.qtyAction.type, logTxt);
-
-    closeModal('qtyModal');
-    S.qtyAction = null;
+  }
+  // fallback langzeit
+  const ky = kmJahr(a);
+  if (!ky) return null;
+  if (ky > a.versKm * 1.1) return {text:'⚠ Erhöhen', cls:'red', detail:ky+' km/Jahr'};
+  if (ky < a.versKm * 0.85) return {text:'💡 Senken möglich', cls:'yellow', detail:ky+' km/Jahr'};
+  return {text:'✓ Versich. ok', cls:'green', detail:ky+' km/Jahr'};
 }
 
-// ───────── RESERVATION ─────────
-function openReservation(key) {
-    const item = S.items.find(x => x.key === key);
-    if (!item) return;
-    S.resvItem = item;
-    document.getElementById('resvInfo').innerHTML = `<b>${esc(item.name)}</b><br>Verfügbar: ${parseInt(item.qty)||0} Stück`;
-    // Defaultwerte: Heute jetzt + 1h und +2h
-    const now = new Date(); now.setMinutes(0); now.setSeconds(0);
-    const from = new Date(now.getTime() + 60*60*1000);
-    const to = new Date(now.getTime() + 2*60*60*1000);
-    document.getElementById('resvFrom').value = toLocalDateTime(from);
-    document.getElementById('resvTo').value = toLocalDateTime(to);
-    document.getElementById('resvQty').value = 1;
-    document.getElementById('resvQty').max = parseInt(item.qty)||1;
-    document.getElementById('resvModal').style.display = 'flex';
+function fmt(num) {
+  if (num == null) return '—';
+  return num.toLocaleString('de-DE');
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const [y,m,dd] = d.split('-');
+  return `${dd}.${m}.${y}`;
+}
+function fmtMoney(num) {
+  if (num == null || isNaN(num)) return '—';
+  return num.toLocaleString('de-DE', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
 }
 
-function toLocalDateTime(d) {
-    const pad = n => String(n).padStart(2,'0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function saveReservation() {
-    if (!S.resvItem) return;
-    const fromVal = document.getElementById('resvFrom').value;
-    const toVal = document.getElementById('resvTo').value;
-    const qty = parseInt(document.getElementById('resvQty').value)||1;
-    if (!fromVal || !toVal) { alert('Bitte Datum und Uhrzeit eingeben.'); return; }
-    const fromTs = new Date(fromVal).getTime();
-    const toTs = new Date(toVal).getTime();
-    if (toTs <= fromTs) { alert('Das End-Datum muss nach dem Anfang liegen.'); return; }
-    if (fromTs < Date.now() - 60000) { alert('Reservierung kann nicht in der Vergangenheit beginnen.'); return; }
-
-    const newRef = ref.child('reservations').push();
-    newRef.set({
-        itemKey: S.resvItem.key,
-        itemName: S.resvItem.name,
-        user: S.user,
-        qty: qty,
-        fromTs, toTs,
-        ts: Date.now()
-    }).then(() => {
-        log('resv', `${qty}× "${S.resvItem.name}" reserviert von ${S.user} für ${formatFullDate(fromTs)} – ${formatFullDate(toTs)}`);
-        closeModal('resvModal');
-        S.resvItem = null;
+// ============= RENDER =============
+function renderDashboard() {
+  // Stats
+  let red=0, yellow=0, green=0;
+  AUTOS.forEach(a => {
+    [statusOel(a), statusZr(a), statusHu(a)].forEach(s => {
+      if (s.cls === 'red') red++;
+      else if (s.cls === 'yellow') yellow++;
+      else if (s.cls === 'green') green++;
     });
-}
+  });
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card red"><div class="num">${red}</div><div class="label">Überfällig</div></div>
+    <div class="stat-card yellow"><div class="num">${yellow}</div><div class="label">Bald fällig</div></div>
+    <div class="stat-card green"><div class="num">${green}</div><div class="label">In Ordnung</div></div>
+  `;
 
-function deleteReservation(key) {
-    const r = S.reservations.find(x => x.key === key);
-    if (!r) return;
-    if (!confirm(`Reservierung für "${r.itemName}" am ${formatFullDate(r.fromTs)} löschen?`)) return;
-    ref.child('reservations/'+key).remove();
-    log('resv', `Reservierung "${r.itemName}" am ${formatFullDate(r.fromTs)} gelöscht von ${S.user}`);
-}
+  // Reminders (rot + gelb)
+  const reminders = [];
+  AUTOS.forEach(a => {
+    [['oel', statusOel(a)], ['zr', statusZr(a)], ['hu', statusHu(a)]].forEach(([typ, s]) => {
+      if (s.cls === 'red' || s.cls === 'yellow') {
+        reminders.push({auto:a, typ, status:s});
+      }
+    });
+  });
+  reminders.sort((x,y) => x.status.sortKey - y.status.sortKey);
 
-let resvFilter = 'all';
-function setRF(f, btn) {
-    resvFilter = f;
-    document.querySelectorAll('#tab-resv .lfbtn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderReservations();
-}
-
-function renderReservations() {
-    const now = Date.now();
-    const soon = now + 7*24*60*60*1000;
-    let list = [...S.reservations];
-    if (resvFilter === 'mine')   list = list.filter(r => r.user === S.user);
-    if (resvFilter === 'soon')   list = list.filter(r => r.fromTs >= now && r.fromTs <= soon);
-    if (resvFilter === 'active') list = list.filter(r => r.fromTs <= now && r.toTs >= now);
-    if (resvFilter === 'future') list = list.filter(r => r.fromTs > now);
-    list.sort((a,b) => a.fromTs - b.fromTs);
-
-    if (!list.length) { document.getElementById('resvList').innerHTML = '<div class="empty"><i>🟣</i>Keine Reservierungen.</div>'; return; }
-
-    document.getElementById('resvList').innerHTML = list.map(r => {
-        const isPast = r.toTs < now;
-        const isActive = r.fromTs <= now && r.toTs >= now;
-        const isSoon = r.fromTs > now && r.fromTs <= soon;
-
-        let cardCls = '', tagCls, tagText;
-        if (isPast)        { cardCls='past';   tagCls='rt-past';   tagText='✓ Vergangen'; }
-        else if (isActive) { cardCls='';       tagCls='rt-active'; tagText='🔴 Jetzt aktiv'; }
-        else if (isSoon)   { cardCls='soon';   tagCls='rt-soon';   tagText='⚠ Bald'; }
-        else               { cardCls='';       tagCls='rt-future'; tagText='🔵 Später'; }
-
-        const canDel = (r.user === S.user) || isPast;
-
-        return `
-        <div class="resv-card ${cardCls}">
-            <span class="resv-time-tag ${tagCls}">${tagText}</span>
-            <div class="resv-h">
-                <div class="resv-name">${esc(r.itemName)}</div>
-                <div class="resv-qty">${r.qty}×</div>
-            </div>
-            <div class="resv-meta">
-                👤 <b>${esc(r.user)}</b><br>
-                📅 ${formatFullDate(r.fromTs)}<br>
-                ➡️ ${formatFullDate(r.toTs)}
-            </div>
-            ${canDel ? `<div class="resv-actions"><button class="resv-btn resv-btn-del" onclick="deleteReservation('${r.key}')">🗑️ Löschen</button></div>` : ''}
+  const remHtml = reminders.length ? `
+    <div class="section-title">⚠️ Aktuelle Erinnerungen <span class="count">${reminders.length}</span></div>
+    ${reminders.slice(0,5).map(r => {
+      let detail = '';
+      if (r.typ === 'oel') detail = `Nächster Wechsel bei ${fmt(r.auto.oelLetzt + r.auto.oelInt)} km · aktuell ${fmt(r.auto.km)} km`;
+      else if (r.typ === 'zr') {
+        const grenze = r.auto.zrLetzt ? r.auto.zrLetzt + r.auto.zrInt : r.auto.zrInt;
+        detail = `Wechsel-Grenze: ${fmt(grenze)} km · aktuell ${fmt(r.auto.km)} km`;
+      } else if (r.typ === 'hu') {
+        detail = `HU-Termin ${fmtDate(r.auto.hu)}`;
+      }
+      return `
+        <div class="reminder ${r.status.cls === 'yellow' ? 'yellow' : ''}">
+          <div class="reminder-top">
+            <span class="what ${r.status.cls}">${r.status.text}</span>
+            <span class="auto-tag">${r.auto.name}</span>
+          </div>
+          <div class="reminder-detail">${detail}</div>
         </div>`;
-    }).join('');
-}
+    }).join('')}
+  ` : '';
+  document.getElementById('reminders-block').innerHTML = remHtml;
 
-// ───────── MANAGE ─────────
-function quickAdd() {
-    const t = document.getElementById('manType').value;
-    const v = document.getElementById('addIn').value.trim(); if(!v) return;
-    const l = [...(S.cfg[t]||[])]; l.push(v);
-    ref.child(t).set(l); document.getElementById('addIn').value = '';
-}
-function renderManage() {
-    const t = document.getElementById('manType').value, l = S.cfg[t]||[];
-    document.getElementById('manList').innerHTML = l.length
-        ? l.map((v,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);color:white;font-size:.83rem;"><span>${esc(v)}</span><span onclick="rmList('${t}',${i})" style="cursor:pointer;color:#ef4444;">✕</span></div>`).join('')
-        : `<div style="padding:14px;color:#64748b;font-size:.8rem;text-align:center;">Noch keine Einträge</div>`;
-}
-function rmList(t,i){ const l=[...(S.cfg[t]||[])]; l.splice(i,1); ref.child(t).set(l); }
+  // Auto-Listen
+  const renderAutoCard = (a) => {
+    const so = statusOel(a), sz = statusZr(a), sh = statusHu(a), sv = statusVers(a);
+    const hasWarn = [so, sz, sh].some(s => s.cls === 'red');
+    const pills = [];
+    if (so.pill !== '-') pills.push(`<span class="pill ${so.cls}">${so.pill}</span>`);
+    if (sz.pill !== '-') pills.push(`<span class="pill ${sz.cls}">${sz.pill}</span>`);
+    if (sh.pill !== '-') pills.push(`<span class="pill ${sh.cls}">${sh.pill}</span>`);
+    if (sv) pills.push(`<span class="pill ${sv.cls}">${sv.text}</span>`);
 
-// ───────── SAVE ─────────
-function saveItem() {
-    const n = document.getElementById('iName').value.trim();
-    if (!n) { alert('Bitte Artikelnamen eingeben.'); return; }
-    const nr = ref.child('items').push();
-    const previewSrc = (() => { const e=document.getElementById('imgPrev'); return e.src.startsWith('data:')?e.src:''; })();
-    const d = {
-        name:n, qty:parseInt(document.getElementById('iQty').value)||1,
-        borrowers:{}, borrowed:0,
-        location:document.getElementById('iLager').value,
-        cat:document.getElementById('iCat').value,
-        regal:document.getElementById('iRegal').value,
-        fach:document.getElementById('iFach').value,
-        img: previewSrc,
-        images: previewSrc ? [previewSrc] : [],
-        status:'im Lager', ts:Date.now(), lastUser:S.user
-    };
-    nr.set(d).then(() => {
-        log('neu', `Neu: "${n}" · ${d.qty}x · ${d.location} R:${d.regal} F:${d.fach}`);
-        showPrint(nr.key, `${d.location} R:${d.regal}`, d.name);
-        document.getElementById('iName').value = '';
-        document.getElementById('iQty').value = '1';
-        const p = document.getElementById('imgPrev'); p.style.display='none'; p.src='';
-        goTab(null,'tab-lager');
-    });
-}
-
-function openEdit(key) {
-    S.editKey = key;
-    const i = S.items.find(x => x.key === key);
-    document.getElementById('eName').value = i.name;
-    document.getElementById('eQty').value = i.qty;
-    // Bilder kopieren in editImages
-    S.editImages = [...(i.images || (i.img ? [i.img] : []))];
-    document.getElementById('eImgInput').value = '';
-    renderEditGallery();
-    document.getElementById('editModal').style.display = 'flex';
-}
-
-function renderEditGallery() {
-    const container = document.getElementById('eImgGallery');
-    if (!S.editImages.length) {
-        container.innerHTML = '<div style="font-size:.78rem;color:#94a3b8;padding:8px 0;">Noch keine Fotos vorhanden.</div>';
-        return;
-    }
-    container.innerHTML = S.editImages.map((src, idx) => `
-        <div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;background:#f1f5f9;">
-            <img src="${src}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="openEditImagePreview(${idx})">
-            <button onclick="removeEditImgAt(${idx})" style="position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.95);color:white;border:1px solid white;font-weight:800;cursor:pointer;font-size:.7rem;line-height:1;padding:0;">✕</button>
-            ${idx===0?'<span style="position:absolute;bottom:2px;left:2px;background:var(--accent);color:white;font-size:.55rem;font-weight:700;padding:2px 5px;border-radius:4px;">Haupt</span>':''}
+    return `
+      <div class="auto ${hasWarn ? 'has-warn' : ''}" onclick="showAuto('${a.id}')">
+        <div class="auto-top">
+          <div>
+            <div class="auto-name">${a.name}</div>
+            <div class="auto-modell">${a.modell.length > 40 ? a.modell.slice(0,40) + '…' : a.modell}</div>
+          </div>
+          <div class="auto-km">${a.km ? fmt(a.km) : '—'}<div class="unit">km</div></div>
         </div>
-    `).join('');
+        <div class="auto-status">${pills.join('') || '<span class="pill neutral">keine Daten</span>'}</div>
+      </div>`;
+  };
+
+  const eigen = AUTOS.filter(a => a.kat === 'Eigen');
+  const betreut = AUTOS.filter(a => a.kat === 'Betreut');
+  document.getElementById('list-eigen').innerHTML = eigen.map(renderAutoCard).join('');
+  document.getElementById('list-betreut').innerHTML = betreut.map(renderAutoCard).join('');
+  document.getElementById('cnt-eigen').textContent = eigen.length;
+  document.getElementById('cnt-betreut').textContent = betreut.length;
 }
 
-function openEditImagePreview(idx) {
-    G.images = [...S.editImages]; G.idx = idx;
-    showCurrentImage();
-    document.getElementById('photoZoom').style.display = 'flex';
-    showZoomHint();
+function showAuto(id) {
+  const a = AUTOS.find(x => x.id === id);
+  if (!a) return;
+  const autoReps = reps.filter(r => r.auto === id).sort((x,y) => y.date.localeCompare(x.date));
+  const totalCost = autoReps.reduce((s,r) => s + (r.cost || 0), 0);
+
+  const so = statusOel(a), sz = statusZr(a), sh = statusHu(a), sv = statusVers(a);
+  const naechstOel = a.oelLetzt && a.oelInt ? a.oelLetzt + a.oelInt : null;
+
+  document.getElementById('page-detail').innerHTML = `
+    <button class="back-btn" onclick="showPage('dashboard')">← Zurück</button>
+
+    <div class="auto-hero">
+      <h2>${a.name}</h2>
+      <div class="sub">${a.modell} · ${a.kat}${a.halter ? ' · ' + a.halter : ''}</div>
+      <div class="specs">
+        <div class="spec"><div class="lbl">km-Stand</div><div class="val">${fmt(a.km)}</div></div>
+        <div class="spec"><div class="lbl">Erstzulassung</div><div class="val">${a.ez ? fmtDate(a.ez) : '—'}</div></div>
+        <div class="spec"><div class="lbl">Hubraum</div><div class="val">${fmt(a.hub)} ccm</div></div>
+        <div class="spec"><div class="lbl">Leistung</div><div class="val">${a.kw ? a.kw + ' kW' : '—'}</div></div>
+        <div class="spec"><div class="lbl">HSN/TSN</div><div class="val">${a.hsn || '—'} / ${a.tsn || '—'}</div></div>
+        <div class="spec"><div class="lbl">Öl-Spec</div><div class="val" style="font-size:11px">${a.oelSpec || '—'}</div></div>
+      </div>
+    </div>
+
+    <div class="service-grid">
+      <div class="svc">
+        <div class="lbl">Status Öl</div>
+        <div class="val" style="color: var(--${so.cls === 'neutral' ? 'txt-2' : so.cls})">${so.text}</div>
+        ${naechstOel ? `<div class="extra">Nächster Wechsel: ${fmt(naechstOel)} km</div>` : ''}
+      </div>
+      <div class="svc">
+        <div class="lbl">Status HU</div>
+        <div class="val" style="color: var(--${sh.cls === 'neutral' ? 'txt-2' : sh.cls})">${sh.text}</div>
+        ${a.hu ? `<div class="extra">${fmtDate(a.hu)}</div>` : ''}
+      </div>
+      <div class="svc full">
+        <div class="lbl">Zahnriemen / Steuerkette</div>
+        <div class="val" style="color: var(--${sz.cls === 'neutral' ? 'txt-2' : sz.cls})">${sz.text}</div>
+        ${a.zrInt === 'Steuerkette' ? '<div class="extra">Kein Wechsel-Intervall (Steuerkette)</div>' :
+          a.zrInt ? `<div class="extra">Intervall: ${fmt(a.zrInt)} km${a.zrLetzt ? ' · letzter Wechsel bei ' + fmt(a.zrLetzt) + ' km' : ' · noch nie gewechselt?'}</div>` : ''}
+      </div>
+      ${sv ? `<div class="svc full">
+        <div class="lbl">Versicherung</div>
+        <div class="val" style="color: var(--${sv.cls})">${sv.text}</div>
+        <div class="extra">Versichert: ${fmt(a.versKm)} km/Jahr · errechnet: ${sv.detail}</div>
+      </div>` : ''}
+    </div>
+
+    <div class="section-title">
+      🛠️ Reparatur-Historie
+      <span class="count">${autoReps.length} · ${fmtMoney(totalCost)}</span>
+    </div>
+    <div>
+      ${autoReps.length === 0 ? '<div class="empty">Noch keine Einträge.</div>' :
+        autoReps.map(r => `
+          <div class="rep-item">
+            <div class="rep-head">
+              <span class="rep-date">${fmtDate(r.date)}</span>
+              <span class="rep-cost">${fmtMoney(r.cost)}</span>
+            </div>
+            <div class="rep-text">${r.work}</div>
+            <div class="rep-meta">
+              ${r.km ? `<span>📍 ${fmt(r.km)} km</span>` : ''}
+              ${r.who ? `<span>👤 ${r.who}</span>` : ''}
+              ${r.time ? `<span>⏱ ${r.time}h</span>` : ''}
+              ${r.photo ? `<span style="color:var(--green)">📷 Foto</span>` : ''}
+            </div>
+            ${r.note ? `<div style="margin-top:6px; font-size:11px; color:var(--txt-3); font-style:italic">${r.note}</div>` : ''}
+          </div>
+        `).join('')
+      }
+    </div>
+
+    <button class="btn-primary" style="width:100%; margin-top: 18px;" onclick="addForAuto('${a.id}')">+ Reparatur eintragen</button>
+  `;
+  showPage('detail');
 }
 
-function addEditImg(input) {
-    if (input.files && input.files[0]) {
-        const r = new FileReader();
-        r.onload = e => {
-            S.editImages.push(e.target.result);
-            renderEditGallery();
-            input.value = ''; // Reset, damit das gleiche Bild erneut hinzugefügt werden kann
-        };
-        r.readAsDataURL(input.files[0]);
+function renderAllReps() {
+  const sorted = [...reps].sort((x,y) => y.date.localeCompare(x.date));
+  document.getElementById('all-reps').innerHTML = sorted.length === 0 ?
+    '<div class="empty">Noch keine Reparaturen erfasst.</div>' :
+    sorted.map(r => {
+      const a = AUTOS.find(x => x.id === r.auto);
+      return `
+        <div class="rep-item" onclick="showAuto('${r.auto}')">
+          <div class="rep-head">
+            <span class="rep-date">${fmtDate(r.date)} · ${a ? a.name : '?'}</span>
+            <span class="rep-cost">${fmtMoney(r.cost)}</span>
+          </div>
+          <div class="rep-text">${r.work}</div>
+          <div class="rep-meta">
+            ${r.km ? `<span>📍 ${fmt(r.km)} km</span>` : ''}
+            ${r.who ? `<span>👤 ${r.who}</span>` : ''}
+            ${r.photo ? `<span style="color:var(--green)">📷</span>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function fillAutoSelect() {
+  const sel = document.getElementById('r-auto');
+  sel.innerHTML = AUTOS.map(a => `<option value="${a.id}">${a.name}${a.halter ? ' (' + a.halter + ')' : ''}</option>`).join('');
+}
+
+function addForAuto(id) {
+  showPage('add');
+  document.getElementById('r-auto').value = id;
+}
+
+// ============= NAVIGATION =============
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const navBtn = document.querySelector(`.nav-btn[data-page="${p}"]`);
+  if (navBtn) navBtn.classList.add('active');
+  if (p === 'dashboard') renderDashboard();
+  if (p === 'list') renderAllReps();
+  if (p === 'add') {
+    document.getElementById('rep-form').reset();
+    document.getElementById('r-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('photo-btn').className = 'photo-btn';
+    document.getElementById('photo-btn').innerHTML = '📸 Foto aufnehmen oder Datei wählen';
+  }
+  if (p === 'settings') document.getElementById('data-count').textContent = reps.length;
+  window.scrollTo(0, 0);
+}
+
+// ============= EINGABE =============
+let photoFlag = false;
+function fakePhoto() {
+  photoFlag = !photoFlag;
+  const btn = document.getElementById('photo-btn');
+  if (photoFlag) {
+    btn.className = 'photo-btn has-photo';
+    btn.innerHTML = '✓ Foto angefügt (Demo)';
+  } else {
+    btn.className = 'photo-btn';
+    btn.innerHTML = '📸 Foto aufnehmen oder Datei wählen';
+  }
+}
+
+async function saveRep(e) {
+  e.preventDefault();
+  const r = {
+    auto: document.getElementById('r-auto').value,
+    date: document.getElementById('r-date').value,
+    km: parseInt(document.getElementById('r-km').value) || null,
+    work: document.getElementById('r-work').value,
+    cost: parseFloat(document.getElementById('r-cost').value) || null,
+    time: parseFloat(document.getElementById('r-time').value) || null,
+    who: document.getElementById('r-who').value || '',
+    note: document.getElementById('r-note').value || '',
+    photo: photoFlag,
+  };
+  reps.push(r);
+  // km im Auto auch aktualisieren
+  if (r.km) {
+    const a = AUTOS.find(x => x.id === r.auto);
+    if (a && (!a.km || r.km > a.km)) {
+      a.km = r.km;
+      a.kmDate = r.date;
     }
+  }
+  // Wenn Eintrag "Ölwechsel" enthält → letzter Ölw. setzen
+  if (r.km && /öl(wechsel|service)/i.test(r.work)) {
+    const a = AUTOS.find(x => x.id === r.auto);
+    if (a) a.oelLetzt = r.km;
+  }
+  // Wenn "Zahnriemen" → letzter Zahnriemen
+  if (r.km && /zahnriemen/i.test(r.work)) {
+    const a = AUTOS.find(x => x.id === r.auto);
+    if (a) a.zrLetzt = r.km;
+  }
+  await saveReps();
+  photoFlag = false;
+  showToast('success', 'Eingetragen ✓', 'Reparatur gespeichert. Service-Status wurde aktualisiert.');
+  showPage('dashboard');
 }
 
-function removeEditImgAt(idx) {
-    if (!confirm('Dieses Foto entfernen?')) return;
-    S.editImages.splice(idx, 1);
-    renderEditGallery();
+// ============= TOAST =============
+let toastTimer;
+function showToast(type, title, msg) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (type || '');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-ico').textContent =
+    type === 'success' ? '✓' : type === 'warn' ? '!' : 'ℹ';
+  setTimeout(() => t.classList.add('show'), 10);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4500);
 }
 
-function delItemFromEdit() {
-    const item = S.items.find(x => x.key === S.editKey);
-    if (!item) return;
-    if (!confirm(`"${item.name}" wirklich komplett löschen?\n\nDas kann nicht rückgängig gemacht werden!`)) return;
-    ref.child('items/'+S.editKey).remove();
-    log('del', `"${item.name}" gelöscht`);
-    closeModal('editModal');
-}
-function saveEdit() {
-    const item = S.items.find(x => x.key === S.editKey);
-    const newN = document.getElementById('eName').value.trim();
-    const newQ = parseInt(document.getElementById('eQty').value)||1;
-    if (!newN) { alert('Bitte Namen eingeben.'); return; }
-
-    const oldImages = item.images || (item.img ? [item.img] : []);
-    const newImages = [...S.editImages];
-
-    // Bilder vergleichen (Anzahl + Inhalt)
-    let imgChanged = false;
-    if (oldImages.length !== newImages.length) imgChanged = true;
-    else for (let i = 0; i < oldImages.length; i++) if (oldImages[i] !== newImages[i]) { imgChanged = true; break; }
-
-    const ch = [];
-    if (newN !== item.name) ch.push(`Name: "${item.name}" → "${newN}"`);
-    if (newQ !== parseInt(item.qty)) ch.push(`Menge: ${item.qty} → ${newQ}`);
-    if (imgChanged) {
-        const diff = newImages.length - oldImages.length;
-        if (diff > 0)      ch.push(`${diff} Foto${diff>1?'s':''} hinzugefügt (${newImages.length} insgesamt)`);
-        else if (diff < 0) ch.push(`${-diff} Foto${-diff>1?'s':''} entfernt (${newImages.length} verbleibend)`);
-        else               ch.push(`Fotos geändert`);
-    }
-    if (ch.length === 0) { closeModal('editModal'); return; }
-    if (!confirm(`Folgende Änderungen speichern?\n\n${ch.join('\n')}`)) return;
-
-    let updates = { name:newN, qty:newQ, lastUser:S.user };
-    if (imgChanged) {
-        updates.images = newImages;
-        // Kompatibilität: img-Feld auf erstes Bild setzen (oder leer)
-        updates.img = newImages.length > 0 ? newImages[0] : '';
-    }
-
-    const borrowed = totalBorrowed(item);
-    if (newQ < borrowed) {
-        const borrowers = {...(item.borrowers||{})};
-        let toRemove = borrowed - newQ;
-        const sorted = Object.entries(borrowers).sort((a,b)=>b[1]-a[1]);
-        for (const [u, c] of sorted) {
-            if (toRemove <= 0) break;
-            const take = Math.min(toRemove, c);
-            borrowers[u] = c - take;
-            if (borrowers[u]===0) delete borrowers[u];
-            toRemove -= take;
-        }
-        updates.borrowers = borrowers;
-        updates.borrowed = Object.values(borrowers).reduce((s,v)=>s+v,0);
-        updates.status = updates.borrowed===0?'im Lager':'ausgeliehen';
-    }
-    ref.child('items/'+S.editKey).update(updates).then(() => {
-        log('edit', `"${item.name}": ${ch.join(' | ')}`);
-        closeModal('editModal');
-    });
-}
-function delItem(k,n) {
-    if (!confirm(`"${n}" wirklich löschen?`)) return;
-    ref.child('items/'+k).remove();
-    log('del', `"${n}" gelöscht`);
-}
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-// ───────── LOGS ─────────
-function log(typ, text) { ref.child('logs').push({ user:S.user, text, typ, ts:Date.now() }); }
-function setLF(f, btn) {
-    S.logF = f;
-    document.querySelectorAll('#tab-log .lfbtn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active'); renderLogs();
-}
-const LT = { aus:['lt-aus','⬆ AUS'], ein:['lt-ein','⬇ EIN'], neu:['lt-neu','✚ NEU'], edit:['lt-edit','✏ EDIT'], del:['lt-del','🗑 DEL'], resv:['lt-resv','🟣 RES'] };
-function renderLogs() {
-    let logs = Object.values(S.cfg.logs||{}).sort((a,b)=>b.ts-a.ts);
-    if (S.logF !== 'all') logs = logs.filter(l => l.typ === S.logF);
-    logs = logs.slice(0, 80);
-    document.getElementById('logList').innerHTML = logs.length
-        ? logs.map(l => {
-            const [cls, lbl] = LT[l.typ] || ['lt-edit','•'];
-            const d = new Date(l.ts);
-            const datum = d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
-            const zeit = d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-            return `<div class="log-item"><span><span class="ltag ${cls}">${lbl}</span><b>${esc(l.user)}</b>: ${esc(l.text)}</span><span class="log-time"><span class="ld">${datum}</span><span class="lt">${zeit}</span></span></div>`;
-          }).join('')
-        : '<div class="empty"><i>📜</i>Keine Einträge.</div>';
+function demoPush() {
+  const overdue = AUTOS.find(a => statusOel(a).cls === 'red' || statusZr(a).cls === 'red' || statusHu(a).cls === 'red');
+  if (overdue) {
+    const issues = [];
+    if (statusOel(overdue).cls === 'red') issues.push('Ölwechsel fällig');
+    if (statusZr(overdue).cls === 'red') issues.push('Zahnriemen-Wechsel fällig');
+    if (statusHu(overdue).cls === 'red') issues.push('HU überfällig');
+    showToast('warn', '🔔 ' + overdue.name, issues.join(' · '));
+  } else {
+    showToast('success', '🔔 Alles im grünen Bereich', 'Kein Service akut nötig.');
+  }
 }
 
-// ───────── PHOTO ZOOM / GALLERY ─────────
-const Z = { scale:1, panX:0, panY:0, lastX:0, lastY:0, lastTap:0, startDist:0, startScale:1 };
-const G = { images: [], idx: 0 }; // Galerie-Status
-
-function openPhotoZoom(src) {
-    G.images = [src]; G.idx = 0;
-    showCurrentImage();
-    document.getElementById('photoZoom').style.display = 'flex';
-    showZoomHint();
-}
-function openGallery(itemKey) {
-    const item = S.items.find(x => x.key === itemKey);
-    if (!item) return;
-    const images = item.images || (item.img ? [item.img] : []);
-    if (!images.length) return;
-    G.images = images; G.idx = 0;
-    showCurrentImage();
-    document.getElementById('photoZoom').style.display = 'flex';
-    showZoomHint();
-}
-function showCurrentImage() {
-    Z.scale=1; Z.panX=0; Z.panY=0;
-    const img = document.getElementById('photoZoomImg');
-    img.src = G.images[G.idx];
-    img.style.transform = 'translate(0,0) scale(1)';
-    // Counter und Pfeile
-    const showNav = G.images.length > 1;
-    document.getElementById('photoNavPrev').style.display = showNav ? 'flex' : 'none';
-    document.getElementById('photoNavNext').style.display = showNav ? 'flex' : 'none';
-    const counter = document.getElementById('photoGalleryCounter');
-    if (showNav) {
-        counter.style.display = 'block';
-        counter.textContent = `${G.idx+1} / ${G.images.length}`;
-    } else {
-        counter.style.display = 'none';
-    }
-}
-function galleryPrev() {
-    G.idx = (G.idx - 1 + G.images.length) % G.images.length;
-    showCurrentImage();
-}
-function galleryNext() {
-    G.idx = (G.idx + 1) % G.images.length;
-    showCurrentImage();
-}
-function showZoomHint() {
-    const h = document.getElementById('photoZoomHint');
-    h.style.opacity='1'; setTimeout(()=>{h.style.opacity='0';}, 2500);
-}
-function closePhotoZoom(){ document.getElementById('photoZoom').style.display = 'none'; }
-function applyZoom(){ document.getElementById('photoZoomImg').style.transform=`translate(${Z.panX}px,${Z.panY}px) scale(${Z.scale})`; }
-function zoomImg(d){ Z.scale=Math.max(1,Math.min(6,Z.scale+d)); if(Z.scale===1){Z.panX=0;Z.panY=0;} applyZoom(); }
-function zoomReset(){ Z.scale=1; Z.panX=0; Z.panY=0; applyZoom(); }
-
-const zw = document.getElementById('photoZoomImgWrap');
-zw.addEventListener('touchstart', e => {
-    if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;Z.startDist=Math.hypot(dx,dy);Z.startScale=Z.scale;}
-    else if(e.touches.length===1){Z.lastX=e.touches[0].clientX;Z.lastY=e.touches[0].clientY;const now=Date.now();if(now-Z.lastTap<300){if(Z.scale>1)zoomReset();else{Z.scale=2.5;applyZoom();}}Z.lastTap=now;}
-}, {passive:false});
-zw.addEventListener('touchmove', e => {
-    if(e.touches.length===2){e.preventDefault();const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const dist=Math.hypot(dx,dy);if(Z.startDist){Z.scale=Math.max(1,Math.min(6,Z.startScale*(dist/Z.startDist)));if(Z.scale===1){Z.panX=0;Z.panY=0;}applyZoom();}}
-    else if(e.touches.length===1&&Z.scale>1){e.preventDefault();Z.panX+=e.touches[0].clientX-Z.lastX;Z.panY+=e.touches[0].clientY-Z.lastY;Z.lastX=e.touches[0].clientX;Z.lastY=e.touches[0].clientY;applyZoom();}
-}, {passive:false});
-zw.addEventListener('touchend', () => { Z.startDist = 0; });
-zw.addEventListener('wheel', e => { e.preventDefault(); zoomImg(e.deltaY<0?0.3:-0.3); }, {passive:false});
-document.getElementById('photoZoom').addEventListener('click', e => { if(e.target.id==='photoZoom') closePhotoZoom(); });
-
-// ───────── PRINT ─────────
-function showPrint(key, meta, name) {
-    S.label = { key, meta, name };
-    document.getElementById('pvQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enc(key)}`;
-    document.getElementById('pvMeta').textContent = meta||'—';
-    document.getElementById('pvName').textContent = name;
-    document.getElementById('pvKey').textContent = key;
-    setPS('inf','Tippe "📥 BILD TEILEN" und wähle "In Fotos sichern".');
-    document.getElementById('printOverlay').style.display = 'flex';
-}
-function closePrint(){ document.getElementById('printOverlay').style.display = 'none'; S.label=null; }
-function setPS(cls,msg){ const el=document.getElementById('pStatus'); el.className=cls; el.style.display='block'; el.textContent=msg; }
-
-// LABEL ZEICHNEN — mit Wortumbruch für lange Namen
-function drawLabel(canvas, key, meta, name) {
-    const W = 1020, H = 348;
-    canvas.width = W; canvas.height = H;
-    const ctx = canvas.getContext('2d');
-
-    return new Promise((resolve, reject) => {
-        const qr = new Image();
-        qr.crossOrigin = 'anonymous';
-        qr.src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${enc(key)}`;
-        qr.onload = () => {
-            ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
-            ctx.fillStyle = '#06b6d4'; ctx.fillRect(0,0,14,H);
-            ctx.drawImage(qr, 26, (H-300)/2, 300, 300);
-
-            const tX = 26+300+22, mW = W-tX-18;
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'alphabetic';
-
-            // META
-            ctx.font = '500 32px Arial'; ctx.fillStyle = '#64748b';
-            ctx.fillText(meta||'—', tX, 60, mW);
-            ctx.fillStyle = '#06b6d4'; ctx.fillRect(tX, 75, mW, 5);
-
-            // NAME — automatischer Umbruch UND Schriftgrößen-Anpassung
-            ctx.fillStyle = '#000';
-            const nameAreaH = H - 100; // Verfügbare Höhe für den Namen
-            const result = fitText(ctx, name, mW, nameAreaH, 100, 28);
-            const linesY = 100 + (nameAreaH - result.totalHeight) / 2 + result.fontSize;
-            result.lines.forEach((line, i) => {
-                ctx.fillText(line, tX, linesY + i * result.fontSize * 1.05);
-            });
-
-            // KEY
-            ctx.font = '300 14px Arial'; ctx.fillStyle = '#cbd5e1'; ctx.textAlign = 'right';
-            ctx.fillText(key, W-10, H-10);
-
-            resolve();
-        };
-        qr.onerror = () => reject(new Error('QR-Code Fehler'));
-    });
+async function resetData() {
+  if (!confirm('Wirklich alle Reparatur-Eingaben zurücksetzen und Demo-Daten neu laden?')) return;
+  reps = [...DEMO_REPS];
+  await saveReps();
+  showToast('success', 'Zurückgesetzt', 'Demo-Daten wurden geladen.');
+  showPage('dashboard');
 }
 
-// Zeilen-Umbruch + Auto-Fit für Etikett-Text
-function fitText(ctx, text, maxWidth, maxHeight, startFontSize, minFontSize) {
-    let fz = startFontSize;
-    while (fz >= minFontSize) {
-        ctx.font = `900 ${fz}px Arial`;
-        const lines = wrapText(ctx, text, maxWidth);
-        const lineHeight = fz * 1.05;
-        const totalHeight = lines.length * lineHeight - (lineHeight - fz);
-        if (totalHeight <= maxHeight && lines.length <= 3) {
-            return { lines, fontSize: fz, totalHeight };
-        }
-        fz -= 4;
-    }
-    // Notfall: kleinste Größe verwenden, hart umbrechen
-    ctx.font = `900 ${minFontSize}px Arial`;
-    const lines = wrapText(ctx, text, maxWidth).slice(0,3);
-    return { lines, fontSize: minFontSize, totalHeight: lines.length * minFontSize * 1.05 };
-}
+// ============= INIT =============
+const today = new Date();
+document.getElementById('header-date').textContent =
+  today.toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
 
-function wrapText(ctx, text, maxWidth) {
-    const words = text.split(' ');
-    if (words.length === 1) {
-        // Einzelnes langes Wort: Zeichenweise umbrechen
-        if (ctx.measureText(text).width <= maxWidth) return [text];
-        const result = [];
-        let current = '';
-        for (const ch of text) {
-            const test = current + ch;
-            if (ctx.measureText(test).width > maxWidth) {
-                if (current) result.push(current);
-                current = ch;
-            } else {
-                current = test;
-            }
-        }
-        if (current) result.push(current);
-        return result;
-    }
-    const lines = [];
-    let current = words[0];
-    for (let i = 1; i < words.length; i++) {
-        const test = current + ' ' + words[i];
-        if (ctx.measureText(test).width <= maxWidth) current = test;
-        else { lines.push(current); current = words[i]; }
-    }
-    lines.push(current);
-    return lines;
-}
-
-async function shareLabel() {
-    if (!S.label) { setPS('err','Kein Etikett.'); return; }
-    setPS('inf','Etikett wird erstellt...');
-    const cvs = document.getElementById('cvs');
-    try {
-        await drawLabel(cvs, S.label.key, S.label.meta, S.label.name);
-    } catch(e) { setPS('err','QR-Code konnte nicht geladen werden.'); return; }
-
-    cvs.toBlob(async blob => {
-        if (!blob) { setPS('err','Fehler beim Erstellen.'); return; }
-        const fileName = `etikett_${(S.label.name||'label').replace(/[^a-z0-9äöüß]/gi,'_')}.png`;
-        const file = new File([blob], fileName, { type:'image/png' });
-
-        if (navigator.canShare && navigator.canShare({ files:[file] })) {
-            try {
-                await navigator.share({ files:[file], title:'GR-Lager Etikett' });
-                setPS('ok','✓ Geteilt! Wähle "In Fotos sichern".');
-            } catch(err) {
-                if (err.name !== 'AbortError') downloadFallback(blob, fileName);
-                else setPS('inf','Teilen abgebrochen.');
-            }
-        } else {
-            downloadFallback(blob, fileName);
-        }
-    }, 'image/png');
-}
-
-function downloadFallback(blob, fileName) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download=fileName;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setPS('ok','✓ Etikett heruntergeladen.');
-}
-
-// ───────── DATE FORMAT HELPERS ─────────
-function formatFullDate(ts) {
-    const d = new Date(ts);
-    return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' +
-           d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' Uhr';
-}
-function formatShortDate(ts) {
-    const d = new Date(ts);
-    return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'}) + ' ' +
-           d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-}
-
-// ───────── TABS ─────────
-function goTab(e, id) {
-    document.querySelectorAll('.tab-c').forEach(c => c.style.display='none');
-    document.getElementById(id).style.display = 'block';
-    if (e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); }
-    if (id==='tab-log') renderLogs();
-    if (id==='tab-neu') renderManage();
-    if (id==='tab-resv') renderReservations();
-}
-
-// ───────── SCANNER ─────────
-let scanner = null;
-function startScanner() {
-    document.getElementById('scanbox').style.display = 'flex';
-    scanner = new Html5Qrcode('qr-reader');
-    scanner.start({ facingMode:'environment' }, { fps:10, qrbox:{ width:250, height:250 } },
-        txt => {
-            const item = S.items.find(x => x.key === txt);
-            if (item) { stopScan(); handleScannedItem(item); }
-            else alert('Artikel nicht gefunden.');
-        }
-    ).catch(() => stopScan());
-}
-function stopScan() {
-    if (scanner) scanner.stop()
-        .then(() => { document.getElementById('scanbox').style.display='none'; scanner=null; })
-        .catch(() => { document.getElementById('scanbox').style.display='none'; scanner=null; });
-}
-
-function handleScannedItem(item) {
-    const total = parseInt(item.qty)||0;
-    const borrowed = totalBorrowed(item);
-    const inStock = total - borrowed;
-    const myBorrowed = (item.borrowers && item.borrowers[S.user]) ? parseInt(item.borrowers[S.user]) : 0;
-
-    // Immer Auswahl anzeigen, weil RESERVIEREN als zusätzliche Option dazu kommt
-    S.scanItem = item;
-    document.getElementById('scTitle').innerHTML = `📦 ${esc(item.name)}`;
-    let info = `<b>${inStock}/${total}</b> im Lager · <b>${borrowed}</b> ausgeliehen`;
-    if (myBorrowed > 0) info += `<br>Du hast davon: <b>${myBorrowed} Stück</b>`;
-    document.getElementById('scInfo').innerHTML = info;
-
-    document.querySelector('.choice-aus').style.display = (inStock > 0) ? 'flex' : 'none';
-    document.querySelector('.choice-ein').style.display = (borrowed > 0) ? 'flex' : 'none';
-
-    document.getElementById('scanChoiceModal').style.display = 'flex';
-}
-
-function scanChoice(type) {
-    const item = S.scanItem;
-    closeModal('scanChoiceModal');
-    if (!item) return;
-    if (type === 'resv') openReservation(item.key);
-    else askQty(type, item.key);
-    S.scanItem = null;
-}
-
-function previewImg(inp) {
-    if (inp.files && inp.files[0]) {
-        const r = new FileReader();
-        r.onload = e => { const el=document.getElementById('imgPrev'); el.src=e.target.result; el.style.display='block'; };
-        r.readAsDataURL(inp.files[0]);
-    }
-}
-
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function ea(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
-function enc(s){return encodeURIComponent(s||'');}
+(async () => {
+  await loadReps();
+  fillAutoSelect();
+  renderDashboard();
+})();
 </script>
 </body>
 </html>
