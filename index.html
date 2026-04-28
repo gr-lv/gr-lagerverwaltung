@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V182</title>
+    <title>GR-Lagerverwaltung V183</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -298,7 +298,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V182 — Lagerverwaltung</p>
+        <p>V183 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -349,7 +349,7 @@
             <div class="lfb">
                 <button class="lfbtn active" onclick="setRF('all',this)">Alle</button>
                 <button class="lfbtn" onclick="setRF('mine',this)">Meine</button>
-                <button class="lfbtn" onclick="setRF('soon',this)">Bald</button>
+                <button class="lfbtn" onclick="setRF('soon',this)">Nächste 7 Tage</button>
                 <button class="lfbtn" onclick="setRF('active',this)">Jetzt</button>
                 <button class="lfbtn" onclick="setRF('future',this)">Später</button>
             </div>
@@ -411,14 +411,10 @@
             </div>
 
             <div class="help-box">
-                <h3>🔐 Anmelden</h3>
-                <ol>
-                    <li>Gib deinen <b>vollständigen Namen</b> ein — also <b>Vor- und Nachname</b> (zum Beispiel "Thomas Müller")</li>
-                    <li>Gib das <b>Passwort</b> ein</li>
-                    <li>Tippe auf <b>LOGIN</b></li>
-                </ol>
-                <div class="tip">💡 Wichtig: Bitte <b>immer den vollen Namen</b> verwenden, damit klar ist, wer welchen Artikel ausgeliehen oder reserviert hat — vor allem wenn mehrere Personen denselben Vornamen haben.</div>
-                <div class="tip">💡 Dein Name wird oben in der Kopfzeile angezeigt. Über das <b>Tür-Symbol</b> kannst du dich jederzeit wieder abmelden.</div>
+                <h3>🔐 Richtig angemeldet?</h3>
+                <p>Bitte melde dich <b>immer mit deinem vollständigen Namen</b> (Vorname und Nachname) an — z.B. <span class="hl">Thomas Müller</span>.</p>
+                <p>So ist eindeutig, wer welchen Artikel ausgeliehen oder reserviert hat. Vor allem wenn mehrere Personen denselben Vornamen haben.</p>
+                <div class="warn">⚠️ <b>Falsch angemeldet?</b><br>Wenn du z.B. nur deinen Vornamen oder einen Spitznamen eingegeben hast, melde dich bitte ab und neu mit dem vollen Namen an.<br><br>👉 Tippe oben rechts auf das <b>Tür-Symbol 🚪</b>, um dich abzumelden, und logge dich dann mit Vor- und Nachnamen neu ein.</div>
             </div>
 
             <div class="help-box">
@@ -434,7 +430,8 @@
                 <p>Es gibt eine <b>Reservierung</b> für diesen Artikel.</p>
 
                 <div class="tip">💡 <b>Suche</b>: Tippe oben in die Suchleiste, um schnell einen Artikel zu finden.<br>
-                <b>Filter</b>: Wähle eine Kategorie, um nur bestimmte Artikel zu sehen.</div>
+                <b>Filter</b>: Wähle eine Kategorie, um nur bestimmte Artikel zu sehen.<br>
+                <b>Fotos ansehen</b>: Tippe auf das Bild eines Artikels, um es groß zu sehen. Bei mehreren Fotos kannst du mit den Pfeilen ‹ › durchblättern.</div>
             </div>
 
             <div class="help-box">
@@ -446,7 +443,7 @@
                     <li>Wähle die Stückzahl, die du ausleihen möchtest</li>
                     <li>Tippe auf <b>"📤 AUSLEIHEN"</b></li>
                 </ol>
-                <div class="warn">⚠️ Wenn jemand anderes für die nächsten 3 Tage eine Reservierung gemacht hat, bekommst du eine <b>Warnung</b> — bitte berücksichtige das, damit der andere seinen Termin halten kann!</div>
+                <div class="warn">⚠️ Wenn jemand anderes für die nächsten 7 Tage eine Reservierung gemacht hat, bekommst du eine <b>Warnung</b> — bitte berücksichtige das, damit der andere seinen Termin halten kann!</div>
             </div>
 
             <div class="help-box">
@@ -483,7 +480,7 @@
                     <li>Tippe auf <b>"🟣 RESERVIEREN"</b></li>
                 </ol>
                 <div class="tip">💡 Im Tab <b>"🟣 RESERV."</b> siehst du alle Reservierungen. Du kannst dort filtern: deine eigenen, bald anstehende, gerade aktive oder zukünftige.</div>
-                <div class="warn">⚠️ Reservierungen sind <b>Ankündigungen</b> — sie sperren den Artikel nicht automatisch, aber andere bekommen eine Warnung, wenn sie etwas nahmenehmen, was du bald brauchst.</div>
+                <div class="warn">⚠️ Reservierungen sind <b>Ankündigungen</b> — sie sperren den Artikel nicht automatisch. Andere Nutzer bekommen aber eine Warnung, wenn sie etwas ausleihen wollen, was du in den nächsten 7 Tagen reserviert hast.</div>
             </div>
 
             <div class="help-box">
@@ -496,7 +493,7 @@
                         <ul>
                             <li><b>Name</b> — z.B. wenn der Name falsch geschrieben war</li>
                             <li><b>Stückzahl</b> — z.B. wenn neue Stücke nachgekauft wurden</li>
-                            <li><b>Foto</b> — neues Foto aufnehmen oder ein altes austauschen / entfernen</li>
+                            <li><b>Fotos</b> — du kannst <b>mehrere Fotos</b> hinzufügen (z.B. von verschiedenen Seiten oder Zustand des Artikels). Tippe auf das ✕ neben einem Foto, um es zu entfernen. Das erste Foto ist das <b>Hauptbild</b>, das in der Liste angezeigt wird.</li>
                         </ul>
                     </li>
                     <li>Tippe auf <b>"✓ Speichern"</b></li>
@@ -578,18 +575,15 @@
 <div id="editModal" class="modal">
     <div class="mbox">
         <h3>✏️ Stammdaten ändern</h3>
-        <p style="font-size:.78rem;color:#64748b;margin:0 0 14px;line-height:1.4;">Hier kannst du die Grunddaten des Artikels ändern: Name, Stückzahl und Foto.</p>
+        <p style="font-size:.78rem;color:#64748b;margin:0 0 14px;line-height:1.4;">Hier kannst du die Grunddaten des Artikels ändern: Name, Stückzahl und Fotos.</p>
         <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Name:</label>
         <input type="text"   id="eName" class="fi-light" placeholder="Artikelname">
         <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Stückzahl:</label>
         <input type="number" id="eQty"  class="fi-light" min="1" placeholder="Stückzahl">
-        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Foto:</label>
-        <button onclick="document.getElementById('eImgInput').click()" style="width:100%;padding:11px;background:#1e293b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:10px;">📷 Foto ändern / hinzufügen</button>
-        <input type="file" id="eImgInput" accept="image/*" capture="environment" style="display:none;" onchange="previewEditImg(this)">
-        <img id="eImgPrev" style="width:100%;height:120px;object-fit:contain;display:none;margin-bottom:10px;border-radius:8px;background:#f1f5f9;border:1px solid #cbd5e1;">
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-            <button onclick="removeEditImg()" id="eImgRemoveBtn" style="display:none;flex:1;padding:9px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:7px;font-weight:700;cursor:pointer;font-size:.78rem;">🗑️ Foto entfernen</button>
-        </div>
+        <label style="font-size:.75rem;color:#475569;font-weight:700;display:block;margin-bottom:4px;">Fotos:</label>
+        <div id="eImgGallery" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:10px;"></div>
+        <button onclick="document.getElementById('eImgInput').click()" style="width:100%;padding:11px;background:#1e293b;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:10px;">📷 Foto hinzufügen</button>
+        <input type="file" id="eImgInput" accept="image/*" capture="environment" style="display:none;" onchange="addEditImg(this)">
         <div style="display:flex;gap:10px;margin-top:4px;">
             <button onclick="saveEdit()" style="flex:1;padding:12px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">✓ Speichern</button>
             <button onclick="closeModal('editModal')" style="flex:1;padding:12px;background:#94a3b8;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;">Abbrechen</button>
@@ -665,6 +659,9 @@
 <!-- PHOTO ZOOM -->
 <div id="photoZoom">
     <button id="photoZoomClose" onclick="closePhotoZoom()">✕</button>
+    <button id="photoNavPrev" onclick="galleryPrev()" style="display:none;position:absolute;left:14px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:white;font-size:1.6rem;cursor:pointer;z-index:11100;">‹</button>
+    <button id="photoNavNext" onclick="galleryNext()" style="display:none;position:absolute;right:14px;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.3);color:white;font-size:1.6rem;cursor:pointer;z-index:11100;">›</button>
+    <div id="photoGalleryCounter" style="display:none;position:absolute;top:calc(20px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:6px 14px;border-radius:20px;font-size:.78rem;font-weight:700;z-index:11100;"></div>
     <div id="photoZoomImgWrap"><img id="photoZoomImg" src="" alt=""></div>
     <div id="photoZoomCtrls">
         <button onclick="zoomImg(-0.4)">−</button>
@@ -707,7 +704,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V182";
+const APP_VERSION = "V183";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -722,7 +719,7 @@ firebase.initializeApp(FB);
 const db  = firebase.database();
 const ref = db.ref('lager_v90_multilager');
 
-const S = { user:"", items:[], reservations:[], cfg:{}, editKey:null, label:null, logF:'all', resvF:'all', qtyAction:null, scanItem:null, resvItem:null };
+const S = { user:"", items:[], reservations:[], cfg:{}, editKey:null, editImages:[], label:null, logF:'all', resvF:'all', qtyAction:null, scanItem:null, resvItem:null };
 
 // ───────── AUTO-UPDATE ─────────
 function versionToNum(v) { if (!v||typeof v!=='string') return 0; const m=v.match(/(\d+)/); return m?parseInt(m[1]):0; }
@@ -794,10 +791,13 @@ function initApp() {
                 if (item.borrowed && parseInt(item.borrowed) > 0 && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.borrowed);
                 else if (item.status === 'ausgeliehen' && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.qty)||0;
             }
+            // Migration: einzelnes img-Feld → images-Array
+            if (!item.images) {
+                item.images = item.img ? [item.img] : [];
+            }
             return item;
         });
         S.reservations = Object.keys(S.cfg.reservations || {}).map(k => ({ ...S.cfg.reservations[k], key:k }));
-        // Alte abgelaufene Reservierungen automatisch entfernen (älter als 7 Tage abgelaufen)
         const now = Date.now();
         const cutoff = now - 7*24*60*60*1000;
         S.reservations.forEach(r => { if (r.toTs && r.toTs < cutoff) ref.child('reservations/'+r.key).remove(); });
@@ -818,7 +818,7 @@ function totalBorrowed(item) { if (!item.borrowers) return 0; return Object.valu
 function getReservationsForItem(itemKey) { return S.reservations.filter(r => r.itemKey === itemKey); }
 
 // Prüft ob in den nächsten X Tagen Reservierungen für diesen Artikel vorliegen
-function getUpcomingReservations(itemKey, days=3, excludeUser=null) {
+function getUpcomingReservations(itemKey, days=7, excludeUser=null) {
     const now = Date.now();
     const future = now + days*24*60*60*1000;
     return S.reservations.filter(r => {
@@ -868,12 +868,20 @@ function render() {
         }
 
         const meta = `${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
-        const thumb = i.img || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
-        const hasImg = !!i.img;
+        const images = i.images || (i.img ? [i.img] : []);
+        const firstImg = images.length > 0 ? images[0] : null;
+        const thumb = firstImg || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
+        const hasImg = images.length > 0;
+        const imgCountBadge = images.length > 1
+            ? `<span style="position:absolute;bottom:-3px;right:-3px;background:var(--accent);color:white;font-size:.55rem;font-weight:800;padding:2px 5px;border-radius:8px;border:2px solid white;line-height:1;">+${images.length-1}</span>`
+            : '';
 
         return `
         <div class="item-card ${cardCls}">
-            <img src="${thumb}" class="item-thumb" ${hasImg?`onclick="openPhotoZoom('${ea(i.img)}')"`:''} onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
+            <div style="position:relative;flex-shrink:0;">
+                <img src="${thumb}" class="item-thumb" ${hasImg?`onclick="openGallery('${i.key}')"`:''} onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
+                ${imgCountBadge}
+            </div>
             <div class="item-info">
                 <div class="item-name">${esc(i.name)}</div>
                 <div class="item-meta">${esc(meta)}</div>
@@ -1069,7 +1077,7 @@ function setRF(f, btn) {
 
 function renderReservations() {
     const now = Date.now();
-    const soon = now + 3*24*60*60*1000;
+    const soon = now + 7*24*60*60*1000;
     let list = [...S.reservations];
     if (resvFilter === 'mine')   list = list.filter(r => r.user === S.user);
     if (resvFilter === 'soon')   list = list.filter(r => r.fromTs >= now && r.fromTs <= soon);
@@ -1129,6 +1137,7 @@ function saveItem() {
     const n = document.getElementById('iName').value.trim();
     if (!n) { alert('Bitte Artikelnamen eingeben.'); return; }
     const nr = ref.child('items').push();
+    const previewSrc = (() => { const e=document.getElementById('imgPrev'); return e.src.startsWith('data:')?e.src:''; })();
     const d = {
         name:n, qty:parseInt(document.getElementById('iQty').value)||1,
         borrowers:{}, borrowed:0,
@@ -1136,7 +1145,8 @@ function saveItem() {
         cat:document.getElementById('iCat').value,
         regal:document.getElementById('iRegal').value,
         fach:document.getElementById('iFach').value,
-        img:(()=>{const e=document.getElementById('imgPrev');return e.src.startsWith('data:')?e.src:'';})(),
+        img: previewSrc,
+        images: previewSrc ? [previewSrc] : [],
         status:'im Lager', ts:Date.now(), lastUser:S.user
     };
     nr.set(d).then(() => {
@@ -1154,41 +1164,53 @@ function openEdit(key) {
     const i = S.items.find(x => x.key === key);
     document.getElementById('eName').value = i.name;
     document.getElementById('eQty').value = i.qty;
-    // Foto laden falls vorhanden
-    const prev = document.getElementById('eImgPrev');
-    const removeBtn = document.getElementById('eImgRemoveBtn');
-    if (i.img) {
-        prev.src = i.img;
-        prev.style.display = 'block';
-        removeBtn.style.display = 'block';
-    } else {
-        prev.src = '';
-        prev.style.display = 'none';
-        removeBtn.style.display = 'none';
-    }
-    // Reset file input damit erneutes Auswählen desselben Bilds funktioniert
+    // Bilder kopieren in editImages
+    S.editImages = [...(i.images || (i.img ? [i.img] : []))];
     document.getElementById('eImgInput').value = '';
+    renderEditGallery();
     document.getElementById('editModal').style.display = 'flex';
 }
-function previewEditImg(input) {
+
+function renderEditGallery() {
+    const container = document.getElementById('eImgGallery');
+    if (!S.editImages.length) {
+        container.innerHTML = '<div style="font-size:.78rem;color:#94a3b8;padding:8px 0;">Noch keine Fotos vorhanden.</div>';
+        return;
+    }
+    container.innerHTML = S.editImages.map((src, idx) => `
+        <div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;background:#f1f5f9;">
+            <img src="${src}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="openEditImagePreview(${idx})">
+            <button onclick="removeEditImgAt(${idx})" style="position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.95);color:white;border:1px solid white;font-weight:800;cursor:pointer;font-size:.7rem;line-height:1;padding:0;">✕</button>
+            ${idx===0?'<span style="position:absolute;bottom:2px;left:2px;background:var(--accent);color:white;font-size:.55rem;font-weight:700;padding:2px 5px;border-radius:4px;">Haupt</span>':''}
+        </div>
+    `).join('');
+}
+
+function openEditImagePreview(idx) {
+    G.images = [...S.editImages]; G.idx = idx;
+    showCurrentImage();
+    document.getElementById('photoZoom').style.display = 'flex';
+    showZoomHint();
+}
+
+function addEditImg(input) {
     if (input.files && input.files[0]) {
         const r = new FileReader();
         r.onload = e => {
-            const el = document.getElementById('eImgPrev');
-            el.src = e.target.result;
-            el.style.display = 'block';
-            document.getElementById('eImgRemoveBtn').style.display = 'block';
+            S.editImages.push(e.target.result);
+            renderEditGallery();
+            input.value = ''; // Reset, damit das gleiche Bild erneut hinzugefügt werden kann
         };
         r.readAsDataURL(input.files[0]);
     }
 }
-function removeEditImg() {
-    if (!confirm('Foto entfernen?')) return;
-    const el = document.getElementById('eImgPrev');
-    el.src = ''; el.style.display = 'none';
-    document.getElementById('eImgInput').value = '';
-    document.getElementById('eImgRemoveBtn').style.display = 'none';
+
+function removeEditImgAt(idx) {
+    if (!confirm('Dieses Foto entfernen?')) return;
+    S.editImages.splice(idx, 1);
+    renderEditGallery();
 }
+
 function delItemFromEdit() {
     const item = S.items.find(x => x.key === S.editKey);
     if (!item) return;
@@ -1203,25 +1225,32 @@ function saveEdit() {
     const newQ = parseInt(document.getElementById('eQty').value)||1;
     if (!newN) { alert('Bitte Namen eingeben.'); return; }
 
-    // Foto-Stand erkennen
-    const prevEl = document.getElementById('eImgPrev');
-    const newImg = (prevEl.style.display !== 'none' && prevEl.src) ? prevEl.src : '';
-    const oldImg = item.img || '';
-    const imgChanged = (newImg !== oldImg);
+    const oldImages = item.images || (item.img ? [item.img] : []);
+    const newImages = [...S.editImages];
+
+    // Bilder vergleichen (Anzahl + Inhalt)
+    let imgChanged = false;
+    if (oldImages.length !== newImages.length) imgChanged = true;
+    else for (let i = 0; i < oldImages.length; i++) if (oldImages[i] !== newImages[i]) { imgChanged = true; break; }
 
     const ch = [];
     if (newN !== item.name) ch.push(`Name: "${item.name}" → "${newN}"`);
     if (newQ !== parseInt(item.qty)) ch.push(`Menge: ${item.qty} → ${newQ}`);
     if (imgChanged) {
-        if (!oldImg && newImg)      ch.push(`Foto hinzugefügt`);
-        else if (oldImg && !newImg) ch.push(`Foto entfernt`);
-        else                        ch.push(`Foto geändert`);
+        const diff = newImages.length - oldImages.length;
+        if (diff > 0)      ch.push(`${diff} Foto${diff>1?'s':''} hinzugefügt (${newImages.length} insgesamt)`);
+        else if (diff < 0) ch.push(`${-diff} Foto${-diff>1?'s':''} entfernt (${newImages.length} verbleibend)`);
+        else               ch.push(`Fotos geändert`);
     }
     if (ch.length === 0) { closeModal('editModal'); return; }
     if (!confirm(`Folgende Änderungen speichern?\n\n${ch.join('\n')}`)) return;
 
     let updates = { name:newN, qty:newQ, lastUser:S.user };
-    if (imgChanged) updates.img = newImg;
+    if (imgChanged) {
+        updates.images = newImages;
+        // Kompatibilität: img-Feld auf erstes Bild setzen (oder leer)
+        updates.img = newImages.length > 0 ? newImages[0] : '';
+    }
 
     const borrowed = totalBorrowed(item);
     if (newQ < borrowed) {
@@ -1274,14 +1303,54 @@ function renderLogs() {
         : '<div class="empty"><i>📜</i>Keine Einträge.</div>';
 }
 
-// ───────── PHOTO ZOOM ─────────
+// ───────── PHOTO ZOOM / GALLERY ─────────
 const Z = { scale:1, panX:0, panY:0, lastX:0, lastY:0, lastTap:0, startDist:0, startScale:1 };
+const G = { images: [], idx: 0 }; // Galerie-Status
+
 function openPhotoZoom(src) {
-    Z.scale=1; Z.panX=0; Z.panY=0;
-    document.getElementById('photoZoomImg').src = src;
-    document.getElementById('photoZoomImg').style.transform = 'translate(0,0) scale(1)';
+    G.images = [src]; G.idx = 0;
+    showCurrentImage();
     document.getElementById('photoZoom').style.display = 'flex';
-    const h = document.getElementById('photoZoomHint'); h.style.opacity='1'; setTimeout(()=>{h.style.opacity='0';}, 2500);
+    showZoomHint();
+}
+function openGallery(itemKey) {
+    const item = S.items.find(x => x.key === itemKey);
+    if (!item) return;
+    const images = item.images || (item.img ? [item.img] : []);
+    if (!images.length) return;
+    G.images = images; G.idx = 0;
+    showCurrentImage();
+    document.getElementById('photoZoom').style.display = 'flex';
+    showZoomHint();
+}
+function showCurrentImage() {
+    Z.scale=1; Z.panX=0; Z.panY=0;
+    const img = document.getElementById('photoZoomImg');
+    img.src = G.images[G.idx];
+    img.style.transform = 'translate(0,0) scale(1)';
+    // Counter und Pfeile
+    const showNav = G.images.length > 1;
+    document.getElementById('photoNavPrev').style.display = showNav ? 'flex' : 'none';
+    document.getElementById('photoNavNext').style.display = showNav ? 'flex' : 'none';
+    const counter = document.getElementById('photoGalleryCounter');
+    if (showNav) {
+        counter.style.display = 'block';
+        counter.textContent = `${G.idx+1} / ${G.images.length}`;
+    } else {
+        counter.style.display = 'none';
+    }
+}
+function galleryPrev() {
+    G.idx = (G.idx - 1 + G.images.length) % G.images.length;
+    showCurrentImage();
+}
+function galleryNext() {
+    G.idx = (G.idx + 1) % G.images.length;
+    showCurrentImage();
+}
+function showZoomHint() {
+    const h = document.getElementById('photoZoomHint');
+    h.style.opacity='1'; setTimeout(()=>{h.style.opacity='0';}, 2500);
 }
 function closePhotoZoom(){ document.getElementById('photoZoom').style.display = 'none'; }
 function applyZoom(){ document.getElementById('photoZoomImg').style.transform=`translate(${Z.panX}px,${Z.panY}px) scale(${Z.scale})`; }
