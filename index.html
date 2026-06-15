@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V184</title>
+    <title>GR-Lagerverwaltung V185</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -12,24 +12,64 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
 
-    <!-- Background-Removal Library (lädt KI-Modell beim ersten Aufruf) -->
+    <!-- Background-Removal Library (lädt KI-Modell beim ersten Aufruf)
+         Mehrere CDN-Fallbacks weil verschiedene Hosts unterschiedlich gut mit
+         komplexen ESM-Modulen mit Workern und WASM-Dependencies umgehen -->
     <script type="module">
-        // Globale Funktion verfügbar machen für die App
         window.__bgRemovalReady = false;
+
+        async function tryImportBgRemoval(onProgress) {
+            const urls = [
+                'https://esm.sh/@imgly/background-removal@1.7.0',
+                'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm',
+                'https://unpkg.com/@imgly/background-removal@1.7.0?module'
+            ];
+            let lastError;
+            for (let i = 0; i < urls.length; i++) {
+                const url = urls[i];
+                try {
+                    if (onProgress) onProgress(`Lade Library (CDN ${i+1}/${urls.length})...`, 5);
+                    console.log('[BgRemoval] Versuche:', url);
+                    const mod = await import(url);
+                    const fn = mod.default || mod.removeBackground || mod.imglyRemoveBackground;
+                    if (typeof fn !== 'function') {
+                        throw new Error('Modul geladen, aber keine Funktion gefunden. Exports: ' + Object.keys(mod).join(', '));
+                    }
+                    console.log('[BgRemoval] Erfolgreich geladen von:', url);
+                    return fn;
+                } catch (e) {
+                    console.warn('[BgRemoval] Fehlgeschlagen:', url, e.message);
+                    lastError = e;
+                }
+            }
+            throw new Error('Alle CDN-Quellen fehlgeschlagen. Letzter Fehler: ' + (lastError?.message || 'unbekannt'));
+        }
+
         window.removeBackground = async function(imgDataUrl, onProgress) {
             if (!window.__bgRemoval) {
-                if (onProgress) onProgress('Lade KI-Modell (einmalig, ~80MB)...', 5);
-                const mod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/browser.mjs');
-                window.__bgRemoval = mod.removeBackground;
+                window.__bgRemoval = await tryImportBgRemoval(onProgress);
                 window.__bgRemovalReady = true;
             }
-            if (onProgress) onProgress('Bild wird verarbeitet...', 30);
-            const blob = await window.__bgRemoval(imgDataUrl, {
+            if (onProgress) onProgress('Bild wird verarbeitet (KI-Modell wird geladen, bitte warten)...', 15);
+
+            const config = {
+                // Offizielle IMG.LY CDN für die WASM- und ONNX-Modell-Dateien
+                publicPath: 'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/',
+                debug: false,
                 progress: (key, current, total) => {
-                    const pct = 30 + Math.round((current/total) * 65);
-                    if (onProgress) onProgress(`Verarbeitung: ${key}`, pct);
+                    const pct = 15 + Math.round((current/total) * 80);
+                    if (onProgress) {
+                        // Schöne deutsche Bezeichnungen für die Phasen
+                        let msg = key;
+                        if (key.includes('fetch')) msg = 'Lade Modell-Daten...';
+                        else if (key.includes('compute')) msg = 'Berechne...';
+                        else if (key.includes('inference')) msg = 'KI verarbeitet das Bild...';
+                        onProgress(`${msg} (${current}/${total})`, pct);
+                    }
                 }
-            });
+            };
+
+            const blob = await window.__bgRemoval(imgDataUrl, config);
             if (onProgress) onProgress('Fertig!', 100);
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -325,7 +365,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V184 — Lagerverwaltung</p>
+        <p>V185 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -806,7 +846,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V184";
+const APP_VERSION = "V185";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
