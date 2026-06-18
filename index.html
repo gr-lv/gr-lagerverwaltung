@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V186</title>
+    <title>GR-Lagerverwaltung V188</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -310,6 +310,43 @@
 
         .empty { text-align:center; padding:40px 20px; color:#64748b; font-size:.85rem; }
         .empty i { font-size:2.5rem; display:block; margin-bottom:10px; }
+
+        /* Loading spinner für initiales Laden */
+        .loading-state {
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:14px; padding:60px 20px; color:#cbd5e1; font-size:.95rem;
+        }
+        .spinner {
+            width:36px; height:36px;
+            border:3px solid rgba(6,182,212,0.18);
+            border-top-color: var(--accent);
+            border-radius:50%;
+            animation: spin 0.7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Skeleton-Cards während Items laden */
+        .skeleton-card {
+            background: rgba(255,255,255,0.85);
+            border-radius:12px; padding:10px; margin-bottom:10px;
+            display:flex; gap:9px; align-items:center;
+            border-left:5px solid #e2e8f0;
+            opacity:0.6;
+        }
+        .skeleton-card .sk-thumb {
+            width:62px; height:62px; border-radius:8px; flex-shrink:0;
+            background:linear-gradient(90deg,#e2e8f0,#f1f5f9,#e2e8f0);
+            background-size:200% 100%; animation: shimmer 1.5s infinite;
+        }
+        .skeleton-card .sk-lines { flex:1; }
+        .skeleton-card .sk-line {
+            height:12px; background:linear-gradient(90deg,#e2e8f0,#f1f5f9,#e2e8f0);
+            background-size:200% 100%; animation: shimmer 1.5s infinite;
+            border-radius:4px; margin-bottom:6px;
+        }
+        .skeleton-card .sk-line.w70 { width:70%; }
+        .skeleton-card .sk-line.w50 { width:50%; height:8px; }
+        @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
         .btn-p { width:100%; padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; font-weight:800; font-size:.95rem; cursor:pointer; }
         .btn-d { width:100%; padding:13px; background:#1e293b; color:white; border:none; border-radius:10px; font-weight:700; cursor:pointer; margin-bottom:10px; }
 
@@ -365,7 +402,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V186 — Lagerverwaltung</p>
+        <p>V188 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -838,7 +875,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V186";
+const APP_VERSION = "V188";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -853,7 +890,52 @@ firebase.initializeApp(FB);
 const db  = firebase.database();
 const ref = db.ref('lager_v90_multilager');
 
-const S = { user:"", items:[], reservations:[], cfg:{}, editKey:null, editImages:[], newItemImages:[], imgActionCtx:null, label:null, logF:'all', resvF:'all', qtyAction:null, scanItem:null, resvItem:null };
+const S = { user:"", items:[], reservations:[], cfg:{}, editKey:null, editImages:[], newItemImages:[], imgActionCtx:null, label:null, logF:'all', resvF:'all', qtyAction:null, scanItem:null, resvItem:null, loading:true };
+
+// ═══════════════════════════════════════════════════════════════════════
+// BILDKOMPRESSION — zwei Versionen
+//  thumb: 200×200px, JPEG 75% → für die Liste (~8 KB)
+//  full:  max 1920px, JPEG 90% → für Vollbild-Zoom (~300 KB)
+// ═══════════════════════════════════════════════════════════════════════
+function compressImage(dataUrl, maxDim, quality) {
+    return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+                const ratio = Math.min(maxDim / width, maxDim / height);
+                width  = Math.round(width  * ratio);
+                height = Math.round(height * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+    });
+}
+
+// Gibt { thumb, full } zurück
+async function compressImageDual(dataUrl) {
+    const [thumb, full] = await Promise.all([
+        compressImage(dataUrl, 200,  0.75),   // Thumbnail für Liste
+        compressImage(dataUrl, 1920, 0.90),   // Vollbild für Zoom
+    ]);
+    return { thumb, full };
+}
+
+// Konvertiert altes Format (einzelner string) in neues { thumb, full }
+function normalizeImage(img) {
+    if (!img) return null;
+    if (typeof img === 'string') return { thumb: img, full: img };
+    return img; // schon neues Format
+
+}
 
 // ───────── AUTO-UPDATE ─────────
 function versionToNum(v) { if (!v||typeof v!=='string') return 0; const m=v.match(/(\d+)/); return m?parseInt(m[1]):0; }
@@ -916,6 +998,26 @@ function doLogout() {
 
 // ───────── APP INIT ─────────
 function initApp() {
+    // Loading-Skeleton beim allerersten Laden anzeigen
+    if (S.loading) {
+        document.getElementById('itemList').innerHTML = `
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <span>Lade Artikel...</span>
+            </div>
+            ${Array.from({length:3}).map(() => `
+                <div class="skeleton-card">
+                    <div class="sk-thumb"></div>
+                    <div class="sk-lines">
+                        <div class="sk-line w70"></div>
+                        <div class="sk-line w50"></div>
+                        <div class="sk-line w50"></div>
+                    </div>
+                </div>
+            `).join('')}
+        `;
+    }
+
     ref.on('value', snap => {
         S.cfg = snap.val() || {};
         S.items = Object.keys(S.cfg.items || {}).map(k => {
@@ -925,9 +1027,11 @@ function initApp() {
                 if (item.borrowed && parseInt(item.borrowed) > 0 && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.borrowed);
                 else if (item.status === 'ausgeliehen' && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.qty)||0;
             }
-            // Migration: einzelnes img-Feld → images-Array
+            // Migration: img/images → normalisiertes {thumb, full} Format
             if (!item.images) {
-                item.images = item.img ? [item.img] : [];
+                item.images = item.img ? [normalizeImage(item.img)] : [];
+            } else {
+                item.images = item.images.map(normalizeImage).filter(Boolean);
             }
             return item;
         });
@@ -935,6 +1039,7 @@ function initApp() {
         const now = Date.now();
         const cutoff = now - 7*24*60*60*1000;
         S.reservations.forEach(r => { if (r.toTs && r.toTs < cutoff) ref.child('reservations/'+r.key).remove(); });
+        S.loading = false;
         render(); renderReservations(); renderLogs(); renderManage(); fillSelects();
     });
 }
@@ -1005,9 +1110,10 @@ function render() {
         }
 
         const meta = `${i.location||''} · R:${i.regal||'—'} · F:${i.fach||'—'}`;
-        const images = i.images || (i.img ? [i.img] : []);
+        const images = i.images || [];
         const firstImg = images.length > 0 ? images[0] : null;
-        const thumb = firstImg || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
+        const thumbSrc = firstImg ? (firstImg.thumb || firstImg.full || firstImg) : null;
+        const thumb = thumbSrc || `https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=${enc((i.name||'?')[0])}`;
         const hasImg = images.length > 0;
         const imgCountBadge = images.length > 1
             ? `<span style="position:absolute;bottom:-3px;right:-3px;background:var(--accent);color:white;font-size:.55rem;font-weight:800;padding:2px 5px;border-radius:8px;border:2px solid white;line-height:1;">+${images.length-1}</span>`
@@ -1016,7 +1122,7 @@ function render() {
         return `
         <div class="item-card ${cardCls}">
             <div style="position:relative;flex-shrink:0;">
-                <img src="${thumb}" class="item-thumb" ${hasImg?`onclick="openGallery('${i.key}')"`:''} onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
+                <img src="${thumb}" class="item-thumb" loading="lazy" decoding="async" ${hasImg?`onclick="openGallery('${i.key}')"`:''} onerror="this.src='https://via.placeholder.com/62x62/e2e8f0/94a3b8?text=?'">
                 ${imgCountBadge}
             </div>
             <div class="item-info">
@@ -1027,7 +1133,7 @@ function render() {
                 ${resvInfo}
             </div>
             <div class="qr-side" onclick="showPrint('${i.key}','${ea(meta)}','${ea(i.name)}')">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${enc(i.key)}" style="width:38px;" alt="QR">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${enc(i.key)}" style="width:38px;" alt="QR" loading="lazy" decoding="async">
                 <span>PRINT</span>
             </div>
             <div class="act">
@@ -1274,7 +1380,8 @@ function saveItem() {
     const n = document.getElementById('iName').value.trim();
     if (!n) { alert('Bitte Artikelnamen eingeben.'); return; }
     const nr = ref.child('items').push();
-    const images = [...S.newItemImages];
+    const images = [...S.newItemImages]; // Array von {thumb, full}
+    const firstImg = images.length > 0 ? images[0] : null;
     const d = {
         name:n, qty:parseInt(document.getElementById('iQty').value)||1,
         borrowers:{}, borrowed:0,
@@ -1282,7 +1389,7 @@ function saveItem() {
         cat:document.getElementById('iCat').value,
         regal:document.getElementById('iRegal').value,
         fach:document.getElementById('iFach').value,
-        img: images.length > 0 ? images[0] : '',
+        img:  firstImg ? (firstImg.thumb || firstImg) : '',   // Kompatibilität
         images: images,
         status:'im Lager', ts:Date.now(), lastUser:S.user
     };
@@ -1322,13 +1429,15 @@ function renderEditGallery() {
         container.innerHTML = '<div style="font-size:.78rem;color:#94a3b8;padding:8px 0;">Noch keine Fotos vorhanden.</div>';
         return;
     }
-    container.innerHTML = S.editImages.map((src, idx) => `
+    container.innerHTML = S.editImages.map((img, idx) => {
+        const src = typeof img === 'object' ? (img.thumb || img.full) : img;
+        return `
         <div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;background:#f1f5f9;">
             <img src="${src}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="openImgAction('edit',${idx})">
             <button onclick="removeEditImgAt(${idx})" style="position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.95);color:white;border:1px solid white;font-weight:800;cursor:pointer;font-size:.7rem;line-height:1;padding:0;">✕</button>
             ${idx===0?'<span style="position:absolute;bottom:2px;left:2px;background:var(--accent);color:white;font-size:.55rem;font-weight:700;padding:2px 5px;border-radius:4px;">Haupt</span>':''}
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 function openEditImagePreview(idx) {
@@ -1344,13 +1453,11 @@ function addEditImg(input) {
     let pending = files.length;
     files.forEach(file => {
         const r = new FileReader();
-        r.onload = e => {
-            S.editImages.push(e.target.result);
+        r.onload = async e => {
+            const { thumb, full } = await compressImageDual(e.target.result);
+            S.editImages.push({ thumb, full });
             pending--;
-            if (pending === 0) {
-                renderEditGallery();
-                input.value = '';
-            }
+            if (pending === 0) { renderEditGallery(); input.value = ''; }
         };
         r.readAsDataURL(file);
     });
@@ -1369,13 +1476,11 @@ function addNewItemImg(input) {
     let pending = files.length;
     files.forEach(file => {
         const r = new FileReader();
-        r.onload = e => {
-            S.newItemImages.push(e.target.result);
+        r.onload = async e => {
+            const { thumb, full } = await compressImageDual(e.target.result);
+            S.newItemImages.push({ thumb, full });
             pending--;
-            if (pending === 0) {
-                renderNewItemGallery();
-                input.value = '';
-            }
+            if (pending === 0) { renderNewItemGallery(); input.value = ''; }
         };
         r.readAsDataURL(file);
     });
@@ -1387,13 +1492,15 @@ function renderNewItemGallery() {
         container.innerHTML = '<div style="font-size:.78rem;color:#94a3b8;padding:8px 0;">Noch keine Fotos hinzugefügt.</div>';
         return;
     }
-    container.innerHTML = S.newItemImages.map((src, idx) => `
+    container.innerHTML = S.newItemImages.map((img, idx) => {
+        const src = typeof img === 'object' ? (img.thumb || img.full) : img;
+        return `
         <div style="position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;background:#f1f5f9;">
             <img src="${src}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="openImgAction('new',${idx})">
             <button onclick="removeNewItemImgAt(${idx})" style="position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:50%;background:rgba(239,68,68,0.95);color:white;border:1px solid white;font-weight:800;cursor:pointer;font-size:.7rem;line-height:1;padding:0;">✕</button>
             ${idx===0?'<span style="position:absolute;bottom:2px;left:2px;background:var(--accent);color:white;font-size:.55rem;font-weight:700;padding:2px 5px;border-radius:4px;">Haupt</span>':''}
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 function removeNewItemImgAt(idx) {
     if (!confirm('Dieses Foto entfernen?')) return;
@@ -1406,13 +1513,17 @@ function openImgAction(context, idx) {
     const list = (context === 'edit') ? S.editImages : S.newItemImages;
     if (!list[idx]) return;
     S.imgActionCtx = { context, idx };
-    document.getElementById('iaPreview').src = list[idx];
+    const img = list[idx];
+    // Vorschau mit Thumbnail
+    document.getElementById('iaPreview').src = typeof img === 'object' ? (img.thumb || img.full) : img;
     document.getElementById('imgActionModal').style.display = 'flex';
 }
 function iaOpenZoom() {
     if (!S.imgActionCtx) return;
     const list = (S.imgActionCtx.context === 'edit') ? S.editImages : S.newItemImages;
-    G.images = [...list]; G.idx = S.imgActionCtx.idx;
+    // Zoom mit voller Auflösung
+    G.images = list.map(img => typeof img === 'object' ? (img.full || img.thumb) : img);
+    G.idx = S.imgActionCtx.idx;
     showCurrentImage();
     closeModal('imgActionModal');
     document.getElementById('photoZoom').style.display = 'flex';
@@ -1434,11 +1545,13 @@ async function iaRemoveBackground() {
             document.getElementById('bgProgressMsg').textContent = msg;
             document.getElementById('bgProgressBar').style.width = pct + '%';
         });
+        if (onProgress) onProgress('Komprimiere Ergebnis...', 96);
+        const { thumb, full } = await compressImageDual(result);
         if (ctx.context === 'edit') {
-            S.editImages[ctx.idx] = result;
+            S.editImages[ctx.idx] = { thumb, full };
             renderEditGallery();
         } else {
-            S.newItemImages[ctx.idx] = result;
+            S.newItemImages[ctx.idx] = { thumb, full };
             renderNewItemGallery();
         }
         closeModal('bgProgressModal');
@@ -1496,7 +1609,9 @@ function saveEdit() {
     };
     if (imgChanged) {
         updates.images = newImages;
-        updates.img = newImages.length > 0 ? newImages[0] : '';
+        // Kompatibilität: img-Feld auf Thumbnail des ersten Bilds
+        const first = newImages.length > 0 ? newImages[0] : null;
+        updates.img = first ? (typeof first === 'object' ? (first.thumb || first.full) : first) : '';
     }
 
     const borrowed = totalBorrowed(item);
@@ -1563,9 +1678,11 @@ function openPhotoZoom(src) {
 function openGallery(itemKey) {
     const item = S.items.find(x => x.key === itemKey);
     if (!item) return;
-    const images = item.images || (item.img ? [item.img] : []);
+    const images = item.images || [];
     if (!images.length) return;
-    G.images = images; G.idx = 0;
+    // Für den Zoom immer die volle Auflösung nehmen
+    G.images = images.map(img => (typeof img === 'object') ? (img.full || img.thumb) : img);
+    G.idx = 0;
     showCurrentImage();
     document.getElementById('photoZoom').style.display = 'flex';
     showZoomHint();
