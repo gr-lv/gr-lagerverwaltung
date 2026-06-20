@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V188</title>
+    <title>GR-Lagerverwaltung V189</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -402,7 +402,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V188 — Lagerverwaltung</p>
+        <p>V189 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -875,7 +875,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V188";
+const APP_VERSION = "V189";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -997,50 +997,113 @@ function doLogout() {
 }
 
 // ───────── APP INIT ─────────
+// ═══════════════════════════════════════════════════════════════════════
+// PROGRESSIVE APP-INITIALISIERUNG
+//
+// Ablauf:
+// 1. Sofort: Config (Kategorien, Lagerorte etc.) laden — klein, schnell
+// 2. Erste 10 Artikel laden → sofort anzeigen
+// 3. Restliche Artikel nachladen → still hinzufügen
+// 4. Firebase Live-Listener einrichten (für Änderungen anderer Nutzer)
+// ═══════════════════════════════════════════════════════════════════════
 function initApp() {
-    // Loading-Skeleton beim allerersten Laden anzeigen
-    if (S.loading) {
-        document.getElementById('itemList').innerHTML = `
-            <div class="loading-state">
-                <div class="spinner"></div>
-                <span>Lade Artikel...</span>
-            </div>
-            ${Array.from({length:3}).map(() => `
-                <div class="skeleton-card">
-                    <div class="sk-thumb"></div>
-                    <div class="sk-lines">
-                        <div class="sk-line w70"></div>
-                        <div class="sk-line w50"></div>
-                        <div class="sk-line w50"></div>
-                    </div>
+    // Sofort Skeleton anzeigen
+    document.getElementById('itemList').innerHTML = `
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Lade Artikel...</span>
+        </div>
+        ${Array.from({length:3}).map(() => `
+            <div class="skeleton-card">
+                <div class="sk-thumb"></div>
+                <div class="sk-lines">
+                    <div class="sk-line w70"></div>
+                    <div class="sk-line w50"></div>
+                    <div class="sk-line w50"></div>
                 </div>
-            `).join('')}
-        `;
-    }
+            </div>
+        `).join('')}
+    `;
 
-    ref.on('value', snap => {
-        S.cfg = snap.val() || {};
-        S.items = Object.keys(S.cfg.items || {}).map(k => {
-            const item = { ...S.cfg.items[k], key:k };
-            if (!item.borrowers) {
-                item.borrowers = {};
-                if (item.borrowed && parseInt(item.borrowed) > 0 && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.borrowed);
-                else if (item.status === 'ausgeliehen' && item.lastUser) item.borrowers[item.lastUser] = parseInt(item.qty)||0;
-            }
-            // Migration: img/images → normalisiertes {thumb, full} Format
-            if (!item.images) {
-                item.images = item.img ? [normalizeImage(item.img)] : [];
-            } else {
-                item.images = item.images.map(normalizeImage).filter(Boolean);
-            }
-            return item;
-        });
-        S.reservations = Object.keys(S.cfg.reservations || {}).map(k => ({ ...S.cfg.reservations[k], key:k }));
-        const now = Date.now();
-        const cutoff = now - 7*24*60*60*1000;
-        S.reservations.forEach(r => { if (r.toTs && r.toTs < cutoff) ref.child('reservations/'+r.key).remove(); });
+    // Schritt 1: Config zuerst (keine Bilder, klein)
+    db.ref('lager_v90_multilager/items').orderByChild('ts').limitToLast(1).once('value'); // warm up
+
+    // Einmalig den kompletten Snapshot holen, aber Items separat behandeln
+    ref.once('value', snap => {
+        const data = snap.val() || {};
+        // Config ohne Items setzen (Selects etc. sofort befüllen)
+        S.cfg = { ...data };
+        fillSelects();
+        renderManage();
+    });
+
+    // Schritt 2: Items progressiv laden
+    const itemsRef = db.ref('lager_v90_multilager/items');
+
+    // Zuerst: Neueste 10 laden (orderByChild + limitToLast)
+    itemsRef.orderByChild('ts').limitToLast(10).once('value', snap => {
+        const batch = snap.val() || {};
+        const newItems = Object.keys(batch).map(k => normalizeItem({ ...batch[k], key:k }));
+        // Merge mit bestehendem Array (deduplizieren nach key)
+        mergeItems(newItems);
         S.loading = false;
-        render(); renderReservations(); renderLogs(); renderManage(); fillSelects();
+        render();
+
+        // Schritt 3: Rest nachladen (alle außer die schon geladenen)
+        itemsRef.once('value', fullSnap => {
+            const all = fullSnap.val() || {};
+            const allItems = Object.keys(all).map(k => normalizeItem({ ...all[k], key:k }));
+            S.items = allItems;
+            render();
+
+            // Schritt 4: Live-Listener für Echtzeit-Updates einrichten
+            setupLiveListeners();
+        });
+    });
+}
+
+function normalizeItem(item) {
+    if (!item.borrowers) {
+        item.borrowers = {};
+        if (item.borrowed && parseInt(item.borrowed) > 0 && item.lastUser)
+            item.borrowers[item.lastUser] = parseInt(item.borrowed);
+        else if (item.status === 'ausgeliehen' && item.lastUser)
+            item.borrowers[item.lastUser] = parseInt(item.qty)||0;
+    }
+    if (!item.images) {
+        item.images = item.img ? [normalizeImage(item.img)] : [];
+    } else {
+        item.images = item.images.map(normalizeImage).filter(Boolean);
+    }
+    return item;
+}
+
+function mergeItems(newItems) {
+    const existing = new Map(S.items.map(i => [i.key, i]));
+    newItems.forEach(i => existing.set(i.key, i));
+    S.items = Array.from(existing.values());
+}
+
+function setupLiveListeners() {
+    // Items Live-Updates (wenn andere Nutzer Änderungen machen)
+    db.ref('lager_v90_multilager/items').on('value', snap => {
+        const all = snap.val() || {};
+        S.items = Object.keys(all).map(k => normalizeItem({ ...all[k], key:k }));
+        render();
+    });
+
+    // Config Live-Updates (Kategorien, Lagerorte etc.)
+    db.ref('lager_v90_multilager').on('value', snap => {
+        const data = snap.val() || {};
+        S.cfg = data;
+        S.reservations = Object.keys(data.reservations || {}).map(k => ({ ...data.reservations[k], key:k }));
+        // Abgelaufene Reservierungen entfernen
+        const cutoff = Date.now() - 7*24*60*60*1000;
+        S.reservations.forEach(r => { if (r.toTs && r.toTs < cutoff) ref.child('reservations/'+r.key).remove(); });
+        fillSelects();
+        renderReservations();
+        renderLogs();
+        renderManage();
     });
 }
 
