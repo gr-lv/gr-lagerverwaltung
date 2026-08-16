@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V190</title>
+    <title>GR-Lagerverwaltung V191</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Winziger QR-Code-Generator (inline, kein Netzwerk-Request) -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <!-- Background-Removal Library (lädt KI-Modell beim ersten Aufruf)
          Mehrere CDN-Fallbacks weil verschiedene Hosts unterschiedlich gut mit
@@ -402,7 +403,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V190 — Lagerverwaltung</p>
+        <p>V191 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -875,7 +876,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V190";
+const APP_VERSION = "V191";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -1197,7 +1198,7 @@ function render() {
                 ${resvInfo}
             </div>
             <div class="qr-side" onclick="showPrint('${i.key}','${ea(labelMeta)}','${ea(i.name)}')">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${enc(i.key)}" style="width:38px;" alt="QR" loading="lazy" decoding="async">
+                <div id="qr-${i.key}" style="width:38px;height:38px;"></div>
                 <span>PRINT</span>
             </div>
             <div class="act">
@@ -1208,6 +1209,38 @@ function render() {
             </div>
         </div>`;
     }).join('');
+    // QR-Codes lokal per IntersectionObserver lazy rendern
+    requestAnimationFrame(() => renderLocalQRCodes(list));
+}
+
+// QR-Codes nur rendern wenn sichtbar (spart Rechenzeit beim Start)
+function renderLocalQRCodes(list) {
+    if (typeof QRCode === 'undefined') return;
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target;
+            if (el.dataset.rendered || !el.dataset.qrkey) return;
+            el.dataset.rendered = '1';
+            observer.unobserve(el);
+            try {
+                new QRCode(el, {
+                    text: el.dataset.qrkey, width:38, height:38,
+                    colorDark:'#000', colorLight:'#fff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+                const img = el.querySelector('img');
+                if (img) { img.style.width='38px'; img.style.height='38px'; img.style.display='block'; }
+            } catch(e) {}
+        });
+    }, { rootMargin:'300px' });
+
+    list.forEach(i => {
+        const el = document.getElementById('qr-' + i.key);
+        if (!el) return;
+        el.dataset.qrkey = i.key;
+        observer.observe(el);
+    });
 }
 
 // ───────── ASK QTY MODAL mit Reservierungs-Warnung ─────────
@@ -1960,10 +1993,28 @@ function goTab(e, id) {
     if (id==='tab-resv') renderReservations();
 }
 
-// ───────── SCANNER ─────────
+// ── SCANNER (lazy geladen — spart ~200KB beim Start) ─────────────────
 let scanner = null;
-function startScanner() {
+let scannerLibLoaded = false;
+
+async function startScanner() {
     document.getElementById('scanbox').style.display = 'flex';
+    document.getElementById('qr-reader').innerHTML =
+        '<div style="color:#94a3b8;text-align:center;padding:60px 20px;font-size:.9rem;">⏳ Scanner wird geladen...</div>';
+    if (!scannerLibLoaded) {
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+            s.onload = () => { scannerLibLoaded = true; resolve(); };
+            s.onerror = () => reject(new Error('Scanner konnte nicht geladen werden'));
+            document.head.appendChild(s);
+        }).catch(e => {
+            document.getElementById('scanbox').style.display = 'none';
+            alert('Scanner konnte nicht geladen werden. Bitte WLAN prüfen.');
+            throw e;
+        });
+    }
+    document.getElementById('qr-reader').innerHTML = '';
     scanner = new Html5Qrcode('qr-reader');
     scanner.start({ facingMode:'environment' }, { fps:10, qrbox:{ width:250, height:250 } },
         txt => {
