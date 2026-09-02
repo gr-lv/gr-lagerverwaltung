@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V196</title>
+    <title>GR-Lagerverwaltung V197</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -393,6 +393,8 @@
 <body>
 
 <canvas id="cvs"></canvas>
+<!-- Versteckter iframe für direkten Druck ohne Popup -->
+<iframe id="printFrame" style="display:none;position:fixed;left:-9999px;top:-9999px;width:0;height:0;border:none;"></iframe>
 <div class="global-bg"></div>
 
 <div id="updateBanner">
@@ -404,7 +406,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V196 — Lagerverwaltung</p>
+        <p>V197 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -903,7 +905,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V196";
+const APP_VERSION = "V197";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -2351,50 +2353,27 @@ async function pcDirectPrint() {
 
     const dataUrl = cvs.toDataURL('image/png');
 
-    // Druckfenster für Chrome --kiosk-printing optimiert:
-    // - Exaktes Papierformat 85×29mm
-    // - Kein Margin
-    // - window.print() direkt nach Bildladen → mit kiosk-printing kein Dialog
-    const win = window.open('', '_blank', 'width=1,height=1,left=-100,top=-100');
-    if (!win) {
-        setPS('err', 'Popup blockiert — bitte Popups für diese Seite erlauben.');
-        return;
-    }
-    win.document.write(`<!DOCTYPE html>
+    // Versteckter iframe — kein Popup nötig, kein Popup-Blocker Problem
+    // Mit --kiosk-printing druckt Chrome direkt ohne Dialog
+    const frame = document.getElementById('printFrame');
+    const doc = frame.contentDocument || frame.contentWindow.document;
+
+    doc.open();
+    doc.write(`<!DOCTYPE html>
 <html>
 <head>
-<title>GR-Lager</title>
 <style>
-    @page {
-        size: 85mm 29mm;
-        margin: 0;
-    }
-    html, body {
-        margin: 0;
-        padding: 0;
-        width: 85mm;
-        height: 29mm;
-        overflow: hidden;
-        background: white;
-    }
-    img {
-        width: 85mm;
-        height: 29mm;
-        display: block;
-        margin: 0;
-        padding: 0;
-    }
+    @page { size: 85mm 29mm; margin: 0; }
+    html, body { margin:0; padding:0; width:85mm; height:29mm; overflow:hidden; background:white; }
+    img { width:85mm; height:29mm; display:block; margin:0; padding:0; }
 </style>
 </head>
 <body>
-<img src="${dataUrl}" onload="
-    window.focus();
-    window.print();
-    setTimeout(function(){ window.close(); }, 500);
-">
+<img src="${dataUrl}" onload="window.focus(); window.print();">
 </body>
 </html>`);
-    win.document.close();
+    doc.close();
+
     setPS('ok', '✓ Druckauftrag gesendet.');
 }
 function goTab(e, id) {
