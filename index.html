@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V194</title>
+    <title>GR-Lagerverwaltung V196</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -387,6 +387,7 @@
         #updateBanner button { background:white; color:var(--success); border:none; padding:8px 14px; border-radius:8px; font-weight:800; cursor:pointer; font-size:.78rem; }
 
         #cvs { display:none; }
+        @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
     </style>
 </head>
 <body>
@@ -403,7 +404,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V194 — Lagerverwaltung</p>
+        <p>V196 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -894,11 +895,15 @@
             <button onclick="shareLabel()" style="flex:1;padding:16px;background:var(--success);color:white;border:none;border-radius:12px;font-weight:800;font-size:.95rem;cursor:pointer;">📥 BILD TEILEN</button>
             <button onclick="closePrint()" style="flex:0 0 56px;padding:16px;background:var(--danger);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;">✕</button>
         </div>
+        <!-- Nur auf PC sichtbar -->
+        <button id="pcPrintBtn" onclick="pcDirectPrint()" style="display:none;width:100%;padding:16px;background:var(--accent);color:white;border:none;border-radius:12px;font-weight:800;font-size:.95rem;cursor:pointer;margin-top:4px;">
+            🖨️ DIREKT DRUCKEN (ohne Dialog)
+        </button>
     </div>
 </div>
 
 <script>
-const APP_VERSION = "V194";
+const APP_VERSION = "V196";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -1158,6 +1163,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
     document.getElementById('ui-wrapper').style.display  = 'flex';
     initApp();
     setupAutoUpdate();
+    initHardwareScanner();
 });
 document.getElementById('lPass').addEventListener('keyup', e => { if (e.key === 'Enter') document.getElementById('startBtn').click(); });
 
@@ -2063,15 +2069,6 @@ zw.addEventListener('wheel', e => { e.preventDefault(); zoomImg(e.deltaY<0?0.3:-
 document.getElementById('photoZoom').addEventListener('click', e => { if(e.target.id==='photoZoom') closePhotoZoom(); });
 
 // ───────── PRINT ─────────
-function showPrint(key, meta, name) {
-    S.label = { key, meta, name };
-    document.getElementById('pvQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enc(key)}`;
-    document.getElementById('pvMeta').textContent = meta||'—';
-    document.getElementById('pvName').textContent = name;
-    document.getElementById('pvKey').textContent = key;
-    setPS('inf','Tippe "📥 BILD TEILEN" und wähle "In Fotos sichern".');
-    document.getElementById('printOverlay').style.display = 'flex';
-}
 function closePrint(){ document.getElementById('printOverlay').style.display = 'none'; S.label=null; }
 function setPS(cls,msg){ const el=document.getElementById('pStatus'); el.className=cls; el.style.display='block'; el.textContent=msg; }
 
@@ -2214,7 +2211,192 @@ function formatShortDate(ts) {
            d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
 }
 
-// ───────── TABS ─────────
+// ═══════════════════════════════════════════════════════════════════════
+// HARDWARE-SCANNER SUPPORT
+// Ein USB/Bluetooth-Handscanner verhält sich wie eine Tastatur:
+// Er tippt den QR-Code sehr schnell ein (< 50ms pro Zeichen) + Enter.
+// Wir unterscheiden Scanner-Input von normalem Tippen anhand der
+// Geschwindigkeit: Scanner tippt > 10 Zeichen in < 100ms.
+// ═══════════════════════════════════════════════════════════════════════
+const HW = {
+    buffer: '',
+    lastTime: 0,
+    minLength: 6,      // Mindestlänge eines Firebase-Keys
+    maxGap: 50,        // Max. ms zwischen Zeichen (Scanner ist schneller)
+    timeout: null
+};
+
+function initHardwareScanner() {
+    document.addEventListener('keydown', e => {
+        // Ignorieren wenn ein Input/Textarea fokussiert ist
+        const tag = document.activeElement?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+        // Ignorieren wenn ein Modal offen ist und Input fokussiert ist
+        const now = Date.now();
+
+        if (e.key === 'Enter') {
+            // Enter = Ende des Scanner-Inputs
+            const code = HW.buffer.trim();
+            HW.buffer = '';
+            clearTimeout(HW.timeout);
+
+            if (code.length >= HW.minLength) {
+                handleHardwareScan(code);
+            }
+            return;
+        }
+
+        // Nur druckbare Zeichen sammeln
+        if (e.key.length === 1) {
+            // Prüfen ob Zeichen schnell genug kam (Scanner-Geschwindigkeit)
+            const gap = now - HW.lastTime;
+            if (HW.buffer.length > 0 && gap > 200) {
+                // Zu langsam → kein Scanner, Buffer leeren
+                HW.buffer = '';
+            }
+            HW.buffer += e.key;
+            HW.lastTime = now;
+
+            // Timeout: Buffer nach 300ms leeren falls kein Enter kommt
+            clearTimeout(HW.timeout);
+            HW.timeout = setTimeout(() => {
+                HW.buffer = '';
+            }, 300);
+        }
+    });
+}
+
+function handleHardwareScan(code) {
+    // Nur wenn App offen und eingeloggt
+    if (!S.user) return;
+
+    // Artikel suchen
+    const item = S.items.find(x => x.key === code);
+    if (!item) {
+        // Kurze Toast-Meldung statt alert
+        showToast(`⚠️ Artikel nicht gefunden: ${code}`, 'warn');
+        return;
+    }
+
+    // Zum Lager-Tab wechseln falls nicht schon da
+    const lagerTab = document.getElementById('tab-lager');
+    if (lagerTab.style.display === 'none') {
+        document.querySelectorAll('.tab-c').forEach(c => c.style.display='none');
+        lagerTab.style.display = 'block';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.tab-btn')?.classList.add('active');
+    }
+
+    showToast(`📦 Scanner: ${item.name}`, 'info');
+    handleScannedItem(item);
+}
+
+// ── TOAST-MELDUNGEN (kurze Benachrichtigungen) ────────────────────────
+function showToast(msg, type = 'info') {
+    const colors = {
+        info: 'var(--accent)',
+        warn: 'var(--warn)',
+        ok:   'var(--success)',
+        err:  'var(--danger)'
+    };
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position:fixed; bottom:calc(80px + env(safe-area-inset-bottom)); left:50%;
+        transform:translateX(-50%);
+        background:${colors[type]||colors.info}; color:white;
+        padding:10px 20px; border-radius:20px;
+        font-size:.85rem; font-weight:700;
+        z-index:15000; box-shadow:0 4px 20px rgba(0,0,0,0.3);
+        white-space:nowrap; max-width:90vw; overflow:hidden; text-overflow:ellipsis;
+        animation: toastIn .2s ease-out;
+    `;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity .3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
+
+// ── PC-OPTIMIERTER DRUCK (direkter Browser-Druck) ─────────────────────
+// Auf Windows kann der Browser direkt mit dem korrekten Papierformat drucken
+const isPC = () => !('ontouchstart' in window) && window.innerWidth > 768;
+
+function showPrint(key, meta, name) {
+    S.label = { key, meta, name };
+    document.getElementById('pvQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enc(key)}`;
+    document.getElementById('pvMeta').textContent = meta||'—';
+    document.getElementById('pvName').textContent = name;
+    document.getElementById('pvKey').textContent  = key;
+
+    // PC: zeige zusätzlichen "Direkt drucken"-Button
+    const pcBtn = document.getElementById('pcPrintBtn');
+    if (pcBtn) pcBtn.style.display = isPC() ? 'block' : 'none';
+
+    setPS('inf', isPC()
+        ? '💻 PC erkannt — "Direkt drucken" öffnet den Browser-Druckdialog.'
+        : 'Tippe "📥 BILD TEILEN" und wähle "In Fotos sichern".');
+    document.getElementById('printOverlay').style.display = 'flex';
+}
+
+async function pcDirectPrint() {
+    if (!S.label) return;
+    setPS('inf', 'Etikett wird erstellt…');
+    const cvs = document.getElementById('cvs');
+    try {
+        await drawLabel(cvs, S.label.key, S.label.meta, S.label.name);
+    } catch(e) { setPS('err', 'Fehler beim Erstellen.'); return; }
+
+    const dataUrl = cvs.toDataURL('image/png');
+
+    // Druckfenster für Chrome --kiosk-printing optimiert:
+    // - Exaktes Papierformat 85×29mm
+    // - Kein Margin
+    // - window.print() direkt nach Bildladen → mit kiosk-printing kein Dialog
+    const win = window.open('', '_blank', 'width=1,height=1,left=-100,top=-100');
+    if (!win) {
+        setPS('err', 'Popup blockiert — bitte Popups für diese Seite erlauben.');
+        return;
+    }
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<title>GR-Lager</title>
+<style>
+    @page {
+        size: 85mm 29mm;
+        margin: 0;
+    }
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 85mm;
+        height: 29mm;
+        overflow: hidden;
+        background: white;
+    }
+    img {
+        width: 85mm;
+        height: 29mm;
+        display: block;
+        margin: 0;
+        padding: 0;
+    }
+</style>
+</head>
+<body>
+<img src="${dataUrl}" onload="
+    window.focus();
+    window.print();
+    setTimeout(function(){ window.close(); }, 500);
+">
+</body>
+</html>`);
+    win.document.close();
+    setPS('ok', '✓ Druckauftrag gesendet.');
+}
 function goTab(e, id) {
     document.querySelectorAll('.tab-c').forEach(c => c.style.display='none');
     document.getElementById(id).style.display = 'block';
