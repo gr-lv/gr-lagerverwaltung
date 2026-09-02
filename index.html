@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V191</title>
+    <title>GR-Lagerverwaltung V193</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
     <!-- Winziger QR-Code-Generator (inline, kein Netzwerk-Request) -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
@@ -403,7 +404,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V191 — Lagerverwaltung</p>
+        <p>V193 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -481,6 +482,28 @@
 
                 <button onclick="saveItem()" class="btn-p">💾 SPEICHERN & ETIKETT</button>
             </div>
+
+            <!-- Migrations-Box: nur sichtbar wenn noch Base64-Bilder in DB sind -->
+            <div id="migrationBox" class="mc" style="display:none; border:2px solid var(--warn);">
+                <h4 style="color:var(--warn);">🔄 Bilder zu Storage migrieren</h4>
+                <p style="font-size:.82rem;color:#cbd5e1;margin:0 0 10px;line-height:1.5;">
+                    <b id="migCount">?</b> Artikel haben noch alte Bilder in der Datenbank gespeichert.
+                    Tippe auf den Button um alle automatisch in Firebase Storage zu verschieben —
+                    die App wird danach <b>deutlich schneller</b> laden.
+                </p>
+                <div id="migProgress" style="display:none;margin-bottom:10px;">
+                    <div style="font-size:.78rem;color:#94a3b8;margin-bottom:6px;" id="migMsg">Vorbereitung…</div>
+                    <div style="background:rgba(255,255,255,0.1);border-radius:99px;height:8px;overflow:hidden;">
+                        <div id="migBar" style="background:linear-gradient(90deg,var(--warn),var(--accent));height:100%;width:0;transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:.72rem;color:#475569;margin-top:4px;" id="migSub"></div>
+                </div>
+                <button id="migBtn" onclick="startMigration()"
+                    style="width:100%;padding:13px;background:var(--warn);color:white;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-size:.92rem;">
+                    🚀 Jetzt migrieren
+                </button>
+            </div>
+
             <div class="mc">
                 <h4>⚙️ Listenpflege</h4>
                 <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -876,7 +899,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V191";
+const APP_VERSION = "V193";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -888,8 +911,148 @@ const FB = {
     appId:"1:561219570576:web:65824b199a12933fd88115"
 };
 firebase.initializeApp(FB);
-const db  = firebase.database();
-const ref = db.ref('lager_v90_multilager');
+const db      = firebase.database();
+const ref     = db.ref('lager_v90_multilager');
+const storage = firebase.storage();
+
+// ═══════════════════════════════════════════════════════════════════════
+// FIREBASE STORAGE UPLOAD
+// Lädt ein Bild in Firebase Storage hoch und gibt die Download-URL zurück.
+// Pfad: items/{itemKey}/{uuid}_{suffix}.jpg
+// ═══════════════════════════════════════════════════════════════════════
+async function uploadImageToStorage(dataUrl, itemKey, suffix) {
+    // dataUrl → Blob
+    const res  = await fetch(dataUrl);
+    const blob = await res.blob();
+    const uuid = Math.random().toString(36).slice(2, 10);
+    const path = `items/${itemKey}/${uuid}_${suffix}.jpg`;
+    const storageRef = storage.ref(path);
+
+    // Upload mit Metadaten
+    const snap = await storageRef.put(blob, { contentType: 'image/jpeg' });
+    const url  = await snap.ref.getDownloadURL();
+    return url;
+}
+
+// Lädt beide Versionen (thumb + full) hoch und gibt URLs zurück
+async function uploadDualImage(dualImg, itemKey, onProgress) {
+    if (!dualImg) return null;
+    // Altes Format (reiner string = Base64) direkt nehmen
+    const thumbData = typeof dualImg === 'object' ? dualImg.thumb : dualImg;
+    const fullData  = typeof dualImg === 'object' ? dualImg.full  : dualImg;
+
+    if (onProgress) onProgress('Thumbnail hochladen…');
+    const thumbUrl = await uploadImageToStorage(thumbData, itemKey, 'thumb');
+    if (onProgress) onProgress('Vollbild hochladen…');
+    const fullUrl  = await uploadImageToStorage(fullData,  itemKey, 'full');
+
+    return { thumb: thumbUrl, full: fullUrl, stored: 'firebase' };
+}
+
+// Löscht alle Storage-Bilder eines Artikels
+async function deleteItemImages(itemKey) {
+    try {
+        const listRef = storage.ref(`items/${itemKey}`);
+        const list = await listRef.listAll();
+        await Promise.all(list.items.map(item => item.delete()));
+    } catch(e) { /* Ignorieren wenn Ordner nicht existiert */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MIGRATION: Base64-Bilder → Firebase Storage
+// Prüft beim Wechsel zum Admin-Tab ob noch alte Bilder in der DB sind
+// und zeigt ggf. den Migrations-Button an.
+// ═══════════════════════════════════════════════════════════════════════
+function isBase64Img(img) {
+    if (!img) return false;
+    if (typeof img === 'string') return img.startsWith('data:');
+    if (typeof img === 'object') {
+        return (img.thumb && img.thumb.startsWith('data:')) ||
+               (img.full  && img.full.startsWith('data:'));
+    }
+    return false;
+}
+
+function checkMigrationNeeded() {
+    const itemsNeedingMigration = S.items.filter(item =>
+        (item.images || []).some(isBase64Img) ||
+        (item.img && item.img.startsWith('data:') && !(item.images && item.images.length))
+    );
+    const box = document.getElementById('migrationBox');
+    if (!box) return;
+    if (itemsNeedingMigration.length > 0) {
+        document.getElementById('migCount').textContent = itemsNeedingMigration.length;
+        box.style.display = 'block';
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+async function startMigration() {
+    const btn = document.getElementById('migBtn');
+    const progDiv = document.getElementById('migProgress');
+    const msgEl = document.getElementById('migMsg');
+    const barEl = document.getElementById('migBar');
+    const subEl = document.getElementById('migSub');
+
+    // Artikel mit Base64-Bildern finden
+    const toMigrate = S.items.filter(item =>
+        (item.images || []).some(isBase64Img) ||
+        (item.img && item.img.startsWith('data:') && !(item.images && item.images.length))
+    );
+    if (!toMigrate.length) {
+        document.getElementById('migrationBox').style.display = 'none';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Migration läuft…';
+    progDiv.style.display = 'block';
+
+    let done = 0;
+    const total = toMigrate.length;
+
+    for (const item of toMigrate) {
+        msgEl.textContent = `Migriere: "${item.name}" (${done+1}/${total})`;
+        barEl.style.width = Math.round((done / total) * 100) + '%';
+        subEl.textContent = '';
+
+        try {
+            // Bilder des Artikels bestimmen
+            let rawImages = item.images && item.images.length
+                ? item.images
+                : (item.img ? [{ thumb: item.img, full: item.img }] : []);
+
+            // Nur die Base64-Bilder hochladen, Storage-URLs behalten
+            const migratedImages = await Promise.all(rawImages.map(async (img, idx) => {
+                if (!isBase64Img(img)) return img; // schon Storage-URL
+                subEl.textContent = `Lade Bild ${idx+1}/${rawImages.length} hoch…`;
+                return uploadDualImage(img, item.key, () => {});
+            }));
+
+            const firstImg = migratedImages.length > 0 ? migratedImages[0] : null;
+            await ref.child('items/' + item.key).update({
+                images: migratedImages,
+                img: firstImg ? (typeof firstImg === 'object' ? (firstImg.thumb || firstImg.full) : firstImg) : ''
+            });
+        } catch(e) {
+            subEl.textContent = `⚠️ Fehler bei "${item.name}": ${e.message}`;
+            await new Promise(r => setTimeout(r, 1500)); // kurz zeigen
+        }
+
+        done++;
+    }
+
+    barEl.style.width = '100%';
+    msgEl.textContent = `✅ Migration abgeschlossen! ${total} Artikel migriert.`;
+    subEl.textContent = 'Die App lädt jetzt deutlich schneller.';
+    btn.textContent = '✅ Fertig';
+
+    // Box nach 4 Sekunden ausblenden
+    setTimeout(() => {
+        document.getElementById('migrationBox').style.display = 'none';
+    }, 4000);
+}
 
 const S = { user:"", items:[], reservations:[], cfg:{}, editKey:null, editImages:[], newItemImages:[], imgActionCtx:null, label:null, logF:'all', resvF:'all', qtyAction:null, scanItem:null, resvItem:null, loading:true };
 
@@ -1476,29 +1639,44 @@ function rmList(t,i){ const l=[...(S.cfg[t]||[])]; l.splice(i,1); ref.child(t).s
 function saveItem() {
     const n = document.getElementById('iName').value.trim();
     if (!n) { alert('Bitte Artikelnamen eingeben.'); return; }
+
     const nr = ref.child('items').push();
-    const images = [...S.newItemImages]; // Array von {thumb, full}
-    const firstImg = images.length > 0 ? images[0] : null;
-    const d = {
-        name:n, qty:parseInt(document.getElementById('iQty').value)||1,
-        borrowers:{}, borrowed:0,
-        location:document.getElementById('iLager').value,
-        cat:document.getElementById('iCat').value,
-        regal:document.getElementById('iRegal').value,
-        fach:document.getElementById('iFach').value,
-        img:  firstImg ? (firstImg.thumb || firstImg) : '',   // Kompatibilität
-        images: images,
-        status:'im Lager', ts:Date.now(), lastUser:S.user
-    };
-    nr.set(d).then(() => {
-        log('neu', `Neu: "${n}" · ${d.qty}x · ${d.location} R:${d.regal} F:${d.fach}${images.length?` · ${images.length} Foto${images.length>1?'s':''}`:''}`);
-        showPrint(nr.key, `${d.location} · Regal: ${d.regal||'—'} · Fach: ${d.fach||'—'}`, d.name);
-        // Reset
-        document.getElementById('iName').value = '';
-        document.getElementById('iQty').value = '1';
-        S.newItemImages = [];
-        renderNewItemGallery();
-        goTab(null,'tab-lager');
+    const itemKey = nr.key;
+    const rawImages = [...S.newItemImages];
+
+    const saveBtn = document.querySelector('#tab-neu .btn-p');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Wird hochgeladen…'; }
+
+    Promise.all(rawImages.map((img, idx) =>
+        uploadDualImage(img, itemKey, p => {
+            if (saveBtn) saveBtn.textContent = `⏳ Bild ${idx+1}/${rawImages.length}: ${p}`;
+        })
+    )).then(uploadedImages => {
+        const firstImg = uploadedImages.length > 0 ? uploadedImages[0] : null;
+        const d = {
+            name:n, qty:parseInt(document.getElementById('iQty').value)||1,
+            borrowers:{}, borrowed:0,
+            location:document.getElementById('iLager').value,
+            cat:document.getElementById('iCat').value,
+            regal:document.getElementById('iRegal').value,
+            fach:document.getElementById('iFach').value,
+            img:    firstImg ? firstImg.thumb : '',
+            images: uploadedImages,
+            status:'im Lager', ts:Date.now(), lastUser:S.user
+        };
+        return nr.set(d).then(() => {
+            log('neu', `Neu: "${n}" · ${d.qty}x · ${d.location} R:${d.regal} F:${d.fach}${uploadedImages.length ? ` · ${uploadedImages.length} Foto${uploadedImages.length>1?'s':''}` : ''}`);
+            showPrint(nr.key, `${d.location} · Regal: ${d.regal||'—'} · Fach: ${d.fach||'—'}`, d.name);
+            document.getElementById('iName').value = '';
+            document.getElementById('iQty').value  = '1';
+            S.newItemImages = [];
+            renderNewItemGallery();
+            goTab(null,'tab-lager');
+        });
+    }).catch(err => {
+        alert('Fehler beim Hochladen: ' + (err.message || err));
+    }).finally(() => {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 SPEICHERN & ETIKETT'; }
     });
 }
 
@@ -1662,6 +1840,8 @@ function delItemFromEdit() {
     const item = S.items.find(x => x.key === S.editKey);
     if (!item) return;
     if (!confirm(`"${item.name}" wirklich komplett löschen?\n\nDas kann nicht rückgängig gemacht werden!`)) return;
+    // Storage-Bilder löschen
+    deleteItemImages(S.editKey).catch(() => {});
     ref.child('items/'+S.editKey).remove();
     log('del', `"${item.name}" gelöscht`);
     closeModal('editModal');
@@ -1680,57 +1860,90 @@ function saveEdit() {
     const oldImages = item.images || (item.img ? [item.img] : []);
     const newImages = [...S.editImages];
 
+    // Prüfen welche Bilder neu sind (Base64 = neu, URL = schon in Storage)
+    const isBase64 = s => typeof s === 'string' && s.startsWith('data:');
+    const isNewImg = img => {
+        if (!img) return false;
+        if (typeof img === 'object') {
+            return isBase64(img.thumb) || isBase64(img.full);
+        }
+        return isBase64(img);
+    };
+    const hasNewImgs = newImages.some(isNewImg);
+
     let imgChanged = false;
     if (oldImages.length !== newImages.length) imgChanged = true;
-    else for (let i = 0; i < oldImages.length; i++) if (oldImages[i] !== newImages[i]) { imgChanged = true; break; }
+    else for (let i = 0; i < oldImages.length; i++) {
+        const o = typeof oldImages[i] === 'object' ? oldImages[i].thumb : oldImages[i];
+        const n = typeof newImages[i] === 'object' ? newImages[i].thumb : newImages[i];
+        if (o !== n) { imgChanged = true; break; }
+    }
 
     const ch = [];
-    if (newN !== item.name) ch.push(`Name: "${item.name}" → "${newN}"`);
-    if (newQ !== parseInt(item.qty)) ch.push(`Menge: ${item.qty} → ${newQ}`);
+    if (newN !== item.name)              ch.push(`Name: "${item.name}" → "${newN}"`);
+    if (newQ !== parseInt(item.qty))     ch.push(`Menge: ${item.qty} → ${newQ}`);
     if (newLoc   !== (item.location||'')) ch.push(`Lagerort: "${item.location||'—'}" → "${newLoc||'—'}"`);
     if (newCat   !== (item.cat||''))      ch.push(`Kategorie: "${item.cat||'—'}" → "${newCat||'—'}"`);
     if (newRegal !== (item.regal||''))    ch.push(`Regal: "${item.regal||'—'}" → "${newRegal||'—'}"`);
     if (newFach  !== (item.fach||''))     ch.push(`Fach: "${item.fach||'—'}" → "${newFach||'—'}"`);
     if (imgChanged) {
         const diff = newImages.length - oldImages.length;
-        if (diff > 0)      ch.push(`${diff} Foto${diff>1?'s':''} hinzugefügt (${newImages.length} insgesamt)`);
-        else if (diff < 0) ch.push(`${-diff} Foto${-diff>1?'s':''} entfernt (${newImages.length} verbleibend)`);
-        else               ch.push(`Fotos geändert`);
+        if (diff > 0)      ch.push(`${diff} Foto${diff>1?'s':''} hinzugefügt`);
+        else if (diff < 0) ch.push(`${-diff} Foto${-diff>1?'s':''} entfernt`);
+        else               ch.push('Fotos geändert');
     }
     if (ch.length === 0) { closeModal('editModal'); return; }
     if (!confirm(`Folgende Änderungen speichern?\n\n${ch.join('\n')}`)) return;
 
-    let updates = {
-        name:newN, qty:newQ, lastUser:S.user,
-        location:newLoc, cat:newCat, regal:newRegal, fach:newFach
-    };
-    if (imgChanged) {
-        updates.images = newImages;
-        // Kompatibilität: img-Feld auf Thumbnail des ersten Bilds
-        const first = newImages.length > 0 ? newImages[0] : null;
-        updates.img = first ? (typeof first === 'object' ? (first.thumb || first.full) : first) : '';
-    }
+    // Speichern-Button während Upload deaktivieren
+    const saveBtn = document.querySelector('#editModal .mbox button[onclick="saveEdit()"]') ||
+                    document.querySelector('#editModal button[onclick="saveEdit()"]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Speichern…'; }
 
-    const borrowed = totalBorrowed(item);
-    if (newQ < borrowed) {
-        const borrowers = {...(item.borrowers||{})};
-        let toRemove = borrowed - newQ;
-        const sorted = Object.entries(borrowers).sort((a,b)=>b[1]-a[1]);
-        for (const [u, c] of sorted) {
-            if (toRemove <= 0) break;
-            const take = Math.min(toRemove, c);
-            borrowers[u] = c - take;
-            if (borrowers[u]===0) delete borrowers[u];
-            toRemove -= take;
+    const doSave = (finalImages) => {
+        let updates = { name:newN, qty:newQ, lastUser:S.user, location:newLoc, cat:newCat, regal:newRegal, fach:newFach };
+        if (imgChanged) {
+            updates.images = finalImages;
+            const first = finalImages.length > 0 ? finalImages[0] : null;
+            updates.img = first ? (typeof first === 'object' ? (first.thumb || first.full) : first) : '';
         }
-        updates.borrowers = borrowers;
-        updates.borrowed = Object.values(borrowers).reduce((s,v)=>s+v,0);
-        updates.status = updates.borrowed===0?'im Lager':'ausgeliehen';
+        const borrowed = totalBorrowed(item);
+        if (newQ < borrowed) {
+            const borrowers = {...(item.borrowers||{})};
+            let toRemove = borrowed - newQ;
+            Object.entries(borrowers).sort((a,b)=>b[1]-a[1]).forEach(([u, c]) => {
+                if (toRemove <= 0) return;
+                const take = Math.min(toRemove, c);
+                borrowers[u] = c - take;
+                if (borrowers[u]===0) delete borrowers[u];
+                toRemove -= take;
+            });
+            updates.borrowers = borrowers;
+            updates.borrowed  = Object.values(borrowers).reduce((s,v)=>s+v,0);
+            updates.status    = updates.borrowed===0 ? 'im Lager' : 'ausgeliehen';
+        }
+        ref.child('items/'+S.editKey).update(updates).then(() => {
+            log('edit', `"${item.name}": ${ch.join(' | ')}`);
+            closeModal('editModal');
+        }).finally(() => {
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '✓ Speichern'; }
+        });
+    };
+
+    // Neue Bilder zu Storage hochladen, vorhandene Storage-URLs behalten
+    if (imgChanged && hasNewImgs) {
+        Promise.all(newImages.map((img, idx) => {
+            if (!isNewImg(img)) return Promise.resolve(img); // schon in Storage
+            return uploadDualImage(img, S.editKey, p => {
+                if (saveBtn) saveBtn.textContent = `⏳ Bild ${idx+1}/${newImages.length}: ${p}`;
+            });
+        })).then(doSave).catch(err => {
+            alert('Fehler beim Hochladen: ' + (err.message || err));
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '✓ Speichern'; }
+        });
+    } else {
+        doSave(newImages);
     }
-    ref.child('items/'+S.editKey).update(updates).then(() => {
-        log('edit', `"${item.name}": ${ch.join(' | ')}`);
-        closeModal('editModal');
-    });
 }
 function delItem(k,n) {
     if (!confirm(`"${n}" wirklich löschen?`)) return;
@@ -1989,7 +2202,7 @@ function goTab(e, id) {
     document.getElementById(id).style.display = 'block';
     if (e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); }
     if (id==='tab-log') renderLogs();
-    if (id==='tab-neu') { renderManage(); renderNewItemGallery(); }
+    if (id==='tab-neu') { renderManage(); renderNewItemGallery(); checkMigrationNeeded(); }
     if (id==='tab-resv') renderReservations();
 }
 
