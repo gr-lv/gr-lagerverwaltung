@@ -2360,7 +2360,7 @@ function initHardwareScanner() {
                     dbgSet('status', `⏱ Timeout — kein Enter nach "${HW.buffer}"`);
                     // Timeout-Fallback: wenn Buffer ≥ 6 Zeichen → trotzdem versuchen
                     if (HW.buffer.trim().length >= 6) {
-                        const code = HW.buffer.trim();
+                        const code = HW.buffer.trim().replace(/^[^a-zA-Z0-9]+/, '');
                         HW.buffer = '';
                         dbgSet('last', code);
                         dbgSet('status', `⏱ Timeout-Fallback: ${code}`);
@@ -2375,14 +2375,22 @@ function initHardwareScanner() {
 }
 
 function handleHardwareScan(code) {
-    // Nur wenn App offen und eingeloggt
     if (!S.user) return;
 
-    // Artikel suchen
-    const item = S.items.find(x => x.key === code);
+    // Scanner-Prefix entfernen: manche Scanner senden Sonderzeichen am Anfang
+    // z.B. ƀ, Ä, oder andere nicht-ASCII Zeichen → alles bis zum ersten
+    // normalen ASCII-Zeichen (a-z, A-Z, 0-9) abschneiden
+    const cleaned = code.replace(/^[^a-zA-Z0-9]+/, '').trim();
+
+    if (HW.active) {
+        dbgSet('status', `✓ Bereinigt: "${code}" → "${cleaned}"`);
+        dbgSet('last', cleaned);
+    }
+
+    const item = S.items.find(x => x.key === cleaned);
     if (!item) {
-        // Kurze Toast-Meldung statt alert
-        showToast(`⚠️ Artikel nicht gefunden: ${code}`, 'warn');
+        showToast(`⚠️ Artikel nicht gefunden: ${cleaned}`, 'warn');
+        if (HW.active) dbgSet('status', `❌ Nicht gefunden: ${cleaned}`);
         return;
     }
 
@@ -2395,7 +2403,8 @@ function handleHardwareScan(code) {
         document.querySelector('.tab-btn')?.classList.add('active');
     }
 
-    showToast(`📦 Scanner: ${item.name}`, 'info');
+    if (HW.active) dbgSet('status', `✅ Gefunden: ${item.name}`);
+    showToast(`📦 ${item.name}`, 'info');
     handleScannedItem(item);
 }
 
