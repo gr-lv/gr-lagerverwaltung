@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V198</title>
+    <title>GR-Lagerverwaltung V199</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -142,6 +142,13 @@
         }
         .header-btn svg { width: 22px; height: 22px; stroke: var(--accent); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         .header-cam { font-size: 1.3rem; }
+        /* Scanner-Modus aktiv */
+        .header-btn.scanner-active { background:var(--success); border-color:var(--success); animation:scannerPulse 1.5s ease-in-out infinite; }
+        .header-btn.scanner-active svg { stroke:white; }
+        .header-btn.scanner-active .hw-icon { filter:brightness(10); }
+        @keyframes scannerPulse { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.5);} 50%{box-shadow:0 0 0 8px rgba(16,185,129,0);} }
+        #scannerModeBanner { display:none; background:var(--success); color:white; text-align:center; padding:8px 14px; font-size:.82rem; font-weight:700; }
+        #scannerModeBanner.active { display:block; }
         /* User-Info Pille rechts neben Logout */
         .user-pill {
             display: flex; flex-direction: column; align-items: flex-end;
@@ -407,7 +414,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V198 — Lagerverwaltung</p>
+        <p>V199 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -435,6 +442,17 @@
             <span>angemeldet</span>
             <b id="uName"></b>
         </div>
+        <!-- Hardware-Scanner Toggle -->
+        <button class="header-btn" id="hwScannerBtn" onclick="toggleHardwareScanner()" title="Handscanner ein/aus">
+            <svg viewBox="0 0 24 24">
+                <rect x="2" y="4" width="3" height="16" rx="1" fill="currentColor" stroke="none"/>
+                <rect x="6" y="4" width="1.5" height="16" rx="0.5" fill="currentColor" stroke="none"/>
+                <rect x="9" y="4" width="3" height="16" rx="1" fill="currentColor" stroke="none"/>
+                <rect x="13.5" y="4" width="1" height="16" rx="0.5" fill="currentColor" stroke="none"/>
+                <rect x="15.5" y="4" width="2.5" height="16" rx="1" fill="currentColor" stroke="none"/>
+                <rect x="19" y="4" width="1.5" height="16" rx="0.5" fill="currentColor" stroke="none"/>
+            </svg>
+        </button>
         <button class="header-btn" onclick="doLogout()" title="Abmelden">
             <!-- Open-Door Icon (offene Tür mit Pfeil nach außen) -->
             <svg viewBox="0 0 24 24">
@@ -445,6 +463,7 @@
         </button>
     </div>
 
+    <div id="scannerModeBanner">🔫 HANDSCANNER AKTIV — QR-Code scannen</div>
     <div class="content-area">
         <!-- LAGER -->
         <div id="tab-lager" class="tab-c">
@@ -906,7 +925,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V198";
+const APP_VERSION = "V199";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -2250,56 +2269,72 @@ function formatShortDate(ts) {
 
 // ═══════════════════════════════════════════════════════════════════════
 // HARDWARE-SCANNER SUPPORT
-// Ein USB/Bluetooth-Handscanner verhält sich wie eine Tastatur:
-// Er tippt den QR-Code sehr schnell ein (< 50ms pro Zeichen) + Enter.
-// Wir unterscheiden Scanner-Input von normalem Tippen anhand der
-// Geschwindigkeit: Scanner tippt > 10 Zeichen in < 100ms.
+// Ein USB/Bluetooth-Handscanner verhält sich wie eine Tastatur.
+// Toggle-Button im Header aktiviert/deaktiviert den Scanner-Modus.
+// Im aktiven Modus: auch Input-Felder werden ignoriert (Scanner hat Priorität)
 // ═══════════════════════════════════════════════════════════════════════
 const HW = {
     buffer: '',
     lastTime: 0,
-    minLength: 6,      // Mindestlänge eines Firebase-Keys
-    maxGap: 50,        // Max. ms zwischen Zeichen (Scanner ist schneller)
-    timeout: null
+    timeout: null,
+    active: false    // Scanner-Modus an/aus
 };
+
+function toggleHardwareScanner() {
+    HW.active = !HW.active;
+    const btn    = document.getElementById('hwScannerBtn');
+    const banner = document.getElementById('scannerModeBanner');
+
+    if (HW.active) {
+        btn.classList.add('scanner-active');
+        banner.classList.add('active');
+        // Fokus von allen Inputs wegnehmen damit Scanner direkt wirkt
+        document.activeElement?.blur();
+        showToast('🔫 Handscanner aktiviert', 'ok');
+    } else {
+        btn.classList.remove('scanner-active');
+        banner.classList.remove('active');
+        showToast('Handscanner deaktiviert', 'info');
+    }
+}
 
 function initHardwareScanner() {
     document.addEventListener('keydown', e => {
-        // Ignorieren wenn ein Input/Textarea fokussiert ist
-        const tag = document.activeElement?.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        // Im aktiven Scanner-Modus: IMMER verarbeiten (auch in Input-Feldern)
+        // Im inaktiven Modus: nur wenn kein Input fokussiert ist
+        if (!HW.active) {
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        }
 
-        // Ignorieren wenn ein Modal offen ist und Input fokussiert ist
         const now = Date.now();
 
         if (e.key === 'Enter') {
-            // Enter = Ende des Scanner-Inputs
             const code = HW.buffer.trim();
-            HW.buffer = '';
+            HW.buffer  = '';
             clearTimeout(HW.timeout);
-
-            if (code.length >= HW.minLength) {
+            if (code.length >= 6) {
+                // Im Scanner-Modus: Event stoppen damit Formular nicht abgeschickt wird
+                if (HW.active) e.preventDefault();
                 handleHardwareScan(code);
             }
             return;
         }
 
-        // Nur druckbare Zeichen sammeln
         if (e.key.length === 1) {
-            // Prüfen ob Zeichen schnell genug kam (Scanner-Geschwindigkeit)
             const gap = now - HW.lastTime;
-            if (HW.buffer.length > 0 && gap > 200) {
-                // Zu langsam → kein Scanner, Buffer leeren
+            // Zu langsam für Scanner → Buffer leeren (nur im passiven Modus)
+            if (!HW.active && HW.buffer.length > 0 && gap > 150) {
                 HW.buffer = '';
             }
-            HW.buffer += e.key;
-            HW.lastTime = now;
+            HW.buffer   += e.key;
+            HW.lastTime  = now;
 
-            // Timeout: Buffer nach 300ms leeren falls kein Enter kommt
+            // Im aktiven Scanner-Modus: Tastatur-Input für die App unterdrücken
+            if (HW.active) e.preventDefault();
+
             clearTimeout(HW.timeout);
-            HW.timeout = setTimeout(() => {
-                HW.buffer = '';
-            }, 300);
+            HW.timeout = setTimeout(() => { HW.buffer = ''; }, 300);
         }
     });
 }
