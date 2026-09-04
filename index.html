@@ -2516,16 +2516,17 @@ function handleHardwareScan(code) {
     const item = S.items.find(x => x.key === cleaned);
 
     if (!item) {
-        // Diagnostik: ähnliche Keys finden
         const similar = S.items
             .filter(i => i.key.includes(cleaned.slice(0,6)) || cleaned.includes(i.key.slice(0,6)))
             .slice(0,3)
-            .map(i => i.key)
+            .map(i => `${i.key}(${i.name})`)
             .join(', ');
+
+        const sampleKeys = S.items.slice(0,2).map(i => `${i.key}(${i.name})`).join(', ');
 
         const msg = similar
             ? `❌ Nicht gefunden. Ähnlich: ${similar}`
-            : `❌ Nicht gefunden. ${S.items.length} Artikel geladen.`;
+            : `❌ Nicht gefunden. Erste Keys: ${sampleKeys}`;
 
         if (HW.active) dbgSet('status', msg);
         showToast(`⚠️ Nicht gefunden: ${cleaned}`, 'warn');
