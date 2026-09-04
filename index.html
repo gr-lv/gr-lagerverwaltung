@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V199</title>
+    <title>GR-Lagerverwaltung V200</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -414,7 +414,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V199 — Lagerverwaltung</p>
+        <p>V200 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -464,6 +464,13 @@
     </div>
 
     <div id="scannerModeBanner">🔫 HANDSCANNER AKTIV — QR-Code scannen</div>
+
+    <!-- DEBUG: Scanner-Input Anzeige (nur im Scanner-Modus sichtbar) -->
+    <div id="scannerDebug" style="display:none;background:#0f172a;color:#06b6d4;font-family:monospace;font-size:.75rem;padding:8px 14px;border-bottom:1px solid rgba(6,182,212,0.3);">
+        <span style="color:#64748b;">Buffer: </span><span id="dbgBuffer">—</span>
+        <span style="color:#64748b;margin-left:12px;">Letzter Code: </span><span id="dbgLast">—</span>
+        <span style="color:#64748b;margin-left:12px;">Status: </span><span id="dbgStatus">Warte auf Scanner…</span>
+    </div>
     <div class="content-area">
         <!-- LAGER -->
         <div id="tab-lager" class="tab-c">
@@ -925,7 +932,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V199";
+const APP_VERSION = "V200";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -2284,24 +2291,30 @@ function toggleHardwareScanner() {
     HW.active = !HW.active;
     const btn    = document.getElementById('hwScannerBtn');
     const banner = document.getElementById('scannerModeBanner');
+    const debug  = document.getElementById('scannerDebug');
 
     if (HW.active) {
         btn.classList.add('scanner-active');
         banner.classList.add('active');
-        // Fokus von allen Inputs wegnehmen damit Scanner direkt wirkt
+        if (debug) debug.style.display = 'block';
         document.activeElement?.blur();
         showToast('🔫 Handscanner aktiviert', 'ok');
+        dbgSet('status', 'Warte auf Scanner-Input…');
     } else {
         btn.classList.remove('scanner-active');
         banner.classList.remove('active');
+        if (debug) debug.style.display = 'none';
         showToast('Handscanner deaktiviert', 'info');
     }
 }
 
+function dbgSet(field, val) {
+    const el = document.getElementById('dbg' + field.charAt(0).toUpperCase() + field.slice(1));
+    if (el) el.textContent = val;
+}
+
 function initHardwareScanner() {
     document.addEventListener('keydown', e => {
-        // Im aktiven Scanner-Modus: IMMER verarbeiten (auch in Input-Feldern)
-        // Im inaktiven Modus: nur wenn kein Input fokussiert ist
         if (!HW.active) {
             const tag = document.activeElement?.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -2313,9 +2326,15 @@ function initHardwareScanner() {
             const code = HW.buffer.trim();
             HW.buffer  = '';
             clearTimeout(HW.timeout);
+
+            if (HW.active) {
+                dbgSet('buffer', '— (Enter erkannt)');
+                dbgSet('last', code || '(leer)');
+                dbgSet('status', code.length >= 6 ? `✓ Verarbeite: ${code}` : `⚠ Zu kurz (${code.length} Zeichen)`);
+                e.preventDefault();
+            }
+
             if (code.length >= 6) {
-                // Im Scanner-Modus: Event stoppen damit Formular nicht abgeschickt wird
-                if (HW.active) e.preventDefault();
                 handleHardwareScan(code);
             }
             return;
@@ -2323,18 +2342,34 @@ function initHardwareScanner() {
 
         if (e.key.length === 1) {
             const gap = now - HW.lastTime;
-            // Zu langsam für Scanner → Buffer leeren (nur im passiven Modus)
             if (!HW.active && HW.buffer.length > 0 && gap > 150) {
                 HW.buffer = '';
             }
             HW.buffer   += e.key;
             HW.lastTime  = now;
 
-            // Im aktiven Scanner-Modus: Tastatur-Input für die App unterdrücken
-            if (HW.active) e.preventDefault();
+            if (HW.active) {
+                dbgSet('buffer', HW.buffer);
+                dbgSet('status', `Empfange… (${HW.buffer.length} Zeichen, Gap: ${gap}ms)`);
+                e.preventDefault();
+            }
 
             clearTimeout(HW.timeout);
-            HW.timeout = setTimeout(() => { HW.buffer = ''; }, 300);
+            HW.timeout = setTimeout(() => {
+                if (HW.active && HW.buffer.length > 0) {
+                    dbgSet('status', `⏱ Timeout — kein Enter nach "${HW.buffer}"`);
+                    // Timeout-Fallback: wenn Buffer ≥ 6 Zeichen → trotzdem versuchen
+                    if (HW.buffer.trim().length >= 6) {
+                        const code = HW.buffer.trim();
+                        HW.buffer = '';
+                        dbgSet('last', code);
+                        dbgSet('status', `⏱ Timeout-Fallback: ${code}`);
+                        handleHardwareScan(code);
+                        return;
+                    }
+                }
+                HW.buffer = '';
+            }, 300);
         }
     });
 }
