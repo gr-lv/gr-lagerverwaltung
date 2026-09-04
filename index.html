@@ -2345,6 +2345,13 @@ function initHardwareScanner() {
             if (!HW.active && HW.buffer.length > 0 && gap > 150) {
                 HW.buffer = '';
             }
+            // Erstes Zeichen: wenn kein Buchstabe/Zahl → Scanner-Prefix, ignorieren
+            if (HW.buffer.length === 0 && /[^a-zA-Z0-9]/.test(e.key)) {
+                if (HW.active) dbgSet('status', `⚡ Prefix-Zeichen ignoriert: "${e.key}" (Code: ${e.key.charCodeAt(0)})`);
+                HW.lastTime = now;
+                if (HW.active) e.preventDefault();
+                return; // Prefix-Zeichen nicht in Buffer aufnehmen
+            }
             HW.buffer   += e.key;
             HW.lastTime  = now;
 
@@ -2377,9 +2384,9 @@ function initHardwareScanner() {
 function handleHardwareScan(code) {
     if (!S.user) return;
 
-    // Scanner-Prefix entfernen: manche Scanner senden Sonderzeichen am Anfang
-    // z.B. ƀ, Ä, oder andere nicht-ASCII Zeichen → alles bis zum ersten
-    // normalen ASCII-Zeichen (a-z, A-Z, 0-9) abschneiden
+    // Scanner-Prefix entfernen: Scanner senden je nach Tastaturlayout
+    // unterschiedliche Prefix-Zeichen (ƀ, -, Sonderzeichen etc.)
+    // Firebase-Keys beginnen immer mit einem Buchstaben oder einer Zahl
     const cleaned = code.replace(/^[^a-zA-Z0-9]+/, '').trim();
 
     if (HW.active) {
