@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V201</title>
+    <title>GR-Lagerverwaltung V202</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -414,7 +414,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V201 — Lagerverwaltung</p>
+        <p>V202 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -451,6 +451,14 @@
                 <rect x="13.5" y="4" width="1" height="16" rx="0.5" fill="currentColor" stroke="none"/>
                 <rect x="15.5" y="4" width="2.5" height="16" rx="1" fill="currentColor" stroke="none"/>
                 <rect x="19" y="4" width="1.5" height="16" rx="0.5" fill="currentColor" stroke="none"/>
+            </svg>
+        </button>
+        <!-- Druckmodus Toggle (nur sichtbar wenn Scanner aktiv) -->
+        <button class="header-btn" id="hwPrintBtn" onclick="togglePrintMode()" title="Druckmodus" style="display:none;">
+            <svg viewBox="0 0 24 24">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
             </svg>
         </button>
         <button class="header-btn" onclick="doLogout()" title="Abmelden">
@@ -530,6 +538,28 @@
                 <button id="migBtn" onclick="startMigration()"
                     style="width:100%;padding:13px;background:var(--warn);color:white;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-size:.92rem;">
                     🚀 Jetzt migrieren
+                </button>
+            </div>
+
+            <div class="mc" style="border:1px solid rgba(168,85,247,0.3);">
+                <h4 style="color:var(--purple);">🖨️ Scanner-Steuercodes</h4>
+                <p style="font-size:.78rem;color:#94a3b8;margin:0 0 12px;line-height:1.5;">
+                    Diese QR-Codes ausdrucken und am PC aufhängen — beim Scannen schalten sie den Modus um.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div style="background:rgba(255,255,255,0.97);border-radius:10px;padding:12px;text-align:center;color:#000;">
+                        <div id="qr-cmd-scanner" style="width:80px;height:80px;margin:0 auto 8px;"></div>
+                        <div style="font-size:.72rem;font-weight:700;color:#1e293b;">🔫 Scanner Ein/Aus</div>
+                        <div style="font-size:.6rem;color:#64748b;">GR-SCANNER-TOGGLE</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.97);border-radius:10px;padding:12px;text-align:center;color:#000;">
+                        <div id="qr-cmd-print" style="width:80px;height:80px;margin:0 auto 8px;"></div>
+                        <div style="font-size:.72rem;font-weight:700;color:#1e293b;">🖨️ Druckmodus</div>
+                        <div style="font-size:.6rem;color:#64748b;">GR-DRUCK-MODUS</div>
+                    </div>
+                </div>
+                <button onclick="printCommandQRs()" style="width:100%;margin-top:10px;padding:11px;background:var(--purple);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem;">
+                    🖨️ Steuercodes drucken
                 </button>
             </div>
 
@@ -932,7 +962,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V201";
+const APP_VERSION = "V202";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -1714,11 +1744,64 @@ function quickAdd() {
     const l = [...(S.cfg[t]||[])]; l.push(v);
     ref.child(t).set(l); document.getElementById('addIn').value = '';
 }
+
+// ── STEUER-QR-CODES ──────────────────────────────────────────────────
+function renderCommandQRs() {
+    if (typeof QRCode === 'undefined') return;
+    [{ id:'qr-cmd-scanner', text:'GR-SCANNER-TOGGLE' },
+     { id:'qr-cmd-print',   text:'GR-DRUCK-MODUS'   }
+    ].forEach(({ id, text }) => {
+        const el = document.getElementById(id);
+        if (!el || el.dataset.rendered) return;
+        el.dataset.rendered = '1'; el.innerHTML = '';
+        new QRCode(el, { text, width:80, height:80, colorDark:'#000', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.M });
+        const img = el.querySelector('img');
+        if (img) { img.style.width='80px'; img.style.height='80px'; }
+    });
+}
+
+function printCommandQRs() {
+    const cmds = [
+        { text:'GR-SCANNER-TOGGLE', label:'🔫 Scanner Ein/Aus'        },
+        { text:'GR-DRUCK-MODUS',    label:'🖨️ Druckmodus umschalten'  },
+    ];
+    const makeQR = (text) => new Promise(resolve => {
+        const div = document.createElement('div');
+        document.body.appendChild(div);
+        new QRCode(div, { text, width:150, height:150, colorDark:'#000', colorLight:'#fff', correctLevel: QRCode.CorrectLevel.M });
+        setTimeout(() => {
+            const img = div.querySelector('img');
+            const src = img ? img.src : '';
+            document.body.removeChild(div);
+            resolve(src);
+        }, 300);
+    });
+    Promise.all(cmds.map(c => makeQR(c.text))).then(srcs => {
+        const win = window.open('', '_blank');
+        win.document.write(`<!DOCTYPE html><html><head>
+        <style>
+            @page { size:A4; margin:20mm; }
+            body { font-family:sans-serif; display:flex; flex-wrap:wrap; gap:20px; }
+            .card { border:2px solid #000; border-radius:8px; padding:16px; text-align:center; width:180px; }
+            .card img { width:150px; height:150px; display:block; margin:0 auto 8px; }
+            .label { font-size:14px; font-weight:bold; margin-bottom:4px; }
+            .code { font-size:10px; color:#666; font-family:monospace; }
+            h2 { width:100%; margin:0 0 16px; }
+        </style></head><body>
+        <h2>GR-Lager Scanner-Steuercodes</h2>
+        ${cmds.map((c,i) => `<div class="card"><img src="${srcs[i]}"><div class="label">${c.label}</div><div class="code">${c.text}</div></div>`).join('')}
+        <script>window.onload=()=>window.print();<\/script></body></html>`);
+        win.document.close();
+    });
+}
+
 function renderManage() {
     const t = document.getElementById('manType').value, l = S.cfg[t]||[];
     document.getElementById('manList').innerHTML = l.length
         ? l.map((v,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);color:white;font-size:.83rem;"><span>${esc(v)}</span><span onclick="rmList('${t}',${i})" style="cursor:pointer;color:#ef4444;">✕</span></div>`).join('')
         : `<div style="padding:14px;color:#64748b;font-size:.8rem;text-align:center;">Noch keine Einträge</div>`;
+    // Steuer-QR-Codes rendern
+    setTimeout(renderCommandQRs, 200);
 }
 function rmList(t,i){ const l=[...(S.cfg[t]||[])]; l.splice(i,1); ref.child(t).set(l); }
 
@@ -2284,17 +2367,20 @@ const HW = {
     buffer: '',
     lastTime: 0,
     timeout: null,
-    active: false    // Scanner-Modus an/aus
+    active: false,
+    printMode: false   // Druckmodus: Scan → Etikett drucken statt Aus-/Einlagern
 };
 
 function toggleHardwareScanner() {
     HW.active = !HW.active;
-    const btn    = document.getElementById('hwScannerBtn');
-    const banner = document.getElementById('scannerModeBanner');
-    const debug  = document.getElementById('scannerDebug');
+    const btn      = document.getElementById('hwScannerBtn');
+    const printBtn = document.getElementById('hwPrintBtn');
+    const banner   = document.getElementById('scannerModeBanner');
+    const debug    = document.getElementById('scannerDebug');
 
     if (HW.active) {
         btn.classList.add('scanner-active');
+        if (printBtn) printBtn.style.display = 'flex';
         banner.classList.add('active');
         if (debug) debug.style.display = 'block';
         document.activeElement?.blur();
@@ -2302,9 +2388,28 @@ function toggleHardwareScanner() {
         dbgSet('status', 'Warte auf Scanner-Input…');
     } else {
         btn.classList.remove('scanner-active');
+        if (printBtn) { printBtn.style.display = 'none'; printBtn.classList.remove('scanner-active'); }
         banner.classList.remove('active');
         if (debug) debug.style.display = 'none';
+        HW.printMode = false;
         showToast('Handscanner deaktiviert', 'info');
+    }
+}
+
+function togglePrintMode() {
+    HW.printMode = !HW.printMode;
+    const btn    = document.getElementById('hwPrintBtn');
+    const banner = document.getElementById('scannerModeBanner');
+    if (HW.printMode) {
+        btn.classList.add('scanner-active');
+        banner.textContent = '🖨️ DRUCKMODUS — Scan öffnet Etikett';
+        banner.style.background = 'var(--purple)';
+        showToast('🖨️ Druckmodus aktiv — Scan öffnet Etikett', 'ok');
+    } else {
+        btn.classList.remove('scanner-active');
+        banner.textContent = '🔫 HANDSCANNER AKTIV — QR-Code scannen';
+        banner.style.background = '';
+        showToast('Druckmodus aus — zurück zu Aus-/Einlagern', 'info');
     }
 }
 
@@ -2382,27 +2487,60 @@ function initHardwareScanner() {
     });
 }
 
+// Spezielle QR-Code Kommandos (auf Etikett drucken zum Scannen)
+const QR_COMMANDS = {
+    'GR-SCANNER-EIN':    () => { if (!HW.active) toggleHardwareScanner(); },
+    'GR-SCANNER-AUS':    () => { if (HW.active)  toggleHardwareScanner(); },
+    'GR-SCANNER-TOGGLE': () => toggleHardwareScanner(),
+    'GR-DRUCK-MODUS':    () => { HW.printMode = !HW.printMode; showToast(HW.printMode ? '🖨️ Druckmodus aktiv' : 'Druckmodus aus', HW.printMode ? 'ok' : 'info'); },
+};
+
 function handleHardwareScan(code) {
     if (!S.user) return;
 
-    // Scanner-Prefix entfernen: Scanner senden je nach Tastaturlayout
-    // unterschiedliche Prefix-Zeichen (ƀ, -, Sonderzeichen etc.)
-    // Firebase-Keys beginnen immer mit einem Buchstaben oder einer Zahl
+    // Prefix entfernen
     const cleaned = code.replace(/^[^a-zA-Z0-9]+/, '').trim();
 
     if (HW.active) {
-        dbgSet('status', `✓ Bereinigt: "${code}" → "${cleaned}"`);
+        dbgSet('status', `Suche: "${cleaned}"…`);
         dbgSet('last', cleaned);
     }
 
-    const item = S.items.find(x => x.key === cleaned);
-    if (!item) {
-        showToast(`⚠️ Artikel nicht gefunden: ${cleaned}`, 'warn');
-        if (HW.active) dbgSet('status', `❌ Nicht gefunden: ${cleaned}`);
+    // Sonder-QR-Codes prüfen
+    if (QR_COMMANDS[cleaned.toUpperCase()]) {
+        QR_COMMANDS[cleaned.toUpperCase()]();
         return;
     }
 
-    // Zum Lager-Tab wechseln falls nicht schon da
+    // Artikel suchen
+    const item = S.items.find(x => x.key === cleaned);
+
+    if (!item) {
+        // Diagnostik: ähnliche Keys finden
+        const similar = S.items
+            .filter(i => i.key.includes(cleaned.slice(0,6)) || cleaned.includes(i.key.slice(0,6)))
+            .slice(0,3)
+            .map(i => i.key)
+            .join(', ');
+
+        const msg = similar
+            ? `❌ Nicht gefunden. Ähnlich: ${similar}`
+            : `❌ Nicht gefunden. ${S.items.length} Artikel geladen.`;
+
+        if (HW.active) dbgSet('status', msg);
+        showToast(`⚠️ Nicht gefunden: ${cleaned}`, 'warn');
+        return;
+    }
+
+    // Druckmodus: statt Aus-/Einlagern → Etikett drucken
+    if (HW.printMode) {
+        const meta = `${item.location||''} · Regal: ${item.regal||'—'} · Fach: ${item.fach||'—'}`;
+        showPrint(item.key, meta, item.name);
+        if (HW.active) dbgSet('status', `🖨️ Drucke: ${item.name}`);
+        return;
+    }
+
+    // Zum Lager-Tab wechseln
     const lagerTab = document.getElementById('tab-lager');
     if (lagerTab.style.display === 'none') {
         document.querySelectorAll('.tab-c').forEach(c => c.style.display='none');
