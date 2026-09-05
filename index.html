@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V212</title>
+    <title>GR-Lagerverwaltung V213</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -413,7 +413,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V212 — Lagerverwaltung</p>
+        <p>V213 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -953,7 +953,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V212";
+const APP_VERSION = "V213";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -2531,7 +2531,9 @@ function showPrint(key, meta, name) {
     document.getElementById('printOverlay').style.display = 'flex';
 }
 
-// ── PC DIREKTDRUCK (iframe, kein Druckserver nötig) ──────────────────
+// ── PC DIREKTDRUCK ───────────────────────────────────────────────────
+const PRINT_SERVER = 'http://localhost:5000';
+
 async function pcDirectPrint() {
     if (!S.label) return;
     setPS('inf', 'Etikett wird erstellt…');
@@ -2541,10 +2543,39 @@ async function pcDirectPrint() {
     } catch(e) { setPS('err', 'Fehler beim Erstellen.'); return; }
 
     const dataUrl = cvs.toDataURL('image/png');
-    const frame   = document.getElementById('printFrame');
-    const doc     = frame.contentDocument || frame.contentWindow.document;
-    doc.open();
-    doc.write(`<!DOCTYPE html><html><head>
+
+    // Prüfen ob Druckserver läuft
+    let serverOnline = false;
+    try {
+        const resp = await fetch(PRINT_SERVER, { signal: AbortSignal.timeout(1500) });
+        const data = await resp.json();
+        serverOnline = data.status === 'online';
+    } catch(e) { serverOnline = false; }
+
+    if (serverOnline) {
+        setPS('inf', 'Sende an Druckserver…');
+        try {
+            const resp = await fetch(PRINT_SERVER, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: dataUrl }),
+                signal: AbortSignal.timeout(15000)
+            });
+            const result = await resp.json();
+            if (result.ok) {
+                setPS('ok', '✓ Etikett gedruckt!');
+                showToast('✓ Etikett gedruckt!', 'ok');
+            } else {
+                setPS('err', 'Druckfehler: ' + result.message);
+            }
+        } catch(e) {
+            setPS('err', 'Druckserver Fehler: ' + e.message);
+        }
+    } else {
+        const frame = document.getElementById('printFrame');
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open();
+        doc.write(`<!DOCTYPE html><html><head>
 <style>
     @page { size: 85mm 29mm; margin: 0; }
     html, body { margin:0; padding:0; width:85mm; height:29mm; overflow:hidden; background:white; }
@@ -2553,10 +2584,10 @@ async function pcDirectPrint() {
 </head><body>
 <img src="${dataUrl}" onload="window.print();">
 </body></html>`);
-    doc.close();
-    // Fokus sofort zurück auf Hauptfenster — damit Scanner weiter funktioniert
-    setTimeout(() => { window.focus(); document.body.focus(); }, 200);
-    setPS('ok', '✓ Druckauftrag gesendet.');
+        doc.close();
+        setPS('inf', '💡 Druckserver nicht aktiv — Browser-Dialog öffnet sich.');
+    }
+    setTimeout(() => { window.focus(); document.body.focus(); }, 500);
 }
 
 function goTab(e, id) {
