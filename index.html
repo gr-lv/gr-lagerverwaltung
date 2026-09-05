@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V204</title>
+    <title>GR-Lagerverwaltung V205</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -414,7 +414,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V204 — Lagerverwaltung</p>
+        <p>V205 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -472,13 +472,6 @@
     </div>
 
     <div id="scannerModeBanner">🔫 HANDSCANNER AKTIV — QR-Code scannen</div>
-
-    <!-- DEBUG: Scanner-Input Anzeige (nur im Scanner-Modus sichtbar) -->
-    <div id="scannerDebug" style="display:none;background:#0f172a;color:#06b6d4;font-family:monospace;font-size:.75rem;padding:8px 14px;border-bottom:1px solid rgba(6,182,212,0.3);">
-        <span style="color:#64748b;">Buffer: </span><span id="dbgBuffer">—</span>
-        <span style="color:#64748b;margin-left:12px;">Letzter Code: </span><span id="dbgLast">—</span>
-        <span style="color:#64748b;margin-left:12px;">Status: </span><span id="dbgStatus">Warte auf Scanner…</span>
-    </div>
     <div class="content-area">
         <!-- LAGER -->
         <div id="tab-lager" class="tab-c">
@@ -957,12 +950,11 @@
         <!-- Nur auf PC sichtbar -->
         <button id="pcPrintBtn" onclick="pcDirectPrint()" style="display:none;width:100%;padding:16px;background:var(--accent);color:white;border:none;border-radius:12px;font-weight:800;font-size:.95rem;cursor:pointer;margin-top:4px;">
             🖨️ DIREKT DRUCKEN (ohne Dialog)
-        </button>
-    </div>
+        </button>    </div>
 </div>
 
 <script>
-const APP_VERSION = "V204";
+const APP_VERSION = "V205";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -2376,21 +2368,17 @@ function toggleHardwareScanner() {
     const btn      = document.getElementById('hwScannerBtn');
     const printBtn = document.getElementById('hwPrintBtn');
     const banner   = document.getElementById('scannerModeBanner');
-    const debug    = document.getElementById('scannerDebug');
 
     if (HW.active) {
         btn.classList.add('scanner-active');
         if (printBtn) printBtn.style.display = 'flex';
         banner.classList.add('active');
-        if (debug) debug.style.display = 'block';
         document.activeElement?.blur();
         showToast('🔫 Handscanner aktiviert', 'ok');
-        dbgSet('status', 'Warte auf Scanner-Input…');
     } else {
         btn.classList.remove('scanner-active');
         if (printBtn) { printBtn.style.display = 'none'; printBtn.classList.remove('scanner-active'); }
         banner.classList.remove('active');
-        if (debug) debug.style.display = 'none';
         HW.printMode = false;
         showToast('Handscanner deaktiviert', 'info');
     }
@@ -2413,7 +2401,6 @@ function togglePrintMode() {
     }
 }
 
-function dbgSet(field, val) {
     const el = document.getElementById('dbg' + field.charAt(0).toUpperCase() + field.slice(1));
     if (el) el.textContent = val;
 }
@@ -2433,9 +2420,6 @@ function initHardwareScanner() {
             clearTimeout(HW.timeout);
 
             if (HW.active) {
-                dbgSet('buffer', '— (Enter erkannt)');
-                dbgSet('last', code || '(leer)');
-                dbgSet('status', code.length >= 6 ? `✓ Verarbeite: ${code}` : `⚠ Zu kurz (${code.length} Zeichen)`);
                 e.preventDefault();
             }
 
@@ -2455,7 +2439,6 @@ function initHardwareScanner() {
             // Echte Prefixes vom Scanner sind Sonderzeichen wie ƀ (Unicode > 127)
             // Ein einfacher Bindestrich ist KEIN Prefix — das ist Teil des Firebase-Keys!
             if (HW.buffer.length === 0 && e.key.charCodeAt(0) > 127) {
-                if (HW.active) dbgSet('status', `⚡ Prefix ignoriert: "${e.key}" (Code: ${e.key.charCodeAt(0)})`);
                 HW.lastTime = now;
                 if (HW.active) e.preventDefault();
                 return;
@@ -2464,21 +2447,16 @@ function initHardwareScanner() {
             HW.lastTime  = now;
 
             if (HW.active) {
-                dbgSet('buffer', HW.buffer);
-                dbgSet('status', `Empfange… (${HW.buffer.length} Zeichen, Gap: ${gap}ms)`);
                 e.preventDefault();
             }
 
             clearTimeout(HW.timeout);
             HW.timeout = setTimeout(() => {
                 if (HW.active && HW.buffer.length > 0) {
-                    dbgSet('status', `⏱ Timeout — kein Enter nach "${HW.buffer}"`);
                     // Timeout-Fallback: wenn Buffer ≥ 6 Zeichen → trotzdem versuchen
                     if (HW.buffer.trim().length >= 6) {
                         const code = HW.buffer.trim().replace(/^[\u0080-\uFFFF]+/, '');
                         HW.buffer = '';
-                        dbgSet('last', code);
-                        dbgSet('status', `⏱ Timeout-Fallback: ${code}`);
                         handleHardwareScan(code);
                         return;
                     }
@@ -2505,8 +2483,6 @@ function handleHardwareScan(code) {
     const cleaned = code.replace(/^[\u0080-\uFFFF]+/, '').trim();
 
     if (HW.active) {
-        dbgSet('status', `Suche: "${cleaned}"…`);
-        dbgSet('last', cleaned);
     }
 
     // Sonder-QR-Codes prüfen
@@ -2532,7 +2508,6 @@ function handleHardwareScan(code) {
             ? `❌ Nicht gefunden. Ähnlich: ${similar}`
             : `❌ Nicht gefunden. Erste Keys: ${sampleKeys}`;
 
-        if (HW.active) dbgSet('status', msg);
         showToast(`⚠️ Nicht gefunden: ${cleaned}`, 'warn');
         return;
     }
@@ -2541,7 +2516,6 @@ function handleHardwareScan(code) {
     if (HW.printMode) {
         const meta = `${item.location||''} · Regal: ${item.regal||'—'} · Fach: ${item.fach||'—'}`;
         showPrint(item.key, meta, item.name);
-        if (HW.active) dbgSet('status', `🖨️ Drucke: ${item.name}`);
         return;
     }
 
@@ -2554,7 +2528,6 @@ function handleHardwareScan(code) {
         document.querySelector('.tab-btn')?.classList.add('active');
     }
 
-    if (HW.active) dbgSet('status', `✅ Gefunden: ${item.name}`);
     showToast(`📦 ${item.name}`, 'info');
     handleScannedItem(item);
 }
@@ -2598,40 +2571,17 @@ function showPrint(key, meta, name) {
     document.getElementById('pvName').textContent = name;
     document.getElementById('pvKey').textContent  = key;
 
-    // PC: Druckserver prüfen und Button anzeigen
-    if (isPC()) {
-        checkPrintServer();
-    }
+    // PC: Direkt-Druck Button anzeigen
+    const pcBtn = document.getElementById('pcPrintBtn');
+    if (pcBtn) pcBtn.style.display = isPC() ? 'block' : 'none';
+
     setPS('inf', isPC()
         ? '💻 PC erkannt — "Direkt drucken" öffnet den Browser-Druckdialog.'
         : 'Tippe "📥 BILD TEILEN" und wähle "In Fotos sichern".');
     document.getElementById('printOverlay').style.display = 'flex';
 }
 
-// ── DRUCKSERVER VERBINDUNG ────────────────────────────────────────────
-const PRINT_SERVER = 'http://localhost:5000';
-let printServerAvailable = null; // null=unbekannt, true=online, false=offline
-
-async function checkPrintServer() {
-    try {
-        const resp = await fetch(PRINT_SERVER, { signal: AbortSignal.timeout(1500) });
-        const data = await resp.json();
-        printServerAvailable = data.status === 'online';
-    } catch(e) {
-        printServerAvailable = false;
-    }
-    // PC-Druck-Button sichtbar machen wenn Server läuft
-    const btn = document.getElementById('pcPrintBtn');
-    if (btn && isPC()) {
-        btn.style.display = 'block';
-        btn.textContent = printServerAvailable
-            ? '🖨️ DIREKT DRUCKEN (kein Dialog)'
-            : '🖨️ DIREKT DRUCKEN (Druckserver starten!)';
-        btn.style.background = printServerAvailable ? 'var(--success)' : 'var(--warn)';
-    }
-    return printServerAvailable;
-}
-
+// ── PC DIREKTDRUCK (iframe, kein Druckserver nötig) ──────────────────
 async function pcDirectPrint() {
     if (!S.label) return;
     setPS('inf', 'Etikett wird erstellt…');
@@ -2641,38 +2591,10 @@ async function pcDirectPrint() {
     } catch(e) { setPS('err', 'Fehler beim Erstellen.'); return; }
 
     const dataUrl = cvs.toDataURL('image/png');
-
-    // Erst prüfen ob Druckserver läuft
-    const serverOnline = await checkPrintServer();
-
-    if (serverOnline) {
-        // ── Weg 1: Druckserver (kein Dialog!) ──────────────────────
-        setPS('inf', 'Sende an Druckserver…');
-        try {
-            const resp = await fetch(`${PRINT_SERVER}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: dataUrl }),
-                signal: AbortSignal.timeout(15000)
-            });
-            const result = await resp.json();
-            if (result.ok) {
-                setPS('ok', '✓ Etikett gedruckt — kein Dialog!');
-                showToast('✓ Etikett gedruckt!', 'ok');
-            } else {
-                setPS('err', 'Druckfehler: ' + result.message);
-            }
-        } catch(e) {
-            setPS('err', 'Druckserver nicht erreichbar: ' + e.message);
-        }
-    } else {
-        // ── Weg 2: iframe Fallback (mit Dialog) ────────────────────
-        setPS('inf', 'Druckserver nicht aktiv — öffne Browser-Dialog…');
-        const frame = document.getElementById('printFrame');
-        const doc = frame.contentDocument || frame.contentWindow.document;
-        doc.open();
-        doc.write(`<!DOCTYPE html>
-<html><head>
+    const frame   = document.getElementById('printFrame');
+    const doc     = frame.contentDocument || frame.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head>
 <style>
     @page { size: 85mm 29mm; margin: 0; }
     html, body { margin:0; padding:0; width:85mm; height:29mm; overflow:hidden; background:white; }
@@ -2681,10 +2603,10 @@ async function pcDirectPrint() {
 </head><body>
 <img src="${dataUrl}" onload="window.focus(); window.print();">
 </body></html>`);
-        doc.close();
-        setPS('inf', '💡 Tipp: GR-Lager-Drucker-Starten.bat ausführen für dialogfreien Druck.');
-    }
+    doc.close();
+    setPS('ok', '✓ Druckauftrag gesendet.');
 }
+
 function goTab(e, id) {
     document.querySelectorAll('.tab-c').forEach(c => c.style.display='none');
     document.getElementById(id).style.display = 'block';
