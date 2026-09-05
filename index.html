@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V208</title>
+    <title>GR-Lagerverwaltung V209</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -413,7 +413,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V208 — Lagerverwaltung</p>
+        <p>V209 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -953,7 +953,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V208";
+const APP_VERSION = "V209";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -2362,10 +2362,6 @@ function togglePrintMode() {
         banner.style.background = '';
         showToast('Druckmodus aus — zurück zu Aus-/Einlagern', 'info');
     }
-}
-
-    const el = document.getElementById('dbg' + field.charAt(0).toUpperCase() + field.slice(1));
-    if (el) el.textContent = val;
 }
 
 function initHardwareScanner() {
