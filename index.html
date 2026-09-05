@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V207</title>
+    <title>GR-Lagerverwaltung V208</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <!-- Winziger QR-Code-Generator (inline, kein Netzwerk-Request) -->
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
@@ -414,7 +413,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V207 — Lagerverwaltung</p>
+        <p>V208 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -954,7 +953,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V207";
+const APP_VERSION = "V208";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -966,20 +965,8 @@ const FB = {
     appId:"1:561219570576:web:65824b199a12933fd88115"
 };
 firebase.initializeApp(FB);
-const db   = firebase.database();
-const ref  = db.ref('lager_v90_multilager');
-const auth = firebase.auth();
-
-// ═══════════════════════════════════════════════════════════════════════
-// ANONYMOUS AUTH
-// Meldet die App unsichtbar bei Firebase an bevor Daten geladen werden.
-// Nutzer merken nichts davon — sie loggen sich weiterhin mit Name + 1234 ein.
-// Verhindert direkten Zugriff auf die Datenbank von außerhalb der App.
-// ═══════════════════════════════════════════════════════════════════════
-// Anonymous Auth — komplett optional, blockiert Login nie
-try {
-    auth.signInAnonymously().catch(() => {});
-} catch(e) {}
+const db  = firebase.database();
+const ref = db.ref('lager_v90_multilager');
 
 // ═══════════════════════════════════════════════════════════════════════
 // CLOUDINARY KONFIGURATION
