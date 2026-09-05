@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V205</title>
+    <title>GR-Lagerverwaltung V206</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -414,7 +414,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V205 — Lagerverwaltung</p>
+        <p>V206 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -954,7 +954,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V205";
+const APP_VERSION = "V206";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -979,14 +979,17 @@ const auth = firebase.auth();
 let authReady = false;
 
 // Beim Laden der Seite sofort anonym einloggen
+// Falls Anonymous Auth nicht aktiviert ist → trotzdem weitermachen
 auth.signInAnonymously().then(() => {
     authReady = true;
     console.log('[Auth] Anonym angemeldet ✓');
 }).catch(err => {
     console.warn('[Auth] Anonym-Login fehlgeschlagen:', err.message);
-    // App läuft trotzdem weiter — falls Auth noch nicht aktiviert ist
-    authReady = true;
+    authReady = true; // Trotzdem weitermachen
 });
+
+// Sicherheits-Fallback: nach 3 Sekunden immer bereit
+setTimeout(() => { authReady = true; }, 3000);
 
 // ═══════════════════════════════════════════════════════════════════════
 // CLOUDINARY KONFIGURATION
@@ -1232,14 +1235,13 @@ document.getElementById('startBtn').addEventListener('click', async () => {
     btn.disabled = true;
     btn.textContent = '⏳ Verbinde…';
 
-    // Warten bis Anonymous Auth bereit ist (normalerweise sofort)
+    // Warten bis Anonymous Auth bereit ist (max 3 Sekunden)
     if (!authReady) {
         await new Promise(resolve => {
             const check = setInterval(() => {
                 if (authReady) { clearInterval(check); resolve(); }
-            }, 100);
-            // Nach 5 Sekunden trotzdem weitermachen
-            setTimeout(() => { clearInterval(check); resolve(); }, 5000);
+            }, 50);
+            setTimeout(() => { clearInterval(check); authReady = true; resolve(); }, 3000);
         });
     }
 
