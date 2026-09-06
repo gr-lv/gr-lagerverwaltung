@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GR-Lagerverwaltung V213</title>
+    <title>GR-Lagerverwaltung V216</title>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -413,7 +413,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h2>GR-LAGER</h2>
-        <p>V213 — Lagerverwaltung</p>
+        <p>V216 — Lagerverwaltung</p>
         <input type="text"     id="lName" class="fi" placeholder="Vorname und Nachname" autocomplete="off">
         <input type="password" id="lPass" class="fi" placeholder="Passwort">
         <button id="startBtn" style="width:100%;padding:15px;background:var(--accent);color:white;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer;letter-spacing:.06em;">LOGIN</button>
@@ -531,6 +531,22 @@
                     style="width:100%;padding:13px;background:var(--warn);color:white;border:none;border-radius:10px;font-weight:800;cursor:pointer;font-size:.92rem;">
                     🚀 Jetzt migrieren
                 </button>
+            </div>
+
+            <div class="mc" style="border:1px solid rgba(16,185,129,0.3);">
+                <h4 style="color:var(--success);">🖨️ Druckserver Einstellungen</h4>
+                <p style="font-size:.78rem;color:#94a3b8;margin:0 0 10px;line-height:1.5;">
+                    Die Adresse des PCs auf dem der Druckserver läuft.<br>
+                    <b>Auf dem Drucker-PC:</b> CMD öffnen → <code style="background:rgba(6,182,212,0.15);color:var(--accent);padding:1px 5px;border-radius:3px;">python GR-Lager-Drucker.py</code> → angezeigte Adresse hier eintragen.
+                </p>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="text" id="printServerInput" class="fi" placeholder="http://192.168.1.38:5000" style="margin:0;flex:1;font-size:.82rem;">
+                    <button onclick="savePrintServerUrl()" style="padding:11px 14px;background:var(--success);color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">💾 Speichern</button>
+                </div>
+                <button onclick="testPrintServer()" style="width:100%;margin-top:8px;padding:10px;background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3);border-radius:8px;font-weight:700;cursor:pointer;font-size:.82rem;">
+                    🔍 Verbindung testen
+                </button>
+                <div id="printServerStatus" style="display:none;margin-top:8px;padding:8px 12px;border-radius:7px;font-size:.78rem;"></div>
             </div>
 
             <div class="mc" style="border:1px solid rgba(168,85,247,0.3);">
@@ -953,7 +969,7 @@
 </div>
 
 <script>
-const APP_VERSION = "V213";
+const APP_VERSION = "V216";
 
 const FB = {
     apiKey:"AIzaSyBQ6A16jUnamH4SFm8UKX2jSryJgZg2apk",
@@ -1693,6 +1709,46 @@ function renderReservations() {
 }
 
 // ───────── MANAGE ─────────
+function savePrintServerUrl() {
+    const input = document.getElementById('printServerInput');
+    let url = (input ? input.value.trim() : '') || 'http://localhost:5000';
+    if (!url.startsWith('http')) url = 'http://' + url;
+    setPrintServerUrl(url);
+    if (input) input.value = url;
+    showToast('✓ Druckserver-Adresse gespeichert', 'ok');
+}
+
+async function testPrintServer() {
+    const statusEl = document.getElementById('printServerStatus');
+    const url = getPrintServerUrl();
+    if (!statusEl) return;
+    statusEl.style.display = 'block';
+    statusEl.style.background = 'rgba(6,182,212,0.1)';
+    statusEl.style.border = '1px solid rgba(6,182,212,0.3)';
+    statusEl.style.color = 'var(--accent)';
+    statusEl.textContent = `🔍 Teste ${url}…`;
+    try {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(3000) });
+        const data = await resp.json();
+        if (data.status === 'online') {
+            statusEl.style.background = 'rgba(16,185,129,0.12)';
+            statusEl.style.border = '1px solid rgba(16,185,129,0.3)';
+            statusEl.style.color = 'var(--success)';
+            statusEl.textContent = `✅ Verbunden! Brother ${data.model} (${data.printer})`;
+        } else throw new Error();
+    } catch(e) {
+        statusEl.style.background = 'rgba(239,68,68,0.12)';
+        statusEl.style.border = '1px solid rgba(239,68,68,0.3)';
+        statusEl.style.color = 'var(--danger)';
+        statusEl.textContent = `❌ Nicht erreichbar — läuft GR-Lager-Drucker.py auf dem Drucker-PC?`;
+    }
+}
+
+function loadPrintServerInput() {
+    const input = document.getElementById('printServerInput');
+    if (input) input.value = getPrintServerUrl();
+}
+
 function quickAdd() {
     const t = document.getElementById('manType').value;
     const v = document.getElementById('addIn').value.trim(); if(!v) return;
@@ -2199,11 +2255,13 @@ function drawLabel(canvas, key, meta, name) {
 
             // NAME — automatischer Umbruch UND Schriftgrößen-Anpassung
             ctx.fillStyle = '#000';
-            const nameAreaH = H - 100; // Verfügbare Höhe für den Namen
-            const result = fitText(ctx, name, mW, nameAreaH, 100, 28);
+            // Sicherheitsabstand oben (100) und unten (20) für Unterlängen (p,g,j,y)
+            const nameAreaH = H - 100 - 20;
+            const safeW = mW - 10;
+            const result = fitText(ctx, name, safeW, nameAreaH, 100, 24);
             const linesY = 100 + (nameAreaH - result.totalHeight) / 2 + result.fontSize;
             result.lines.forEach((line, i) => {
-                ctx.fillText(line, tX, linesY + i * result.fontSize * 1.05);
+                ctx.fillText(line, tX, linesY + i * result.fontSize * 1.15);
             });
 
             // KEY
@@ -2532,7 +2590,14 @@ function showPrint(key, meta, name) {
 }
 
 // ── PC DIREKTDRUCK ───────────────────────────────────────────────────
-const PRINT_SERVER = 'http://localhost:5000';
+// Druckserver-URL: gespeichert in localStorage, änderbar im Admin-Tab
+function getPrintServerUrl() {
+    try { return localStorage.getItem('printServerUrl') || 'http://localhost:5000'; }
+    catch(e) { return 'http://localhost:5000'; }
+}
+function setPrintServerUrl(url) {
+    try { localStorage.setItem('printServerUrl', url); } catch(e) {}
+}
 
 async function pcDirectPrint() {
     if (!S.label) return;
@@ -2546,6 +2611,7 @@ async function pcDirectPrint() {
 
     // Prüfen ob Druckserver läuft
     let serverOnline = false;
+    const PRINT_SERVER = getPrintServerUrl();
     try {
         const resp = await fetch(PRINT_SERVER, { signal: AbortSignal.timeout(1500) });
         const data = await resp.json();
@@ -2595,7 +2661,7 @@ function goTab(e, id) {
     document.getElementById(id).style.display = 'block';
     if (e) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active'); }
     if (id==='tab-log') renderLogs();
-    if (id==='tab-neu') { renderManage(); renderNewItemGallery(); checkMigrationNeeded(); }
+    if (id==='tab-neu') { renderManage(); renderNewItemGallery(); checkMigrationNeeded(); loadPrintServerInput(); }
     if (id==='tab-resv') renderReservations();
 }
 
